@@ -28,6 +28,13 @@ lib_fixups: lib_fixups_user_type = {
 }
 
 blob_fixups: blob_fixups_user_type = {
+    (
+        'vendor/lib/libexynosdisplay.so',
+        'vendor/lib64/libexynosdisplay.so',
+        'vendor/lib64/sensors.sensorhub.so',
+    ): blob_fixup()
+        .add_needed('libutils-v32.so')
+        .binary_regex_replace(b'_ZN7android6Thread3runEPKci', b'_ZN7utils326Thread3runEPKci'),
 }  # fmt: skip
 
 module = ExtractUtilsModule(
