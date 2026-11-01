@@ -1,0 +1,2 @@
+# Graphics: as stock N950NKSU5DZE2 /system/build.prop
+ro.zygote.disable_gl_preload=true

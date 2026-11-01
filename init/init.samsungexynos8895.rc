@@ -1,0 +1,66 @@
+#
+# SPDX-FileCopyrightText: The LineageOS Project
+# SPDX-License-Identifier: Apache-2.0
+#
+
+on early-init
+    mkdir /efs 0771 radio system
+
+on init
+    # Reactivation Lock and Google FRP (stock init.samsungexynos8895.rc)
+    symlink /dev/block/by-name/STEADY /dev/block/steady
+    symlink /dev/block/by-name/PERSISTENT /dev/block/persistent
+
+on fs
+    mount_all /vendor/etc/fstab.${ro.hardware} --early
+    chown radio system /efs
+    restorecon_recursive /efs
+
+on late-fs
+    mount_all /vendor/etc/fstab.${ro.hardware} --late
+
+on post-fs
+    # Trustonic Kinibi (stock init.rc)
+    export MC_AUTH_TOKEN_PATH /efs
+    mkdir /efs/TEE 0770 radio system
+    start mobicore
+
+on post-fs-data
+    mkdir /data/vendor 0771 root system
+    mkdir /data/vendor/log 0771 root system
+
+    # Trustonic Kinibi
+    mkdir /data/vendor/mcRegistry 0770 system system
+
+    # NFC
+    mkdir /data/vendor/nfc 0770 nfc nfc
+
+    # Wi-Fi (stock wifi.rc)
+    mkdir /data/vendor/conn 0771 wifi root
+    mkdir /data/vendor/wifi 0771 wifi wifi
+    mkdir /data/vendor/wifi/wpa 0770 wifi wifi
+    mkdir /data/vendor/wifi/wpa/sockets 0770 wifi wifi
+
+on boot
+    # Wi-Fi: firmware and NVRAM paths are module parameters of dhd
+    chown wifi wifi /sys/module/dhd/parameters/firmware_path
+    chown wifi wifi /sys/module/dhd/parameters/nvram_path
+
+    # Touchscreen and S-Pen commands (vendor.lineage.touch-service.samsung)
+    chown system system /sys/class/sec/tsp/cmd
+    chown system system /sys/class/sec/tsp/cmd_list
+    chown system system /sys/class/sec/tsp/cmd_result
+    chown system system /sys/class/sec/sec_epen/epen_saving_mode
+
+# Trustonic Kinibi daemon (stock init.rc; its fourth -r image, ...d0000000000000000000001c.tlbin, is not
+# shipped in /vendor/app/mcRegistry)
+service mobicore /vendor/bin/mcDriverDaemon -r /vendor/app/mcRegistry/FFFFFFFF000000000000000000000001.drbin -r /vendor/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin -r /vendor/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
+    class core
+    user system
+    group system
+    disabled
+
+# Wi-Fi MAC address from /efs (stock wifi.rc)
+service macloader /vendor/bin/hw/macloader
+    class main
+    oneshot
