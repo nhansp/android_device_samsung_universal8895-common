@@ -75,8 +75,6 @@ vendor/lib64/libion_exynos.so
 vendor/lib64/libmpp.so
 
 # Keymaster
-vendor/bin/hw/android.hardware.keymaster@3.0-service
-vendor/etc/init/android.hardware.keymaster@3.0-service.rc
 vendor/lib64/hw/android.hardware.keymaster@3.0-impl.so
 vendor/lib64/hw/keystore.mdfpp.so
 vendor/lib64/libkeymaster_helper.so
