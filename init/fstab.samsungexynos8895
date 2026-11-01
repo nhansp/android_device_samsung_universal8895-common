@@ -1,0 +1,21 @@
+# Android fstab file
+#
+# Mount options and flags follow the stock /fstab.samsungexynos8895 of N950NKSU5DZE2, with
+# first-stage mount of /system (system-as-root) and file-based encryption: full-disk encryption
+# (forceencrypt=footer) is gone from fs_mgr. There is no metadata partition.
+#
+#<src>                                   <mnt_point>  <type>  <mnt_flags and options>                                                                  <fs_mgr_flags>
+/dev/block/by-name/SYSTEM                /system      ext4    ro,errors=panic,noload                                                                   wait,first_stage_mount
+/dev/block/by-name/CACHE                 /cache       ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  wait,check
+/dev/block/by-name/USERDATA              /data        ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  latemount,wait,check,quota,reservedsize=128M,fileencryption=aes-256-xts:aes-256-cts:v2,keydirectory=/data/unencrypted
+/dev/block/by-name/EFS                   /efs         ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  wait,check
+/dev/block/by-name/CPEFS                 /cpefs       ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  wait,check,nofail
+/dev/block/by-name/OMR                   /omr         ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  wait,check,nofail
+/dev/block/by-name/MISC                  /misc        emmc    defaults                                                                                 defaults
+/dev/block/by-name/BOOT                  /boot        emmc    defaults                                                                                 defaults
+/dev/block/by-name/RECOVERY              /recovery    emmc    defaults                                                                                 defaults
+
+# VOLD
+/dev/block/by-name/HIDDEN                /preload     ext4    defaults                                                                                 voldmanaged=preload:auto
+/devices/platform/soc@0/11500000.mmc/mmc_host*      auto  auto  defaults                                                                           voldmanaged=sdcard:auto,encryptable=userdata
+/devices/platform/soc@0/10c00000.usb/10c00000.usb*  auto  auto  defaults                                                                           voldmanaged=usb:auto

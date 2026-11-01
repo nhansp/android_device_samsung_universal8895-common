@@ -1,0 +1,84 @@
+# Device node permissions of universal8895, from the stock /ueventd.samsungexynos8895.rc
+# (N950NKSU5DZE2), less nodes owned by Samsung-private AIDs.
+
+# Graphics
+/dev/mali0                0666   system     system
+/dev/ion                  0666   system     system
+/dev/fimg2d               0666   system     graphics
+/dev/video55              0666   system     graphics
+/dev/media1               0660   system     graphics
+/dev/v4l-subdev20         0660   system     graphics
+/dev/v4l-subdev21         0660   system     graphics
+/dev/v4l-subdev32         0660   system     graphics
+
+# GScaler
+/dev/video23              0660   media      graphics
+/dev/video24              0660   media      graphics
+/dev/video26              0660   media      graphics
+/dev/video27              0660   media      graphics
+/dev/video29              0660   media      graphics
+/dev/video30              0660   media      graphics
+/dev/video31              0660   media      graphics
+
+# MScaler
+/dev/video50              0660   media      graphics
+
+# MFC
+/dev/video6               0660   mediacodec mediadrm
+/dev/video7               0660   mediacodec mediadrm
+/dev/video8               0660   mediacodec mediadrm
+/dev/video9               0660   mediacodec mediadrm
+
+# JPEG
+/dev/m2m1shot_jpeg        0660   media      media
+/dev/video12              0660   cameraserver media
+/dev/media2               0660   media      media
+/dev/hdcp2                0660   media      media
+
+# Camera
+/dev/video0               0660   system     camera
+/dev/video1               0660   system     camera
+/dev/video2               0660   system     camera
+/dev/video3               0660   system     camera
+/dev/media0               0660   system     camera
+/dev/v4l-subdev[0-9]      0660   system     camera
+/dev/v4l-subdev1[0-9]     0660   system     camera
+/dev/video1[0-9][0-9]     0660   cameraserver camera
+/dev/video2[0-9][0-9]     0660   cameraserver camera
+
+# Audio (ABOX)
+/dev/seiren               0660   system     audio
+
+# Input
+/dev/input/event*         0660   system     input
+
+# Sensorhub (CONFIG_SENSORS_SSP_BBD, Broadcom bridge)
+/dev/ssp_sensorhub        0660   system     system
+/dev/batch_io             0600   system     system
+/dev/iio:device*          0660   system     system
+/dev/bbd_control          0660   system     system
+/dev/bbd_packet           0660   system     system
+/dev/bbd_patch            0660   system     system
+/dev/bbd_reliable         0660   system     system
+/dev/bbd_sensor           0660   system     system
+/dev/bbd_sio              0660   system     system
+/dev/ttyBCM*              0660   system     system
+
+# Fingerprint (vfs8xxx)
+/dev/vfsspi               0660   system     system
+
+# Trustonic Kinibi (mcDriverDaemon). Modes and owners are the stock ones from
+# factory/dump/boot_extracted/rootfs/ueventd.rc:141-142. Setting them here
+# rather than with a chown in an init .rc keeps vendor_init away from
+# tee_device entirely.
+/dev/mobicore             0700   system     system
+/dev/mobicore-user        0666   radio      system
+
+# NFC (CONFIG_SEC_NFC)
+/dev/sec-nfc              0660   nfc        nfc
+
+# Google FRP
+/dev/block/by-name/PERSISTENT    0660    system    system
+
+# Reactivation lock
+/dev/block/by-name/STEADY        0660    system    system

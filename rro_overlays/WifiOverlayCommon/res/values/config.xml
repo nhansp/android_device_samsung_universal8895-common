@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: The LineageOS Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- BCM4361: 2.4 and 5 GHz, 802.11ac -->
+    <bool name="config_wifi5ghzSupport">true</bool>
+    <bool name="config_wifiSoftap5ghzSupported">true</bool>
+    <bool name="config_wifi_softap_ieee80211ac_supported">true</bool>
+</resources>

@@ -1,0 +1,39 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+prebuilt_etc {
+    name: "fstab.samsungexynos8895",
+    src: "fstab.samsungexynos8895",
+    vendor: true,
+}
+
+prebuilt_root {
+    name: "fstab.samsungexynos8895.ramdisk",
+    src: "fstab.samsungexynos8895",
+    filename: "fstab.samsungexynos8895",
+    ramdisk: true,
+    install_in_root: true,
+}
+
+prebuilt_etc {
+    name: "init.samsungexynos8895.rc",
+    src: "init.samsungexynos8895.rc",
+    relative_install_path: "init/hw",
+    vendor: true,
+}
+
+prebuilt_etc {
+    name: "init.recovery.samsungexynos8895.rc",
+    src: "init.recovery.samsungexynos8895.rc",
+    filename: "init.recovery.samsungexynos8895.rc",
+    recovery: true,
+}
+
+prebuilt_etc {
+    name: "ueventd.samsungexynos8895.rc",
+    src: "ueventd.samsungexynos8895.rc",
+    filename: "ueventd.rc",
+    vendor: true,
+}

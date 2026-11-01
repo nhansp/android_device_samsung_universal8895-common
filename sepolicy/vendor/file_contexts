@@ -1,0 +1,8 @@
+# Fingerprint (vfs8xxx)
+/dev/vfsspi                                             u:object_r:fp_sensor_device:s0
+
+# NFC
+/data/vendor/nfc(/.*)?                                  u:object_r:nfc_vendor_data_file:s0
+
+# Graphics: loaded into app processes by the stock gralloc module and the Mali driver
+/(vendor|system/vendor)/lib(64)?/libion_exynos\.so          u:object_r:same_process_hal_file:s0
