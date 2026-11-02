@@ -16,6 +16,13 @@ on fs
     chown radio system /efs
     restorecon_recursive /efs
 
+    # Modem (stock init.baseband.rc)
+    symlink /dev/block/by-name/RADIO /dev/mbin0
+    chown radio system /cpefs
+    chmod 0771 /cpefs
+    chown radio radio /efs/factory.prop
+    chmod 0600 /efs/factory.prop
+
 on late-fs
     mount_all /vendor/etc/fstab.${ro.hardware} --late
 
@@ -28,6 +35,9 @@ on post-fs
 on post-fs-data
     mkdir /data/vendor 0771 root system
     mkdir /data/vendor/log 0771 root system
+
+    # RIL
+    mkdir /data/vendor/secradio 0770 radio radio
 
     # Trustonic Kinibi
     mkdir /data/vendor/mcRegistry 0770 system system
@@ -64,3 +74,13 @@ service mobicore /vendor/bin/mcDriverDaemon -r /vendor/app/mcRegistry/FFFFFFFF00
 service macloader /vendor/bin/hw/macloader
     class main
     oneshot
+
+# Modem boot daemon (stock init.baseband.rc; the RADIO partition by name instead of the 4.4 platform path)
+service cpboot-daemon /vendor/bin/cbd -d -tss310 -bm -mm -P by-name/RADIO -n /efs
+    class main
+    user root
+    group radio cache inet misc audio sdcard_rw log sdcard_r shell system
+    seclabel u:r:cbd:s0
+
+on property:ro.vendor.multisim.simslotcount=*
+    write /sys/module/modem_ctrl_ss310ap/parameters/ds_detect ${ro.vendor.multisim.simslotcount}
