@@ -81,6 +81,23 @@ vendor/lib64/libkeymaster_helper.so
 vendor/lib64/libkeymaster_mdfpp.so
 vendor/lib64/libskeymaster3device.so
 
+# Media
+system/lib/libExynosOMX_Core.so:vendor/lib/libExynosOMX_Core.so
+system/lib/libExynosOMX_Resourcemanager.so:vendor/lib/libExynosOMX_Resourcemanager.so
+system/lib/libstagefrighthw.so:vendor/lib/libstagefrighthw.so
+system/lib/omx/libOMX.Exynos.AVC.Decoder.so:vendor/lib/omx/libOMX.Exynos.AVC.Decoder.so
+system/lib/omx/libOMX.Exynos.AVC.Encoder.so:vendor/lib/omx/libOMX.Exynos.AVC.Encoder.so
+system/lib/omx/libOMX.Exynos.HEVC.Decoder.so:vendor/lib/omx/libOMX.Exynos.HEVC.Decoder.so
+system/lib/omx/libOMX.Exynos.HEVC.Encoder.so:vendor/lib/omx/libOMX.Exynos.HEVC.Encoder.so
+system/lib/omx/libOMX.Exynos.MPEG4.Decoder.so:vendor/lib/omx/libOMX.Exynos.MPEG4.Decoder.so
+system/lib/omx/libOMX.Exynos.MPEG4.Encoder.so:vendor/lib/omx/libOMX.Exynos.MPEG4.Encoder.so
+system/lib/omx/libOMX.Exynos.VP8.Decoder.so:vendor/lib/omx/libOMX.Exynos.VP8.Decoder.so
+system/lib/omx/libOMX.Exynos.VP8.Encoder.so:vendor/lib/omx/libOMX.Exynos.VP8.Encoder.so
+system/lib/omx/libOMX.Exynos.VP9.Decoder.so:vendor/lib/omx/libOMX.Exynos.VP9.Decoder.so
+system/lib/omx/libOMX.Exynos.VP9.Encoder.so:vendor/lib/omx/libOMX.Exynos.VP9.Encoder.so
+system/lib/omx/libOMX.Exynos.WMV.Decoder.so:vendor/lib/omx/libOMX.Exynos.WMV.Decoder.so
+vendor/lib/libcsc.so
+
 # Media - firmware (MFC video codec, loaded by the kernel)
 vendor/firmware/mfc_fw.bin
 
