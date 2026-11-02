@@ -16,6 +16,7 @@ vendor/lib/hw/sound_trigger.primary.universal8895.so
 vendor/lib/libaboxpcmdump.so
 vendor/lib/libaudio_soundtrigger.so
 vendor/lib/libdatamod.so
+vendor/lib/libtinycompress.so
 vendor/lib/libvndsecril-client.so
 
 # Audio - firmware
