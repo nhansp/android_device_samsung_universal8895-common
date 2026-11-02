@@ -46,6 +46,17 @@ vendor/lib64/libsynaFpSensorTestNwd.so
 vendor/lib/hw/gatekeeper.exynos8895.so
 vendor/lib64/hw/gatekeeper.exynos8895.so
 
+# GNSS
+vendor/bin/hw/gpsd
+vendor/bin/hw/lhd
+vendor/etc/gnss/gps.cer
+vendor/etc/gnss/gps.xml
+vendor/etc/sensor/lhd.conf
+vendor/lib64/hw/android.hardware.gnss@1.1-impl.so
+vendor/lib64/hw/gps.default.so
+vendor/lib64/libvndsecril-client.so
+vendor/lib64/libwrappergps.so
+
 # Graphics
 system/lib/hw/gralloc.exynos5.so:vendor/lib/hw/gralloc.exynos5.so
 system/lib/libGrallocWrapper.so:vendor/lib/libGrallocWrapper.so

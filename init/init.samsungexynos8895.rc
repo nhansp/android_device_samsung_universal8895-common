@@ -42,6 +42,9 @@ on post-fs-data
     # Trustonic Kinibi
     mkdir /data/vendor/mcRegistry 0770 system system
 
+    # GNSS (stock init.gps.rc)
+    mkdir /data/vendor/gps 0771 system system
+
     # NFC
     mkdir /data/vendor/nfc 0770 nfc nfc
 
@@ -84,3 +87,16 @@ service cpboot-daemon /vendor/bin/cbd -d -tss310 -bm -mm -P by-name/RADIO -n /ef
 
 on property:ro.vendor.multisim.simslotcount=*
     write /sys/module/modem_ctrl_ss310ap/parameters/ds_detect ${ro.vendor.multisim.simslotcount}
+
+# GNSS (stock init.gps.rc)
+service lhd /vendor/bin/hw/lhd /vendor/etc/sensor/lhd.conf
+    class main
+    user gps
+    group system inet net_raw
+    ioprio be 0
+
+service gpsd /vendor/bin/hw/gpsd -c /vendor/etc/gnss/gps.xml
+    class main
+    user gps
+    group system inet net_raw wakelock
+    ioprio be 0
