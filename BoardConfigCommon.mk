@@ -118,6 +118,9 @@ TARGET_RECOVERY_PIXEL_FORMAT := RGBX_8888
 # Security
 VENDOR_SECURITY_PATCH := 2021-10-01
 
+# RIL
+ENABLE_VENDOR_RIL_SERVICE := true
+
 # SELinux
 include device/lineage/sepolicy/libion/sepolicy.mk
 include device/lineage/sepolicy/exynos/sepolicy.mk

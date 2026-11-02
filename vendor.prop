@@ -27,3 +27,6 @@ ro.hardware.keystore=mdfpp
 
 # Wi-Fi
 wifi.interface=wlan0
+
+# RIL
+vendor.sec.rild.libpath=/vendor/lib64/libsec-ril.so
