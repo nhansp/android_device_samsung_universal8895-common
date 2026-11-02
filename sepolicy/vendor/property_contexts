@@ -1,0 +1,2 @@
+# Trustonic Kinibi (stock mcDriverDaemon, read by libkeymaster_helper)
+sys.mobicoredaemon.enable    u:object_r:tee_prop:s0
