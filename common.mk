@@ -188,7 +188,16 @@ PRODUCT_SOONG_NAMESPACES += \
     hardware/broadcom/libbt \
     hardware/google/interfaces \
     hardware/google/pixel/power-libperfmgr \
+    hardware/google/pixel/thermal \
     hardware/samsung
+
+# Thermal
+PRODUCT_PACKAGES += \
+    android.hardware.thermal-service.pixel \
+    thermal_symlinks
+
+PRODUCT_COPY_FILES += \
+    $(COMMON_PATH)/configs/thermal/thermal_info_config.json:$(TARGET_COPY_OUT_VENDOR)/etc/thermal_info_config.json
 
 # Touch
 PRODUCT_PACKAGES += \
