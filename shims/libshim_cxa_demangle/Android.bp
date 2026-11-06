@@ -6,6 +6,6 @@
 cc_library_shared {
     name: "libshim_cxa_demangle",
     whole_static_libs: ["libc++demangle"],
-    stl: "none",
+    static_libs: ["libunwind"],
     vendor: true,
 }
