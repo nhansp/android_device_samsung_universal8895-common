@@ -30,7 +30,10 @@ lib_fixups: lib_fixups_user_type = {
 blob_fixups: blob_fixups_user_type = {
     'vendor/bin/hw/gpsd': blob_fixup()
         .binary_regex_replace(b'SSLv3_client_method', b'SSLv23_method\x00\x00\x00\x00\x00\x00'),
-    'vendor/lib64/hw/gps.default.so': blob_fixup()
+    (
+        'vendor/lib64/hw/android.hardware.gnss@1.1-impl.so',
+        'vendor/lib64/hw/gps.default.so',
+    ): blob_fixup()
         .fix_soname(),
     'vendor/lib/libExynosOMX_Core.so': blob_fixup()
         .binary_regex_replace(b'/system/lib/omx/', b'/vendor/lib/omx/'),
