@@ -28,6 +28,15 @@ lib_fixups: lib_fixups_user_type = {
 }
 
 blob_fixups: blob_fixups_user_type = {
+    (
+        'vendor/lib/egl/libGLES_mali.so',
+        'vendor/lib64/egl/libGLES_mali.so',
+    ): blob_fixup()
+        .clear_symbol_version('AHardwareBuffer_acquire')
+        .clear_symbol_version('AHardwareBuffer_allocate')
+        .clear_symbol_version('AHardwareBuffer_describe')
+        .clear_symbol_version('AHardwareBuffer_getNativeHandle')
+        .clear_symbol_version('AHardwareBuffer_release'),
     'vendor/bin/hw/gpsd': blob_fixup()
         .binary_regex_replace(b'SSLv3_client_method', b'SSLv23_method\x00\x00\x00\x00\x00\x00'),
     (
