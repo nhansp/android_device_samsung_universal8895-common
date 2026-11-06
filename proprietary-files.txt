@@ -1,6 +1,7 @@
 # All blobs are from N950NKSU5DZE2 (SM-N950N, Android 9) unless pinned
 
 # Audio
+system/lib/libtinyalsa.so:vendor/lib/libtinyalsa-samsung.so
 system/lib/hw/audio.primary.universal8895.so:vendor/lib/hw/audio.primary.universal8895.so
 system/lib/libSamsungPostProcessConvertor.so:vendor/lib/libSamsungPostProcessConvertor.so
 system/lib/lib_SamsungRec_06006.so:vendor/lib/lib_SamsungRec_06006.so

@@ -32,9 +32,18 @@ blob_fixups: blob_fixups_user_type = {
         .add_needed('libcompiler_rt-samsung.so'),
     'vendor/lib/hw/audio.primary.universal8895.so': blob_fixup()
         .add_needed('libprocessgroup.so')
-        .replace_needed('libaudioroute.so', 'libaudioroute-samsung.so'),
+        .replace_needed('libaudioroute.so', 'libaudioroute-samsung.so')
+        .replace_needed('libtinyalsa.so', 'libtinyalsa-samsung.so'),
+    (
+        'vendor/lib/hw/sound_trigger.primary.universal8895.so',
+        'vendor/lib/libaboxpcmdump.so',
+        'vendor/lib/libaudio_soundtrigger.so',
+        'vendor/lib/libaudioroute-samsung.so',
+    ): blob_fixup()
+        .replace_needed('libtinyalsa.so', 'libtinyalsa-samsung.so'),
     (
         'vendor/lib/libaudioroute-samsung.so',
+        'vendor/lib/libtinyalsa-samsung.so',
         'vendor/lib/libcompiler_rt-samsung.so',
     ): blob_fixup()
         .fix_soname(),
