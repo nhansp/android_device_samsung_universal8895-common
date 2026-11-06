@@ -28,6 +28,8 @@ lib_fixups: lib_fixups_user_type = {
 }
 
 blob_fixups: blob_fixups_user_type = {
+    'vendor/lib/hw/audio.primary.universal8895.so': blob_fixup()
+        .add_needed('libprocessgroup.so'),
     (
         'vendor/lib/egl/libGLES_mali.so',
         'vendor/lib64/egl/libGLES_mali.so',
