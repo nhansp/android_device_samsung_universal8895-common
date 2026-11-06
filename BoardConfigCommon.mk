@@ -34,7 +34,8 @@ BOARD_MKBOOTIMG_ARGS := \
     --kernel_offset 0x00008000 \
     --ramdisk_offset 0x01000000 \
     --second_offset 0x00f00000 \
-    --tags_offset 0x00000100 \
+    --tags_offset 0x00000100
+BOARD_DTBH_MKBOOTIMG_ARGS := \
     --dtbh_chip 0x22bf \
     --dtbh_platform 0x50a6 \
     --dtbh_subtype 0x217584da \
