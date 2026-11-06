@@ -14,10 +14,10 @@ $(foreach b,$(INSTALLED_BOOTIMAGE_TARGET),\
 $(INSTALLED_BOOTIMAGE_TARGET): $(MKDTBHBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES)
 	$(call pretty,"Target boot image: $@")
 	$(MKDTBHBOOTIMG) --kernel $(call bootimage-to-kernel,$@) $(INTERNAL_BOOTIMAGE_ARGS) \
-	    $(BOARD_MKBOOTIMG_ARGS) --output $@
+	    $(BOARD_MKBOOTIMG_ARGS) $(BOARD_DTBH_MKBOOTIMG_ARGS) --output $@
 	$(call assert-max-image-size,$@,$(call get-bootimage-partition-size,$@,boot))
 
 $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKDTBHBOOTIMG) $(recoveryimage-deps)
 	$(call pretty,"Target recovery image: $@")
-	$(MKDTBHBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $@
+	$(MKDTBHBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) $(BOARD_MKBOOTIMG_ARGS) $(BOARD_DTBH_MKBOOTIMG_ARGS) --output $@
 	$(call assert-max-image-size,$@,$(BOARD_RECOVERYIMAGE_PARTITION_SIZE))
