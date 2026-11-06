@@ -29,9 +29,15 @@ lib_fixups: lib_fixups_user_type = {
 
 blob_fixups: blob_fixups_user_type = {
     'vendor/lib/lib_SamsungRec_06006.so': blob_fixup()
-        .add_needed('libcompiler_rt.so'),
+        .add_needed('libcompiler_rt-samsung.so'),
     'vendor/lib/hw/audio.primary.universal8895.so': blob_fixup()
-        .add_needed('libprocessgroup.so'),
+        .add_needed('libprocessgroup.so')
+        .replace_needed('libaudioroute.so', 'libaudioroute-samsung.so'),
+    (
+        'vendor/lib/libaudioroute-samsung.so',
+        'vendor/lib/libcompiler_rt-samsung.so',
+    ): blob_fixup()
+        .fix_soname(),
     (
         'vendor/lib/egl/libGLES_mali.so',
         'vendor/lib64/egl/libGLES_mali.so',
