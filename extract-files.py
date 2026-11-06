@@ -28,6 +28,8 @@ lib_fixups: lib_fixups_user_type = {
 }
 
 blob_fixups: blob_fixups_user_type = {
+    'vendor/lib/lib_SamsungRec_06006.so': blob_fixup()
+        .add_needed('libcompiler_rt.so'),
     'vendor/lib/hw/audio.primary.universal8895.so': blob_fixup()
         .add_needed('libprocessgroup.so'),
     (
