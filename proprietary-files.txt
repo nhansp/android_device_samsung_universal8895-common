@@ -150,7 +150,6 @@ vendor/lib64/vendor.samsung.hardware.radio.messaging-V1-ndk.so|9b3b09c9bc2911b80
 vendor/lib64/vendor.samsung.hardware.radio.sim-V1-ndk.so|611a9f8ca1a46b33471643e200e70ce28f963b75
 
 # Sensors
-system/lib64/android.frameworks.schedulerservice@1.0.so:vendor/lib64/android.frameworks.schedulerservice@1.0.so
 vendor/lib64/sensors.bio.so
 vendor/lib64/sensors.grip.so
 vendor/lib64/sensors.sensorhub.so

@@ -1,0 +1,13 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+cc_library_shared {
+    name: "android.frameworks.schedulerservice@1.0",
+    srcs: ["ISchedulingPolicyService.cpp"],
+    shared_libs: [
+        "libutils",
+    ],
+    vendor: true,
+}

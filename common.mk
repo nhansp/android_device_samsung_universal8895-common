@@ -207,6 +207,7 @@ PRODUCT_COPY_FILES += \
 
 # Shims
 PRODUCT_PACKAGES += \
+    android.frameworks.schedulerservice@1.0 \
     libutils-v32
 
 # Soong namespaces
