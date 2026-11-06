@@ -1,0 +1,16 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+cc_library_shared {
+    name: "libshim_aeabi",
+    srcs: ["aeabi_idiv0.c"],
+    vendor: true,
+    enabled: false,
+    arch: {
+        arm: {
+            enabled: true,
+        },
+    },
+}
