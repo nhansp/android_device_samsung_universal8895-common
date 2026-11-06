@@ -86,6 +86,9 @@ vendor/lib64/libexynosv4l2.so
 vendor/lib64/libion_exynos.so
 vendor/lib64/libmpp.so
 
+# Audio
+system/lib/libaudioroute.so:vendor/lib/libaudioroute.so
+
 # Media
 system/lib/libExynosOMX_Core.so:vendor/lib/libExynosOMX_Core.so
 system/lib/libExynosOMX_Resourcemanager.so:vendor/lib/libExynosOMX_Resourcemanager.so
