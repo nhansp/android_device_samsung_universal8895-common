@@ -41,7 +41,7 @@ BOARD_DTBH_MKBOOTIMG_ARGS := \
     --dtbh_subtype 0x217584da \
     --dtbh_hw_rev $(BOARD_DTBH_HW_REV) \
     --dtbh_hw_rev_end $(BOARD_DTBH_HW_REV_END)
-BOARD_RAMDISK_USE_LZ4 := true
+BOARD_RAMDISK_USE_XZ := true
 
 # DTB
 BOARD_INCLUDE_DTB_IN_BOOTIMG := true

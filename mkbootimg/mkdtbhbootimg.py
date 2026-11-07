@@ -16,12 +16,24 @@ Accepts the arguments build/make passes to $(MKBOOTIMG) (--kernel, --ramdisk, --
 import argparse
 import hashlib
 import struct
+import subprocess
 import sys
+import zlib
 
 DTBH_MAGIC = b"DTBH"
 DTBH_VERSION = 2
 FDT_MAGIC = b"\xd0\x0d\xfe\xed"
 TRAILER = b"SEANDROIDENFORCE"
+
+# Layout of stub/sboot-bounce-lz4.bin (stub/sboot-bounce-lz4.S): the header sits at 0x10 and is patched
+# with the length of the lz4 frame behind the stub, the length of the Image and its CRC-32.
+STUB_MAGIC = b"GLLZ4STB"
+STUB_HDR_OFF = 0x10
+STUB_DEST = 0x84000000
+STUB_HDR_FMT = "<QQQII"
+INITRD_PA = 0x89000000
+LZ4_LEGACY_MAGIC = b"\x02\x21\x4c\x18"
+LZ4_FLAGS = ["-q", "-c", "-l", "-12"]
 
 
 def roundup(n, page):
@@ -62,6 +74,29 @@ def make_dtbh(fdts, page, chip, platform, subtype, hw_rev, hw_rev_end, space):
     return pad(hdr, page) + body
 
 
+def bounce_kernel(stub, image, lz4):
+    """S-Boot only boots a stub as the kernel: the stub, patched for this Image, followed by the Image as a
+    legacy lz4 frame that the stub decompresses to STUB_DEST."""
+    if len(stub) < 4096 or len(stub) % 4096:
+        sys.exit("mkdtbhbootimg: the stub is not a positive multiple of 4096 bytes")
+    unpatched = STUB_MAGIC + struct.pack(STUB_HDR_FMT, STUB_DEST, 0, 0, 0, 0)
+    if stub.count(unpatched) != 1 or stub.index(unpatched) != STUB_HDR_OFF:
+        sys.exit("mkdtbhbootimg: the stub does not carry exactly one unpatched header at 0x10")
+    if image[56:60] != b"ARM\x64":
+        sys.exit("mkdtbhbootimg: the kernel is not a raw arm64 Image")
+    image_size = struct.unpack_from("<Q", image, 16)[0]
+    if STUB_DEST + image_size > INITRD_PA:
+        sys.exit(f"mkdtbhbootimg: Image footprint {image_size:#x} overlaps the ramdisk at {INITRD_PA:#x}")
+    frame = subprocess.run([lz4, *LZ4_FLAGS], input=image, capture_output=True, check=True).stdout
+    if frame[:4] != LZ4_LEGACY_MAGIC:
+        sys.exit("mkdtbhbootimg: lz4 did not produce a legacy frame")
+    if subprocess.run([lz4, "-q", "-d", "-c"], input=frame, capture_output=True, check=True).stdout != image:
+        sys.exit("mkdtbhbootimg: the lz4 frame does not decompress to the Image")
+    hdr = STUB_MAGIC + struct.pack(STUB_HDR_FMT, STUB_DEST, len(frame), len(image),
+                                   zlib.crc32(image) & 0xFFFFFFFF, 0)
+    return stub[:STUB_HDR_OFF] + hdr + stub[STUB_HDR_OFF + len(hdr):] + frame
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--kernel", required=True)
@@ -83,6 +118,8 @@ def main():
     ap.add_argument("--dtbh_hw_rev", type=lambda x: int(x, 0), required=True)
     ap.add_argument("--dtbh_hw_rev_end", type=lambda x: int(x, 0), required=True)
     ap.add_argument("--dtbh_space", type=lambda x: int(x, 0), default=0x20)
+    ap.add_argument("--bounce_stub", help="the compressed bounce stub; --kernel is stored lz4-compressed behind it")
+    ap.add_argument("--lz4", default="lz4", help="lz4 executable used with --bounce_stub")
     ap.add_argument("--second")
     ap.add_argument("--recovery_dtbo")
     a = ap.parse_args()
@@ -100,6 +137,8 @@ def main():
 
     page = a.pagesize
     kernel = open(a.kernel, "rb").read()
+    if a.bounce_stub:
+        kernel = bounce_kernel(open(a.bounce_stub, "rb").read(), kernel, a.lz4)
     ramdisk = open(a.ramdisk, "rb").read()
     dtbh = make_dtbh(split_fdts(open(a.dtb, "rb").read()), page, a.dtbh_chip, a.dtbh_platform,
                      a.dtbh_subtype, a.dtbh_hw_rev, a.dtbh_hw_rev_end, a.dtbh_space)
