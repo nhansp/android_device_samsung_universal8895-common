@@ -87,6 +87,13 @@ vendor/lib64/libexynosv4l2.so
 vendor/lib64/libion_exynos.so
 vendor/lib64/libmpp.so
 
+# Keymaster
+vendor/lib64/hw/android.hardware.keymaster@3.0-impl.so
+vendor/lib64/hw/keystore.mdfpp.so
+vendor/lib64/libkeymaster_helper.so
+vendor/lib64/libkeymaster_mdfpp.so
+vendor/lib64/libskeymaster3device.so
+
 # Audio
 system/lib/libaudioroute.so:vendor/lib/libaudioroute-samsung.so
 
