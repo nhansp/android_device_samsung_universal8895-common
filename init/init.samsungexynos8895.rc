@@ -57,9 +57,10 @@ on post-fs-data
     mkdir /data/vendor/wifi/wpa/sockets 0770 wifi wifi
 
 on boot
-    # Wi-Fi: firmware and NVRAM paths are module parameters of dhd
-    chown wifi wifi /sys/module/dhd/parameters/firmware_path
-    chown wifi wifi /sys/module/dhd/parameters/nvram_path
+    # Wi-Fi: firmware and NVRAM paths are module parameters of dhd (0660). macloader (root, no
+    # dac_override) writes them as owner, the Wi-Fi HAL through the wifi group.
+    chown root wifi /sys/module/dhd/parameters/firmware_path
+    chown root wifi /sys/module/dhd/parameters/nvram_path
 
     # Touchscreen and S-Pen commands (vendor.lineage.touch-service.samsung)
     chown system system /sys/class/sec/tsp/cmd
