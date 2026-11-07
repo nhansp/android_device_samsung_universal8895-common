@@ -232,11 +232,13 @@ PRODUCT_SOONG_NAMESPACES += \
     hardware/google/interfaces \
     hardware/google/pixel/power-libperfmgr \
     hardware/google/pixel/thermal \
+    hardware/google/pixel/pixelstats \
     hardware/samsung
 
 # Thermal
 PRODUCT_PACKAGES += \
     android.hardware.thermal-service.pixel \
+    pixelatoms-cpp \
     thermal_symlinks
 
 PRODUCT_COPY_FILES += \
