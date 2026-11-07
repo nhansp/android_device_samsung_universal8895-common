@@ -63,6 +63,13 @@ blob_fixups: blob_fixups_user_type = {
         'vendor/lib64/hw/gps.default.so',
     ): blob_fixup()
         .fix_soname(),
+    'vendor/lib64/libcrypto-v28.so': blob_fixup()
+        .fix_soname(),
+    (
+        'vendor/lib64/libkeymaster_helper.so',
+        'vendor/lib64/libkeymaster_mdfpp.so',
+    ): blob_fixup()
+        .replace_needed('libcrypto.so', 'libcrypto-v28.so'),
     'vendor/lib/libExynosOMX_Core.so': blob_fixup()
         .binary_regex_replace(b'/system/lib/omx/', b'/vendor/lib/omx/'),
     'vendor/lib64/libsec-ril.so': blob_fixup()
