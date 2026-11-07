@@ -1,0 +1,2 @@
+# Firmware requested through request_firmware() lives in /vendor/firmware (calliope, wifi, bt, sensorhub).
+allow kernel vendor_firmware_file:system firmware_load;
