@@ -101,8 +101,21 @@ PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false
 PRODUCT_SET_DEBUGFS_RESTRICTIONS := true
 
 # Keymaster
+# The TEE path (stock Samsung keymaster through our own 3.0 implementation) cannot open its
+# trustlet yet: Kinibi answers MC_MCP_RET_ERR_DOWNGRADE_NOT_AUTHORIZED, then UNKNOWN_UUID, the HAL
+# restarts forever and init blocks on `vdc keymaster earlyBootEnded`. Serve the AOSP software
+# keymaster until the trustlet loads; TARGET_KEYMASTER_TEE := true switches the TEE path back on.
+TARGET_KEYMASTER_TEE ?= false
+ifeq ($(TARGET_KEYMASTER_TEE),true)
 PRODUCT_PACKAGES += \
-    android.hardware.keymaster@3.0-impl.exynos8895 \
+    android.hardware.keymaster@3.0-impl.exynos8895
+PRODUCT_VENDOR_PROPERTIES += \
+    ro.hardware.keystore=mdfpp
+else
+PRODUCT_PACKAGES += \
+    android.hardware.keymaster@3.0-impl
+endif
+PRODUCT_PACKAGES += \
     android.hardware.keymaster@3.0-service
 
 # Lights
