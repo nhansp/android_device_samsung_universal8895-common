@@ -4,3 +4,9 @@ type omr_file, file_type;
 
 # DECON (12860000.decon_f) sysfs: vsync and psr_info, read by the stock composer
 type sysfs_display, sysfs_type, fs_type;
+
+# Camera class (/sys/class/camera/{rear,front,ois,flash}) read by the camera HAL
+type sysfs_camera, sysfs_type, fs_type;
+
+# model_info-system_rev in the device tree, read by cbd
+type sysfs_dt_model_info, sysfs_type, fs_type;

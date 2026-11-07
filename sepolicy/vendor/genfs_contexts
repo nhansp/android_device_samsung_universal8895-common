@@ -1,3 +1,23 @@
 # Display: DECON-F and the SoC revision the stock composer reads (6.18 sysfs paths)
 genfscon sysfs /devices/platform/12860000.decon_f                                       u:object_r:sysfs_display:s0
 genfscon sysfs /devices/system/chip-id                                                  u:object_r:sysfs_soc:s0
+
+# Battery: MAX77865 charger (32-0069) and fuel gauge (32-0036) on USI 10960000 (6.18 sysfs paths)
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0069/power_supply u:object_r:sysfs_battery:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0036/power_supply u:object_r:sysfs_battery:s0
+
+# IIO: the SSP sensor hub on spi10.0 and the other IIO devices the sensors HAL scans by name
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device u:object_r:sysfs_iio:s0
+genfscon sysfs /devices/platform/soc@0/15b70000.adc/iio:device                          u:object_r:sysfs_iio:s0
+genfscon sysfs /devices/platform/thermal-sensor-ap/iio:device                           u:object_r:sysfs_iio:s0
+genfscon sysfs /devices/platform/thermal-sensor-battery/iio:device                      u:object_r:sysfs_iio:s0
+genfscon sysfs /devices/platform/thermal-sensor-charger/iio:device                      u:object_r:sysfs_iio:s0
+genfscon sysfs /devices/platform/thermal-sensor-pa/iio:device                           u:object_r:sysfs_iio:s0
+genfscon sysfs /devices/platform/thermal-sensor-usb/iio:device                          u:object_r:sysfs_iio:s0
+genfscon sysfs /devices/platform/thermal-sensor-wf/iio:device                           u:object_r:sysfs_iio:s0
+
+# Camera class
+genfscon sysfs /devices/virtual/camera                                                  u:object_r:sysfs_camera:s0
+
+# Device tree model info
+genfscon sysfs /firmware/devicetree/base/model_info-system_rev                          u:object_r:sysfs_dt_model_info:s0
