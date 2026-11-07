@@ -1,3 +1,5 @@
+import /vendor/etc/init/hw/init.samsungexynos8895.usb.rc
+
 #
 # SPDX-FileCopyrightText: The LineageOS Project
 # SPDX-License-Identifier: Apache-2.0

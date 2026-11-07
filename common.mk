@@ -94,6 +94,7 @@ PRODUCT_PACKAGES += \
     fstab.samsungexynos8895.ramdisk \
     init.recovery.samsungexynos8895.rc \
     init.samsungexynos8895.rc \
+    init.samsungexynos8895.usb.rc \
     ueventd.samsungexynos8895.rc
 
 # Kernel
