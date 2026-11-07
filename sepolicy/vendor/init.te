@@ -1,0 +1,1 @@
+allow init { efs_file cpefs_file omr_file }:dir mounton;
