@@ -23,3 +23,7 @@ on boot
     write /config/usb_gadget/g1/strings/0x409/manufacturer ${ro.product.vendor.manufacturer}
     write /config/usb_gadget/g1/strings/0x409/product ${ro.product.vendor.model}
     write /config/usb_gadget/g1/configs/b.1/MaxPower 0x3f
+
+# Debuggable builds: bring adb up at boot, before system_server's USB manager takes over.
+on boot && property:ro.debuggable=1
+    setprop sys.usb.config adb
