@@ -10,7 +10,7 @@ hal_client_domain(hal_graphics_composer_default, hal_graphics_allocator)
 allow hal_graphics_composer_default vendor_surfaceflinger_vndservice:service_manager { add find };
 
 r_dir_file(hal_graphics_composer_default, sysfs_display)
-r_dir_file(hal_graphics_composer_default, sysfs_soc)
+r_dir_file(hal_graphics_composer_default, sysfs_chipid)
 
 # Hotplug and DECON uevents
 allow hal_graphics_composer_default self:netlink_kobject_uevent_socket create_socket_perms_no_ioctl;

@@ -1,6 +1,6 @@
 # Display: DECON-F and the SoC revision the stock composer reads (6.18 sysfs paths)
 genfscon sysfs /devices/platform/12860000.decon_f                                       u:object_r:sysfs_display:s0
-genfscon sysfs /devices/system/chip-id                                                  u:object_r:sysfs_soc:s0
+genfscon sysfs /devices/system/chip-id                                                  u:object_r:sysfs_chipid:s0
 
 # Battery: MAX77865 charger (32-0069) and fuel gauge (32-0036) on USI 10960000 (6.18 sysfs paths)
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0069/power_supply u:object_r:sysfs_battery:s0
