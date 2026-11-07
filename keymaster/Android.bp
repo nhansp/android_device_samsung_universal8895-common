@@ -1,0 +1,21 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+cc_library_shared {
+    name: "android.hardware.keymaster@3.0-impl.exynos8895",
+    stem: "android.hardware.keymaster@3.0-impl",
+    device_specific: true,
+    relative_install_path: "hw",
+    compile_multilib: "64",
+    srcs: ["KeymasterDevice.cpp"],
+    shared_libs: [
+        "android.hardware.keymaster@3.0",
+        "libhardware",
+        "libhidlbase",
+        "liblog",
+        "libskeymaster3device",
+        "libutils",
+    ],
+}
