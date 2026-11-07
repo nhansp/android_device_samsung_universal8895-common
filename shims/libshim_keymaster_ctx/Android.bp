@@ -1,0 +1,17 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+cc_library_shared {
+    name: "libshim_keymaster_ctx",
+    srcs: ["keymaster_ctx.cpp"],
+    vendor: true,
+    shared_libs: [
+        "libcrypto",
+        "libkeymaster3device",
+        "libkeymaster_messages",
+        "libkeymaster_portable",
+    ],
+    header_libs: ["libhardware_headers"],
+}

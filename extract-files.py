@@ -63,6 +63,11 @@ blob_fixups: blob_fixups_user_type = {
         'vendor/lib64/hw/gps.default.so',
     ): blob_fixup()
         .fix_soname(),
+    (
+        'vendor/lib/libskeymaster3device.so',
+        'vendor/lib64/libskeymaster3device.so',
+    ): blob_fixup()
+        .add_needed('libshim_keymaster_ctx.so'),
     'vendor/lib64/libcrypto-v28.so': blob_fixup()
         .fix_soname(),
     (
