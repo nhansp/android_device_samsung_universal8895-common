@@ -22,6 +22,9 @@ ro.hardware.gatekeeper=exynos8895
 ro.hardware.egl=mali
 ro.opengles.version=196610
 
+# Keystore (vendor/lib64/hw/keystore.mdfpp.so)
+ro.hardware.keystore=mdfpp
+
 # Wi-Fi
 wifi.interface=wlan0
 
