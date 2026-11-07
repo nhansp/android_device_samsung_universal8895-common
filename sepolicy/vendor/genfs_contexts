@@ -1,0 +1,3 @@
+# Display: DECON-F and the SoC revision the stock composer reads (6.18 sysfs paths)
+genfscon sysfs /devices/platform/12860000.decon_f                                       u:object_r:sysfs_display:s0
+genfscon sysfs /devices/system/chip-id                                                  u:object_r:sysfs_soc:s0
