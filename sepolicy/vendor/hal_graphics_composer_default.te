@@ -1,0 +1,2 @@
+# The stock composer registers vendor.samsung_slsi.hardware.ExynosHWCServiceTW on vndbinder.
+vndbinder_use(hal_graphics_composer_default)

@@ -13,3 +13,9 @@
 
 # Camera
 /(vendor|system/vendor)/bin/hw/android\.hardware\.camera\.provider-service_32\.samsung    u:object_r:hal_camera_default_exec:s0
+
+# GPU (Mali)
+/dev/mali0                                              u:object_r:gpu_device:s0
+
+# SELinux contexts of odm, which lives inside the vendor directory of the system partition
+/(vendor|system/vendor)/odm/etc/selinux(/.*)?           u:object_r:vendor_configs_file:s0
