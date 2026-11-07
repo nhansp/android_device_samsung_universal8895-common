@@ -3,3 +3,17 @@ vndbinder_use(hal_graphics_composer_default)
 
 # libGrallocWrapper in the stock composer allocates through IAllocator.
 hal_client_domain(hal_graphics_composer_default, hal_graphics_allocator)
+
+# The stock HWC registers Exynos.HWCService in-process (vndservice_contexts labels it
+# vendor_surfaceflinger_vndservice). Plain allow: add_service() would neverallow the
+# samsung_slsi hal_vendor_hwcservice_default domain that is allowed the same add.
+allow hal_graphics_composer_default vendor_surfaceflinger_vndservice:service_manager { add find };
+
+r_dir_file(hal_graphics_composer_default, sysfs_display)
+r_dir_file(hal_graphics_composer_default, sysfs_soc)
+
+# Hotplug and DECON uevents
+allow hal_graphics_composer_default self:netlink_kobject_uevent_socket create_socket_perms_no_ioctl;
+
+# The HWC probes /data/vendor/log for its debug dumps; nothing is written there by default.
+dontaudit hal_graphics_composer_default log_vendor_data_file:dir search;
