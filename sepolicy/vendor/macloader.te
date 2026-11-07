@@ -1,0 +1,2 @@
+# macloader fixes the owner of the Wi-Fi MAC files it creates; dac_override is neverallowed (system/sepolicy domain.te).
+allow macloader self:capability chown;
