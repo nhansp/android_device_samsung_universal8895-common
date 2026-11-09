@@ -7,9 +7,11 @@
 # NFC
 /data/vendor/nfc(/.*)?                                  u:object_r:nfc_vendor_data_file:s0
 
-# Modem and OMR partitions mounted at the root (BOARD_ROOT_EXTRA_FOLDERS)
+# Modem partition mounted at the root (BOARD_ROOT_EXTRA_FOLDERS)
 /cpefs(/.*)?    u:object_r:cpefs_file:s0
-/omr(/.*)?       u:object_r:omr_file:s0
+
+# /metadata lives on OMR; more specific than the samsung_slsi (omr|OMR) entry, so it wins
+/dev/block/platform/soc@0/11120000\.ufs/by-name/OMR    u:object_r:metadata_block_device:s0
 
 # Camera
 /(vendor|system/vendor)/bin/hw/android\.hardware\.camera\.provider-service_32\.samsung    u:object_r:hal_camera_default_exec:s0

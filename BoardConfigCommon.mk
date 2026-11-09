@@ -100,7 +100,11 @@ BOARD_CACHEIMAGE_PARTITION_SIZE := 314572800
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 48234496
 BOARD_SYSTEMIMAGE_PARTITION_SIZE := 4508876800
 BOARD_FLASH_BLOCK_SIZE := 4096
-BOARD_ROOT_EXTRA_FOLDERS := cpefs efs omr
+BOARD_ROOT_EXTRA_FOLDERS := cpefs efs
+
+# A17 keeps the aconfig flag storage, apex sessions and vold state in /metadata: the empty OMR
+# partition serves as one (fstab).
+BOARD_USES_METADATA_PARTITION := true
 
 # Platform
 BOARD_VENDOR := samsung
