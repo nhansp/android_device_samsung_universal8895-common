@@ -21,3 +21,6 @@ genfscon sysfs /devices/virtual/camera                                          
 
 # Device tree model info
 genfscon sysfs /firmware/devicetree/base/model_info-system_rev                          u:object_r:sysfs_dt_model_info:s0
+
+# Panel and mDNIe (/sys/class/lcd/panel, /sys/class/mdnie/mdnie is panel/mdnie) at their 6.18 path
+genfscon sysfs /devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel           u:object_r:sysfs_lcd_writable:s0
