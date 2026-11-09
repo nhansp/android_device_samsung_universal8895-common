@@ -9,8 +9,4 @@
     <bool name="config_enableWifiDisplay">true</bool>
     <bool name="config_showNavigationBar">true</bool>
 
-    <!-- One strong rear fingerprint sensor (vfs8xxx): id:modality(fingerprint):strength(strong) -->
-    <string-array name="config_biometric_sensors" translatable="false">
-        <item>0:2:15</item>
-    </string-array>
 </resources>
