@@ -1,0 +1,4 @@
+# /sys/class/mdnie/mdnie/{mode,mode_max,sensorRGB,accessibility}: the HAL opens them read-write to
+# probe each feature (hardware/samsung aidl/livedisplay).
+r_dir_file(hal_lineage_livedisplay_exynos, sysfs_lcd_writable)
+allow hal_lineage_livedisplay_exynos sysfs_lcd_writable:file w_file_perms;
