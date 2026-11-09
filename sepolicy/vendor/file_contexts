@@ -14,6 +14,9 @@
 # Camera
 /(vendor|system/vendor)/bin/hw/android\.hardware\.camera\.provider-service_32\.samsung    u:object_r:hal_camera_default_exec:s0
 
+# Composer (stock HWC1 through the stock adapter)
+/(vendor|system/vendor)/bin/hw/android\.hardware\.graphics\.composer@2\.1-service\.exynos8895    u:object_r:hal_graphics_composer_default_exec:s0
+
 # GPU (Mali)
 /dev/mali0                                              u:object_r:gpu_device:s0
 

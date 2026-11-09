@@ -74,6 +74,7 @@ vendor/lib/egl/libGLES_mali.so
 vendor/lib/hw/hwcomposer.exynos5.so
 vendor/lib/libExynosHWCService.so
 vendor/lib/libexynosdisplay.so
+vendor/lib/libhwc2on1adapter.so
 vendor/lib/libexynosutils.so
 vendor/lib/libexynosv4l2.so
 vendor/lib/libion_exynos.so
@@ -82,6 +83,7 @@ vendor/lib64/egl/libGLES_mali.so
 vendor/lib64/hw/hwcomposer.exynos5.so
 vendor/lib64/libExynosHWCService.so
 vendor/lib64/libexynosdisplay.so
+vendor/lib64/libhwc2on1adapter.so
 vendor/lib64/libexynosutils.so
 vendor/lib64/libexynosv4l2.so
 vendor/lib64/libion_exynos.so
