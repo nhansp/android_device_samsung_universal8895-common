@@ -141,7 +141,6 @@ vendor/etc/plmn_se13.bin
 vendor/bin/hw/rild|249bd469620af395bcca58153d40cee6c28bdcb5
 vendor/etc/init/vendor.samsung.rilchip.slsi.rc|95aa52333814b340e5064eae3a9bd5cb8a96a3ff
 vendor/etc/vintf/manifest/vendor.samsung.hardware.radio.exclude.slsi.xml|c3f8ea3f6228f2d572081b0c0ae29a251de4350b
-vendor/etc/vintf/manifest/vendor.samsung.hardware.radio_manifest_2_33.xml|e9cdde9d05c5cce32f76bbb164437f43b3288157
 vendor/etc/vintf/manifest/vendor.samsung.hardware.sehradio_manifest_2_33.xml|ebbe359a9b2d78cb88debe79d9183c039afb7c01
 vendor/lib/libsecril-client.so|fd7cb317ad17fd6c5b94c69bc4eaef80631215f1
 vendor/lib/libsemnativecarrierfeature.so|56ed7bd5f596502cf9614b5d9ebf255ac4e1e73c
