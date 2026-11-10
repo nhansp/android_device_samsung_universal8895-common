@@ -1,0 +1,2 @@
+# the UFS host directory (genfs sysfs_scsi_host_writable) has the uevent vold writes
+allow vold sysfs_scsi_host_writable:file w_file_perms;

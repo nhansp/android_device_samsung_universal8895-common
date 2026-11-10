@@ -1,1 +1,8 @@
 allow hal_audio_default efs_file:dir search;
+
+# audio-ril Connect_RILD: rild's Multiclient socket (codeberg lineage-23.2 hal_audio_default.te:2)
+allow hal_audio_default rild:unix_stream_socket connectto;
+
+# AudioInfo: /efs/imei/mps_code.dat (sales code) and the SIM slot count
+r_dir_file(hal_audio_default, imei_efs_file)
+get_prop(hal_audio_default, vendor_radio_prop)

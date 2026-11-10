@@ -1,4 +1,8 @@
+# Audio: audio.primary.exynos8895 is found by ro.arch (codeberg lineage-23.2 system.prop:24)
+ro.arch=exynos8895
+
 # Bluetooth
+ro.bt.bdaddr_path=/efs/bluetooth/bt_addr
 bluetooth.device.class_of_device=90,2,12
 bluetooth.profile.a2dp.source.enabled=true
 bluetooth.profile.asha.central.enabled=true

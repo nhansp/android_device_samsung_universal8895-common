@@ -1,1 +1,2 @@
 allow hal_wifi_default sysfs_wifi_writable:file w_file_perms;
+allow hal_wifi_default conn_vendor_data_file:dir search;
