@@ -7,4 +7,10 @@
     <!-- Hardware keys: volume (64); the Bixby key has no Lineage function. -->
     <integer name="config_deviceHardwareKeys">64</integer>
     <integer name="config_deviceHardwareWakeKeys">64</integer>
+
+    <!-- RGB notification and battery LED with adjustable pulse: 1 + 2 + 8 + 64 -->
+    <integer name="config_deviceLightCapabilities">75</integer>
+
+    <bool name="config_deviceSupportsWirelessCharging">true</bool>
+    <bool name="config_haveHigherAspectRatioScreen">true</bool>
 </resources>

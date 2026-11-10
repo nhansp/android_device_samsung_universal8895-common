@@ -1,0 +1,3 @@
+net_domain(lhd)
+wakelock_use(lhd)
+r_dir_file(lhd, efs_file)

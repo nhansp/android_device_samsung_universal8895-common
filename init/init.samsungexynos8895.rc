@@ -9,6 +9,8 @@ on early-init
     mkdir /efs 0771 radio system
 
 on init
+    setprop ro.bt.bdaddr_path /efs/bluetooth/bt_addr
+
     # Reactivation Lock and Google FRP (stock init.samsungexynos8895.rc)
     symlink /dev/block/by-name/STEADY /dev/block/steady
     symlink /dev/block/by-name/PERSISTENT /dev/block/persistent
@@ -20,6 +22,7 @@ on fs
 
     # Modem (stock init.baseband.rc)
     symlink /dev/block/by-name/RADIO /dev/mbin0
+    restorecon /dev/mbin0
     chown radio system /cpefs
     chmod 0771 /cpefs
     chown radio radio /efs/factory.prop
@@ -28,12 +31,6 @@ on fs
 on late-fs
     mount_all /vendor/etc/fstab.${ro.hardware} --late
 
-on post-fs
-    # Trustonic Kinibi (stock init.rc)
-    export MC_AUTH_TOKEN_PATH /efs
-    mkdir /efs/TEE 0770 radio system
-    start mobicore
-
 on post-fs-data
     mkdir /data/vendor 0771 root system
     mkdir /data/vendor/log 0771 root system
@@ -41,14 +38,84 @@ on post-fs-data
     # RIL
     mkdir /data/vendor/secradio 0770 radio radio
 
-    # Trustonic Kinibi
-    mkdir /data/vendor/mcRegistry 0770 system system
+    # Trustonic Kinibi (stock init.rc:516-521, :1632)
+    mkdir /data/vendor/mcRegistry 0775 system system
+    export MC_AUTH_TOKEN_PATH /efs
+    mkdir /efs/TEE 0770 radio system
+    start mobicore
 
     # GNSS (stock init.gps.rc)
     mkdir /data/vendor/gps 0771 system system
 
     # NFC
     mkdir /data/vendor/nfc 0770 nfc nfc
+
+    # Bluetooth
+    mkdir /efs/bluetooth 0770 system bluetooth
+    chown system bluetooth /efs/bluetooth
+    chown system bluetooth /efs/bluetooth/bt_addr
+    chmod 0640 /efs/bluetooth/bt_addr
+
+    # Audio
+    mkdir /efs/maxim 0770 audioserver audio
+    mkdir /data/vendor/log/abox 0771 audioserver system
+
+    # Camera (stock init.samsungexynos8895.rc:80-135)
+    mkdir /data/vendor/camera 0770 cameraserver system
+    chown system radio /sys/class/camera/rear/rear_camfw
+    chown system radio /sys/class/camera/rear/rear_camfw_full
+    chown system radio /sys/class/camera/rear/rear_camfw_all
+    chown system radio /sys/class/camera/rear/rear_checkfw_user
+    chown system radio /sys/class/camera/rear/rear_checkfw_factory
+    chown system radio /sys/class/camera/rear/rear2_camfw
+    chown system radio /sys/class/camera/rear/rear2_camfw_full
+    chown system radio /sys/class/camera/rear/rear2_checkfw_user
+    chown system radio /sys/class/camera/rear/rear2_checkfw_factory
+    chown system radio /sys/class/camera/rear/rear2_tilt
+    chown system system /sys/class/camera/rear/rear2_hwparam
+    chown system radio /sys/class/camera/rear/rear_dualcal
+    chown system radio /sys/class/camera/rear/rear_dualcal_size
+    chown system radio /sys/class/camera/rear/rear_sensor_standby
+    chown system radio /sys/class/camera/rear/rear_camtype
+    chown system radio /sys/class/camera/rear/rear_companionfw
+    chown system radio /sys/class/camera/rear/rear_companionfw_full
+    chown system radio /sys/class/camera/rear/rear_calcheck
+    chown system radio /sys/class/camera/rear/rear_afcal
+    chown system system /sys/class/camera/rear/rear_hwparam
+    chown cameraserver cameraserver /sys/class/camera/rear/rear_awb_master
+    chown cameraserver cameraserver /sys/class/camera/rear/rear_awb_module
+    chown cameraserver cameraserver /sys/class/camera/rear/rear_sensorid_exif
+    chown cameraserver cameraserver /sys/class/camera/rear/rear_sensorid
+    chown cameraserver cameraserver /sys/class/camera/rear/ssrm_camera_info
+    chown system radio /sys/class/camera/rear/rear2_afcal
+    chown system radio /sys/class/camera/rear/isp_core
+    chown system radio /sys/class/camera/rear/fw_update
+    chown system radio /sys/class/camera/rear/companion_ic_check
+    chown system radio /sys/class/camera/rear/rear_moduleid
+    chown system radio /sys/class/camera/flash/rear_flash
+    chown cameraserver system /sys/class/camera/flash/rear_torch_flash
+    chown system radio /sys/class/camera/front/front_camfw
+    chown system radio /sys/class/camera/front/front_camfw_full
+    chown system radio /sys/class/camera/front/front_checkfw_factory
+    chown system radio /sys/class/camera/front/front_camtype
+    chown system radio /sys/class/camera/front/front_moduleid
+    chown system radio /sys/class/camera/front/front_afcal
+    chown system system /sys/class/camera/front/front_hwparam
+    chown cameraserver cameraserver /sys/class/camera/front/front_sensorid_exif
+    chown cameraserver cameraserver /sys/class/camera/front/front_sensorid
+    chown system radio /sys/class/camera/ois/selftest
+    chown system radio /sys/class/camera/ois/ois_power
+    chown system radio /sys/class/camera/ois/ois_rawdata
+    chown system radio /sys/class/camera/ois/oisfw
+    chown system radio /sys/class/camera/ois/ois_diff
+    chown system radio /sys/class/camera/ois/autotest
+    chown system radio /sys/class/camera/ois/autotest_2nd
+    chown cameraserver cameraserver /sys/class/camera/ois/ois_exif
+    chown system radio /sys/class/camera/secure/iris_camfw
+    chown system radio /sys/class/camera/secure/iris_camfw_full
+    chown system radio /sys/class/camera/secure/iris_checkfw_factory
+    chown system radio /sys/class/camera/secure/iris_checkfw_user
+    chown system system /sys/class/camera/secure/iris_hwparam
 
     # Wi-Fi (stock wifi.rc)
     mkdir /data/vendor/conn 0771 wifi root
@@ -74,11 +141,22 @@ on boot
     chown root wifi /sys/module/dhd/parameters/firmware_path
     chown root wifi /sys/module/dhd/parameters/nvram_path
 
-    # Touchscreen and S-Pen commands (vendor.lineage.touch-service.samsung)
+    # Touchscreen commands (vendor.lineage.touch-service.samsung)
     chown system system /sys/class/sec/tsp/cmd
     chown system system /sys/class/sec/tsp/cmd_list
     chown system system /sys/class/sec/tsp/cmd_result
-    chown system system /sys/class/sec/sec_epen/epen_saving_mode
+
+    # Lights HAL
+    chown system system /sys/class/backlight/panel/brightness
+    chown system system /sys/class/sec/led/led_pattern
+    chown system system /sys/class/sec/led/led_blink
+    chown system system /sys/class/sec/led/led_br_lev
+    chown system system /sys/class/sec/led/led_lowpower
+
+    # Bluetooth
+    chown bluetooth bluetooth /sys/class/rfkill/rfkill0/state
+    chmod 0660 /sys/class/rfkill/rfkill0/state
+    chown bluetooth bluetooth /sys/class/rfkill/rfkill0/type
 
 # Trustonic Kinibi daemon (stock init.rc; its fourth -r image, ...d0000000000000000000001c.tlbin, is not
 # shipped in /vendor/app/mcRegistry)
@@ -99,6 +177,15 @@ service cpboot-daemon /vendor/bin/cbd -d -tss310 -bm -mm -P by-name/RADIO -n /ef
     user root
     group radio cache inet misc audio sdcard_rw log sdcard_r shell system
     seclabel u:r:cbd:s0
+
+# RIL daemon (stock vendor/etc/init/init.vendor.rilchip.rc, single SIM)
+service ril-daemon /vendor/bin/hw/rild -l ${vendor.sec.rild.libpath}
+    class main
+    user radio
+    group radio cache inet misc audio sdcard_r sdcard_rw log vpn system readproc wakelock
+    capabilities BLOCK_SUSPEND NET_ADMIN NET_RAW SYS_ADMIN CHOWN SYS_TIME
+    socket sap_uim_socket1 stream 660 bluetooth bluetooth
+    onrestart restart cpboot-daemon
 
 on property:ro.vendor.multisim.simslotcount=*
     write /sys/module/modem_ctrl_ss310ap/parameters/ds_detect ${ro.vendor.multisim.simslotcount}
