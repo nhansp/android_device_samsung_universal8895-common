@@ -200,10 +200,3 @@ service gpsd /vendor/bin/hw/gpsd -c /vendor/etc/gnss/gps.xml
     user gps
     group system inet net_raw wakelock
     ioprio be 0
-
-# The panel framework creates the mDNIe nodes at the first display enable (the boot animation's
-# first frame: kernel panel-samsung-s6e3ha6.c s6e3ha6_stock_probe()), after the LiveDisplay HAL
-# started and registered nothing. Restart it once they exist.
-on property:init.svc.bootanim=running
-    wait /sys/class/mdnie/mdnie/mode 5
-    restart vendor.livedisplay-hal-samsung-exynos
