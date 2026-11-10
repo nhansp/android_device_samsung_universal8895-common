@@ -98,3 +98,24 @@
 /sys/devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device*    buffer/enable    0660    system    system
 /sys/devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device*    buffer/length    0660    system    system
 /sys/devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device*    poll_delay       0660    system    system
+
+# Modem interface (stock ueventd.samsungexynos8895.rc:138-144): rild opens umts_ipc0 as radio
+/dev/umts*                       0660    system    radio
+/dev/umts_csd                    0660    system    loop_radio
+/dev/smd4                        0660    system    radio
+/dev/ramdump_memshare            0660    system    radio
+/dev/drb                         0660    system    radio
+
+# Panel backlight and mDNIe, owners of stock init.samsungexynos8895.rc. The panel framework
+# registers them at the first display enable, after "on boot".
+/sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/backlight/panel    brightness       0664    system    system
+/sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel/mdnie    bypass           0664    system    media_rw
+/sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel/mdnie    mode             0664    system    media_rw
+/sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel/mdnie    scenario         0664    system    media_rw
+/sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel/mdnie    hdr              0664    system    media_rw
+/sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel/mdnie    accessibility    0664    system    system
+/sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel/mdnie    sensorRGB        0664    system    system
+/sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel/mdnie    mdnie_ldu        0664    system    system
+/sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel/mdnie    night_mode       0664    system    system
+/sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel/mdnie    color_lens       0664    system    system
+/sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel/mdnie    whiteRGB         0664    system    system

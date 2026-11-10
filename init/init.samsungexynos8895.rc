@@ -9,8 +9,6 @@ on early-init
     mkdir /efs 0771 radio system
 
 on init
-    setprop ro.bt.bdaddr_path /efs/bluetooth/bt_addr
-
     # Reactivation Lock and Google FRP (stock init.samsungexynos8895.rc)
     symlink /dev/block/by-name/STEADY /dev/block/steady
     symlink /dev/block/by-name/PERSISTENT /dev/block/persistent
@@ -202,3 +200,10 @@ service gpsd /vendor/bin/hw/gpsd -c /vendor/etc/gnss/gps.xml
     user gps
     group system inet net_raw wakelock
     ioprio be 0
+
+# The panel framework creates the mDNIe nodes at the first display enable (the boot animation's
+# first frame: kernel panel-samsung-s6e3ha6.c s6e3ha6_stock_probe()), after the LiveDisplay HAL
+# started and registered nothing. Restart it once they exist.
+on property:init.svc.bootanim=running
+    wait /sys/class/mdnie/mdnie/mode 5
+    restart vendor.livedisplay-hal-samsung-exynos

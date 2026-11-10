@@ -1,24 +1,31 @@
 # All blobs are from N950NKSU5DZE2 (SM-N950N, Android 9) unless pinned
 
 # Audio
-system/lib/libtinyalsa.so:vendor/lib/libtinyalsa-samsung.so
-system/lib/hw/audio.primary.universal8895.so:vendor/lib/hw/audio.primary.universal8895.so
-system/lib/libSamsungPostProcessConvertor.so:vendor/lib/libSamsungPostProcessConvertor.so
-system/lib/lib_SamsungRec_06006.so:vendor/lib/lib_SamsungRec_06006.so
-system/lib/lib_SoundAlive_SRC384_ver320.so:vendor/lib/lib_SoundAlive_SRC384_ver320.so
-system/lib/lib_soundaliveresampler.so:vendor/lib/lib_soundaliveresampler.so
-system/lib/libaudio-ril.so:vendor/lib/libaudio-ril.so
 system/lib/libfloatingfeature.so:vendor/lib/libfloatingfeature.so
-system/lib/librecordalive.so:vendor/lib/librecordalive.so
-system/lib/libsamsungDiamondVoice.so:vendor/lib/libsamsungDiamondVoice.so
-system/lib/libsecaudioinfo.so:vendor/lib/libsecaudioinfo.so
 system/lib/libsecnativefeature.so:vendor/lib/libsecnativefeature.so
-vendor/lib/hw/sound_trigger.primary.universal8895.so
-vendor/lib/libaboxpcmdump.so
-vendor/lib/libaudio_soundtrigger.so
-vendor/lib/libdatamod.so
 vendor/lib/libtinycompress.so
 vendor/lib/libvndsecril-client.so
+
+## Audio - LSI ABOX primary HAL built for exynos8895 by the universal7885 community, and its
+## libraries, as codeberg universal8895 lineage-23.2 (github 8890q/proprietary_vendor_samsung:
+## the HAL from 4517882c "Import 7885 audio hal", the libraries from lineage-19.1)
+system/lib/hw/audio.primary.exynos8895.so:vendor/lib/hw/audio.primary.exynos8895.so|9b77947eb120b83ee8c54bfb7558804d2e34c88d|d173b9ba5efa7ba434305a7b9b493063aac083a5
+system/lib/libSamsungPostProcessConvertor.so:vendor/lib/libSamsungPostProcessConvertor.so|2c0a713597538c2b94240e602ebe43a3e0797854
+system/lib/lib_SamsungRec_06006.so:vendor/lib/lib_SamsungRec_06006.so|0d865049930cec077d856672dac5544cea9b723e|d40ab083df662be8afe5b6dc9261d16e18775b33
+system/lib/lib_SoundAlive_SRC384_ver320.so:vendor/lib/lib_SoundAlive_SRC384_ver320.so|2a36eb8aa40f604e5541f51ece552651976a29b5
+system/lib/lib_soundaliveresampler.so:vendor/lib/lib_soundaliveresampler.so|f8c384b9cd05ab9af18e5491deda76985dd22017
+system/lib/libaudio-ril.so:vendor/lib/libaudio-ril.so|67a22c799ecb1c8ea39da44cd023c772764c9ec1
+system/lib/libaudioroute.so:vendor/lib/libaudioroute-samsung.so|e280f78a84e31fce6426df09d2d6df82c1fcf14b|4290069481483d2d3ba63eab565396b0442c5a96
+system/lib/librecordalive.so:vendor/lib/librecordalive.so|e7f9ae0e0933f7663de657e0634ea164f6178252
+system/lib/libsamsungDiamondVoice.so:vendor/lib/libsamsungDiamondVoice.so|5c58dce544e20e51f4fac776b5c2f0125bb31d1d
+system/lib/libsecaudiocoreutils.so:vendor/lib/libsecaudiocoreutils.so|df2dbe9f5fcc41557ca01cc4cab857628a72aa8d
+system/lib/libsecaudioinfo.so:vendor/lib/libsecaudioinfo.so|9d48ab6a8b2297138c659b05eb699753c6e9626f
+system/lib/libtinyalsa.so:vendor/lib/libtinyalsa-samsung.so|8a3d37e7f477c2116815d16c36908be1c80187f1|79b6feb94a1a8c7066d721037199ffa7f713ab62
+system/lib64/libsecaudioinfo.so:vendor/lib64/libsecaudioinfo.so|4ff39dbddfde1e5fab2b380fe34e5ffc3f31479a
+system/lib64/libtinyalsa.so:vendor/lib64/libtinyalsa-samsung.so|385631c7f8c3edf52e023cc926392206f55aca01|87df68e7a035a1a2d8d1f52fca65b734dc868b87
+vendor/lib/lib_SoundAlive_3DPosition_ver202.so|e091b1eb353e0356a2978b8ba129df5098a920cc
+vendor/lib/libaboxpcmdump.so|ae19f40ae26ab677b055acaaa8ba9cd8f95e7b74|251a0403bdc5bda94a2ebcf145667d62aade69c5
+vendor/lib/libdatamod.so|70c49c5cf7deaa4e9d25790eb99df268ba353033
 
 # Audio - firmware
 vendor/firmware/APBargeIn_AUDIO_SLSI.bin
@@ -96,12 +103,10 @@ vendor/lib64/libkeymaster_mdfpp.so
 vendor/lib/libskeymaster3device.so
 vendor/lib64/libskeymaster3device.so
 
-# Audio - routing
+# Audio - routing (mixer_paths.xml of codeberg lineage-23.2 is in configs/audio)
 system/etc/mixer_gains.xml:vendor/etc/mixer_gains.xml
-system/etc/mixer_paths.xml:vendor/etc/mixer_paths.xml
-system/lib/libaudioroute.so:vendor/lib/libaudioroute-samsung.so
 
-# Compiler runtime
+# Compiler runtime (greatlte libOpenCv.camera.samsung)
 system/lib/libcompiler_rt.so:vendor/lib/libcompiler_rt-samsung.so
 
 # Media
@@ -132,14 +137,15 @@ vendor/firmware/nfc/sec_s3nrn82_firmware.bin
 # RIL
 system/lib64/libfloatingfeature.so:vendor/lib64/libfloatingfeature.so
 system/lib64/libsecnativefeature.so:vendor/lib64/libsecnativefeature.so
-vendor/bin/cbd
 vendor/etc/plmn_delta.bin
 vendor/etc/plmn_delta_attaio.bin
 vendor/etc/plmn_delta_usagsm.bin
 vendor/etc/plmn_delta_usacdma.bin
 vendor/etc/plmn_se13.bin
 
-## RIL - from N975FXXU6ETLL (github 8890q/proprietary_vendor_samsung lineage-19.1)
+## RIL - from N975FXXU6ETLL (github 8890q/proprietary_vendor_samsung lineage-19.1); the N975F
+## rild fails "waiting ONLINE" against the N950N cbd, so cbd is the N975F one too, as 23.2
+vendor/bin/cbd|aae9a11fefb25f0293aa7da714a093d5f017d826
 vendor/bin/hw/rild|c77d17bde3312077a77a3a8238a62e649a996f44
 vendor/etc/mtu-conf.xml|0f17947b42293684e25db2cf97027c7deed66a31
 vendor/etc/pdpcnt-conf.xml|914a3ec45c2f82cca4355b4736e617e1ee644fbe
@@ -150,7 +156,7 @@ vendor/lib/libvkmanager_vendor.so|9227ca82047d99fbe3a6ffdf203e41b862e48691
 vendor/lib/vendor.samsung.hardware.radio.channel@2.0.so|8f1ef76608e97b5864e30ea2f2aff2f685eb4d8e
 vendor/lib64/libengmode_client.so|ac3615bb78e4e569841abd804c0278c6de181b2c
 vendor/lib64/libril.so|d81e76523a5a28fdf488fa42c0e1d4a2b15fff19
-vendor/lib64/libsec-ril.so|31d0692a989da0c1be83bbc02a5f8fa8cb6c1d2f
+vendor/lib64/libsec-ril.so|31d0692a989da0c1be83bbc02a5f8fa8cb6c1d2f|bc62d7610dc6b5140e7f4ca0af2a6ce9e4162397
 vendor/lib64/libsec_semRil.so|7987ec9be7bf937438c43fc0b9859f6c9b4b5787
 vendor/lib64/libsecril-client.so|86b71fb3fb1daa5bc5293d38779c528126e0cfa3
 vendor/lib64/libsemnativecarrierfeature.so|3a1058f01dd6a7663272fdba6a0ea53b9253f934

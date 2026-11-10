@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * hardware/interfaces/graphics/composer/2.1/default/service.cpp, loading the HWC through a
- * HwcHal that keeps solid-color layers away from the stock HWC1 (see SolidColorHwcHal).
+ * HwcHal that keeps solid-color layers away from the stock HWC1 and reports HWC2 present fences
+ * (see SolidColorHwcHal).
  */
 
 #define LOG_TAG "android.hardware.graphics.composer@2.1-service"
@@ -18,6 +19,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include <android-base/unique_fd.h>
 #include <android/hardware/graphics/composer/2.1/IComposer.h>
 
 #include <binder/ProcessState.h>
@@ -41,8 +43,39 @@ namespace {
 // HWC_FRAMEBUFFER | HWC_SKIP_LAYER anyway, so ask it for CLIENT composition instead, which leaves
 // the handle slot to the (null) buffer, and report the layer as changed to CLIENT so that
 // SurfaceFlinger draws it.
+//
+// HWC1 has no present fence. For frame N the adapter returns the HWC1 retire fence, which signals
+// when N is replaced on the panel: the DECON timeline of a DSI display starts one ahead
+// (kernel exynos8895_s3cfb.c, stock dpu/helper.c:326-339), so it signals a refresh after N is
+// shown. SurfaceFlinger takes it as the HWC2 present fence and counts each frame as missed
+// (FrameTargeter::beginFrame: the fence signalled more than half a refresh after its expected
+// present time), then composes every other vsync. The retire fence of frame N-1 signals when N
+// replaces it on the panel, which is what the HWC2 present fence of N means; return that one.
+// Release fences are not touched.
 class SolidColorHwcHal : public HwcHal {
   public:
+    Error presentDisplay(Display display, int32_t* outPresentFence, std::vector<Layer>* outLayers,
+                         std::vector<int32_t>* outReleaseFences) override {
+        Error err = HwcHal::presentDisplay(display, outPresentFence, outLayers, outReleaseFences);
+        if (err != Error::NONE) {
+            return err;
+        }
+
+        IComposerClient::DisplayType type;
+        if (getDisplayType(display, &type) != Error::NONE ||
+            type != IComposerClient::DisplayType::PHYSICAL) {
+            return err;
+        }
+
+        std::lock_guard<std::mutex> lock(mMutex);
+        android::base::unique_fd& previousRetire = mPreviousRetire[display];
+        int32_t retire = *outPresentFence;
+        // -1 for the first frame: no fence means presented
+        *outPresentFence = previousRetire.release();
+        previousRetire.reset(retire);
+        return err;
+    }
+
     Error setLayerCompositionType(Display display, Layer layer, int32_t type) override {
         {
             std::lock_guard<std::mutex> lock(mMutex);
@@ -113,6 +146,7 @@ class SolidColorHwcHal : public HwcHal {
   private:
     std::mutex mMutex;
     std::unordered_map<Display, std::unordered_set<Layer>> mSolidColorLayers;
+    std::unordered_map<Display, android::base::unique_fd> mPreviousRetire;
 };
 
 // HwcLoader::load() with SolidColorHwcHal in place of HwcHal.

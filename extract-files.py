@@ -28,29 +28,32 @@ lib_fixups: lib_fixups_user_type = {
 }
 
 blob_fixups: blob_fixups_user_type = {
+    # __aeabi_idiv, __aeabi_ldivmod, __aeabi_f2lz and __aeabi_l2f are not exported by bionic
     'vendor/lib/lib_SamsungRec_06006.so': blob_fixup()
         .add_needed('libcompiler_rt-samsung.so'),
-    'vendor/lib/hw/audio.primary.universal8895.so': blob_fixup()
-        .add_needed('libprocessgroup.so')
+    # codeberg universal8895 lineage-23.2 extract-files.sh:81-86 (BT SCO shim, no SoundTrigger HAL);
+    # the Samsung libaudioroute and libtinyalsa are renamed away from the AOSP ones
+    # patchelf 0.17.2 and 0.18 put its program headers at offset 0x34 but vaddr 0x1a034 (inside
+    # the text LOAD), which the linker would read as code; 0.9 maps them in a new LOAD
+    'vendor/lib/hw/audio.primary.exynos8895.so': blob_fixup()
+        .patchelf_version('0_9')
+        .add_needed('libaudioparams_shim.so')
+        .binary_regex_replace(b'str_parms_get_str', b'str_parms_get_mod')
+        .remove_needed('libaudio_soundtrigger.so')
         .replace_needed('libaudioroute.so', 'libaudioroute-samsung.so')
         .replace_needed('libtinyalsa.so', 'libtinyalsa-samsung.so'),
-    (
-        'vendor/lib/hw/sound_trigger.primary.universal8895.so',
-        'vendor/lib/libaboxpcmdump.so',
-        'vendor/lib/libaudio_soundtrigger.so',
-        'vendor/lib/libaudioroute-samsung.so',
-    ): blob_fixup()
+    'vendor/lib/libaboxpcmdump.so': blob_fixup()
+        .replace_needed('libaudioroute.so', 'libaudioroute-samsung.so')
+        .replace_needed('libtinyalsa.so', 'libtinyalsa-samsung.so'),
+    'vendor/lib/libaudioroute-samsung.so': blob_fixup()
         .replace_needed('libtinyalsa.so', 'libtinyalsa-samsung.so'),
     (
         'vendor/lib/libaudioroute-samsung.so',
         'vendor/lib/libtinyalsa-samsung.so',
+        'vendor/lib64/libtinyalsa-samsung.so',
         'vendor/lib/libcompiler_rt-samsung.so',
     ): blob_fixup()
         .fix_soname(),
-    'vendor/lib/libaudioroute-samsung.so': blob_fixup()
-        .binary_regex_replace(b'/system/etc/mixer_paths.xml', b'/vendor/etc/mixer_paths.xml'),
-    'vendor/etc/mixer_paths.xml': blob_fixup()
-        .regex_replace('/system/etc/mixer_gains.xml', '/vendor/etc/mixer_gains.xml'),
     (
         'vendor/lib/egl/libGLES_mali.so',
         'vendor/lib64/egl/libGLES_mali.so',
@@ -81,9 +84,14 @@ blob_fixups: blob_fixups_user_type = {
         .replace_needed('libcrypto.so', 'libcrypto-v28.so'),
     'vendor/lib/libExynosOMX_Core.so': blob_fixup()
         .binary_regex_replace(b'/system/lib/omx/', b'/vendor/lib/omx/'),
+    # SmsManager::OnGetSmscAddressDone (vaddr 0x1e3cec): complete the failed SMSC request with
+    # no data instead of the SmsCenter object (mov x3, x20 -> mov x3, #0), as codeberg
+    # universal8895 lineage-23.2 extract-files.sh:75-79
     'vendor/lib64/libsec-ril.so': blob_fixup()
         .remove_needed('libhidltransport.so')
-        .remove_needed('libhwbinder.so'),
+        .remove_needed('libhwbinder.so')
+        .sig_replace('60 0E 40 F9 82 0C 80 52 E1 03 15 AA E3 03 14 AA',
+                     '60 0E 40 F9 82 0C 80 52 E1 03 15 AA 03 00 80 D2'),
     (
         'vendor/lib/libexynosdisplay.so',
         'vendor/lib64/libexynosdisplay.so',
