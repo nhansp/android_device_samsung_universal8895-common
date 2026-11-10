@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: The LineageOS Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- The display corners: radius fitted to the foreground mask (fore_port.png) of Samsung's
+         Galaxy Note8 emulator skin (developer.samsung.com Galaxy Emulator Skin 2.0), which the
+         skin's layout scales over the 1440x2960 display: 26.8-27.2 mask px = 53.5-54.4 px on all
+         four corners, circular arc, RMS error under 0.31 mask px. In px of the highest resolution,
+         which the framework scales for the 1080x2220 mode. -->
+    <dimen name="rounded_corner_radius">54px</dimen>
+    <!-- codeberg universal8895 lineage-23.2 overlay/frameworks/base/core/res/res/values/dimens.xml -->
+    <dimen name="rounded_corner_content_padding">16dp</dimen>
+</resources>
