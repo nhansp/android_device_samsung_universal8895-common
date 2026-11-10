@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+     The panel scaler (DSU) offers 1440x2960 and 1080x2220. The display has no identification
+     data, so DisplayDeviceConfig finds this file by its port (port 0). Densities as stock:
+     ro.sf.init.lcd_density=560 (native), ro.sf.lcd_density=420 (FHD+), stock build.prop:124-125.
+-->
+<displayConfiguration>
+    <densityMapping>
+        <density>
+            <height>2220</height>
+            <width>1080</width>
+            <density>420</density>
+        </density>
+        <density>
+            <height>2960</height>
+            <width>1440</width>
+            <density>560</density>
+        </density>
+    </densityMapping>
+</displayConfiguration>

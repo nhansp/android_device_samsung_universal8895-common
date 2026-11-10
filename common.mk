@@ -278,5 +278,9 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/configs/idc/sec_e-pen.idc:$(TARGET_COPY_OUT_VENDOR)/usr/idc/sec_e-pen.idc
 
+# Display
+PRODUCT_COPY_FILES += \
+    $(COMMON_PATH)/configs/display/display_port_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/displayconfig/display_port_0.xml
+
 # Proprietary files
 $(call inherit-product, vendor/samsung/universal8895-common/universal8895-common-vendor.mk)
