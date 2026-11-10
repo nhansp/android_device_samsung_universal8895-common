@@ -270,5 +270,9 @@ PRODUCT_PACKAGES += \
     wpa_supplicant \
     wpa_supplicant.conf
 
+# LiveDisplay
+PRODUCT_COPY_FILES += \
+    $(COMMON_PATH)/init/zz-livedisplay-ondemand.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/zz-livedisplay-ondemand.rc
+
 # Proprietary files
 $(call inherit-product, vendor/samsung/universal8895-common/universal8895-common-vendor.mk)
