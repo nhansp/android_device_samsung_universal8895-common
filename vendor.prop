@@ -1,5 +1,7 @@
-# Audio: audio.primary.exynos8895 is found by ro.arch (codeberg lineage-23.2 system.prop:24)
-ro.arch=exynos8895
+# Audio: hw_get_module_by_class() tries ro.hardware.<class> first
+# (hardware/libhardware/hardware.c:245), so audio.primary.exynos8895 is found without
+# codeberg lineage-23.2's ro.arch (system.prop:24), which vendor_init may not set.
+ro.hardware.audio.primary=exynos8895
 
 # Bluetooth
 ro.bt.bdaddr_path=/efs/bluetooth/bt_addr
