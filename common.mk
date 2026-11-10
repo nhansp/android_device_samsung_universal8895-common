@@ -274,5 +274,9 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/init/zz-livedisplay-ondemand.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/zz-livedisplay-ondemand.rc
 
+# Input
+PRODUCT_COPY_FILES += \
+    $(COMMON_PATH)/configs/idc/sec_e-pen.idc:$(TARGET_COPY_OUT_VENDOR)/usr/idc/sec_e-pen.idc
+
 # Proprietary files
 $(call inherit-product, vendor/samsung/universal8895-common/universal8895-common-vendor.mk)
