@@ -267,7 +267,8 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.wifi-service \
     hostapd \
-    wpa_supplicant
+    wpa_supplicant \
+    wpa_supplicant.conf
 
 # Proprietary files
 $(call inherit-product, vendor/samsung/universal8895-common/universal8895-common-vendor.mk)
