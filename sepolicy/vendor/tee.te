@@ -1,3 +1,2 @@
-# mcDriverDaemon reads its auth token container from /efs/TEE (MC_AUTH_TOKEN_PATH).
-allow tee efs_file:dir r_dir_perms;
-allow tee efs_file:file r_file_perms;
+allow tee prov_efs_file:dir create_dir_perms;
+allow tee prov_efs_file:file create_file_perms;

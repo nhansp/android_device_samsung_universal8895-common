@@ -96,7 +96,9 @@ vendor/lib64/libkeymaster_mdfpp.so
 vendor/lib/libskeymaster3device.so
 vendor/lib64/libskeymaster3device.so
 
-# Audio
+# Audio - routing
+system/etc/mixer_gains.xml:vendor/etc/mixer_gains.xml
+system/etc/mixer_paths.xml:vendor/etc/mixer_paths.xml
 system/lib/libaudioroute.so:vendor/lib/libaudioroute-samsung.so
 
 # Compiler runtime
@@ -137,25 +139,24 @@ vendor/etc/plmn_delta_usagsm.bin
 vendor/etc/plmn_delta_usacdma.bin
 vendor/etc/plmn_se13.bin
 
-## RIL - from a54x - A546BXXU5BWK4
-vendor/bin/hw/rild|249bd469620af395bcca58153d40cee6c28bdcb5
-vendor/etc/init/vendor.samsung.rilchip.slsi.rc|95aa52333814b340e5064eae3a9bd5cb8a96a3ff
-vendor/etc/vintf/manifest/vendor.samsung.hardware.radio.exclude.slsi.xml|c3f8ea3f6228f2d572081b0c0ae29a251de4350b
-vendor/etc/vintf/manifest/vendor.samsung.hardware.sehradio_manifest_2_33.xml|ebbe359a9b2d78cb88debe79d9183c039afb7c01
-vendor/lib/libsecril-client.so|fd7cb317ad17fd6c5b94c69bc4eaef80631215f1
-vendor/lib/libsemnativecarrierfeature.so|56ed7bd5f596502cf9614b5d9ebf255ac4e1e73c
-vendor/lib64/libSemDataProps.so|023991c586ba36f42f06b7f9286cf417bcb8a9f8
-vendor/lib64/libSemTelephonyProps.so|cbde8c62e9126875501d26681873b81e75dcd8a0
-vendor/lib64/libril_sem.so|9bcd6054a5ebded9ba92f27ef00ab537ab1c09b9
-vendor/lib64/libsec-ril.so|f66b4199957f40d0e023141e86606696a740872f|f66b4199957f40d0e023141e86606696a740872f
-vendor/lib64/libsecril-client.so|bae84e05d1c19dc5b41bfe2326dbf2744b1e412c
-vendor/lib64/libsemnativecarrierfeature.so|b69b820d8881d4e7bba426212e4aba31095bb437
-vendor/lib64/vendor.samsung.hardware.radio-V1-ndk.so|738bc9ac0ca800b36e8b08652240ee01ddba6e47
-vendor/lib64/vendor.samsung.hardware.radio.bridge-V1-ndk.so|6faa7fbeab4b7d335d434729ec22493fde30028c
-vendor/lib64/vendor.samsung.hardware.radio.channel-V1-ndk.so|fc3522bd787fa48ab80f53c0836cbb0c5ddf1b10
-vendor/lib64/vendor.samsung.hardware.radio.data-V1-ndk.so|8645b1d3d2e944a38ec07ee8c69d9f7d817b3730
-vendor/lib64/vendor.samsung.hardware.radio.messaging-V1-ndk.so|9b3b09c9bc2911b801d0de0caea13476a90f8776
-vendor/lib64/vendor.samsung.hardware.radio.sim-V1-ndk.so|611a9f8ca1a46b33471643e200e70ce28f963b75
+## RIL - from N975FXXU6ETLL (github 8890q/proprietary_vendor_samsung lineage-19.1)
+vendor/bin/hw/rild|c77d17bde3312077a77a3a8238a62e649a996f44
+vendor/etc/mtu-conf.xml|0f17947b42293684e25db2cf97027c7deed66a31
+vendor/etc/pdpcnt-conf.xml|914a3ec45c2f82cca4355b4736e617e1ee644fbe
+vendor/lib/libengmode_client.so|38b95cf93d0c1f497e1d8a6370e53b903bb03510
+vendor/lib/libsecril-client.so|af77c32b35ab1a2b7ee5f38e529e7eb8dee0a195
+vendor/lib/libsemnativecarrierfeature.so|7aeaf1049ffa3718eb4beed0739624c0cb4c9847
+vendor/lib/libvkmanager_vendor.so|9227ca82047d99fbe3a6ffdf203e41b862e48691
+vendor/lib/vendor.samsung.hardware.radio.channel@2.0.so|8f1ef76608e97b5864e30ea2f2aff2f685eb4d8e
+vendor/lib64/libengmode_client.so|ac3615bb78e4e569841abd804c0278c6de181b2c
+vendor/lib64/libril.so|d81e76523a5a28fdf488fa42c0e1d4a2b15fff19
+vendor/lib64/libsec-ril.so|31d0692a989da0c1be83bbc02a5f8fa8cb6c1d2f
+vendor/lib64/libsec_semRil.so|7987ec9be7bf937438c43fc0b9859f6c9b4b5787
+vendor/lib64/libsecril-client.so|86b71fb3fb1daa5bc5293d38779c528126e0cfa3
+vendor/lib64/libsemnativecarrierfeature.so|3a1058f01dd6a7663272fdba6a0ea53b9253f934
+vendor/lib64/libvkmanager_vendor.so|c251a0386644c03760148177047ddb0c437029e5
+vendor/lib64/vendor.samsung.hardware.radio.bridge@2.0.so|ac01bab3a779374005bb6b94e8b354107671d5dc
+vendor/lib64/vendor.samsung.hardware.radio.channel@2.0.so|44d2173ab0187ec3460dd54135e2b406bc93b098
 
 # Sensors
 vendor/lib64/sensors.bio.so

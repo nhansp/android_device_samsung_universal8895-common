@@ -47,6 +47,10 @@ blob_fixups: blob_fixups_user_type = {
         'vendor/lib/libcompiler_rt-samsung.so',
     ): blob_fixup()
         .fix_soname(),
+    'vendor/lib/libaudioroute-samsung.so': blob_fixup()
+        .binary_regex_replace(b'/system/etc/mixer_paths.xml', b'/vendor/etc/mixer_paths.xml'),
+    'vendor/etc/mixer_paths.xml': blob_fixup()
+        .regex_replace('/system/etc/mixer_gains.xml', '/vendor/etc/mixer_gains.xml'),
     (
         'vendor/lib/egl/libGLES_mali.so',
         'vendor/lib64/egl/libGLES_mali.so',
@@ -78,8 +82,8 @@ blob_fixups: blob_fixups_user_type = {
     'vendor/lib/libExynosOMX_Core.so': blob_fixup()
         .binary_regex_replace(b'/system/lib/omx/', b'/vendor/lib/omx/'),
     'vendor/lib64/libsec-ril.so': blob_fixup()
-        .sig_replace('80 0E 40 F9 E1 03 16 AA 82 0C 80 52 E3 03 15 AA',
-            '80 0E 40 F9 E1 03 16 AA 82 0C 80 52 08 00 80 D2'),
+        .remove_needed('libhidltransport.so')
+        .remove_needed('libhwbinder.so'),
     (
         'vendor/lib/libexynosdisplay.so',
         'vendor/lib64/libexynosdisplay.so',

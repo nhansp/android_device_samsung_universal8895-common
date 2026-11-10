@@ -26,4 +26,10 @@ ro.opengles.version=196610
 wifi.interface=wlan0
 
 # RIL
+ro.radio.noril=no
+ro.vendor.multisim.simslotcount=1
+ro.vendor.radio.default_network=9
 vendor.sec.rild.libpath=/vendor/lib64/libsec-ril.so
+
+# FRP
+ro.frp.pst=/dev/block/persistent

@@ -73,6 +73,8 @@
 # tee_device entirely.
 /dev/mobicore             0700   system     system
 /dev/mobicore-user        0666   radio      system
+/dev/t-base-tui           0660   system     system
+/dev/tzic                 0660   system     net_bt_admin
 
 # NFC (CONFIG_SEC_NFC)
 /dev/sec-nfc              0660   nfc        nfc
@@ -82,3 +84,17 @@
 
 # Reactivation lock
 /dev/block/by-name/STEADY        0660    system    system
+
+# Modem (stock ueventd.samsungexynos8895.rc:136-137)
+/dev/block/by-name/RADIO         0660    system    radio
+/dev/block/by-name/CP_DEBUG      0660    radio     system
+
+# Bluetooth UART (stock init.samsungexynos8895.rc:452-453)
+/dev/ttySAC1                     0660    bluetooth bluetooth
+
+# Sensors (stock ueventd.samsungexynos8895.rc:166-177)
+/sys/devices/virtual/input/input*    poll_delay    0660    system    radio
+/sys/devices/virtual/input/input*    enable        0660    system    radio
+/sys/devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device*    buffer/enable    0660    system    system
+/sys/devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device*    buffer/length    0660    system    system
+/sys/devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device*    poll_delay       0660    system    system
