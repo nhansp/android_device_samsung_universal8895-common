@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: The LineageOS Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- codeberg universal8895 lineage-23.2 overlay/frameworks/base/packages/SystemUI/res/values/config.xml:
+         the always-on display keeps the panel on at doze brightness instead of the DOZE power mode. -->
+    <bool name="doze_display_state_supported">false</bool>
+    <bool name="config_enableShellMainThread">true</bool>
+</resources>
