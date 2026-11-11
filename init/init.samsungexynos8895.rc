@@ -143,6 +143,8 @@ on boot
     chown system system /sys/class/sec/tsp/cmd
     chown system system /sys/class/sec/tsp/cmd_list
     chown system system /sys/class/sec/tsp/cmd_result
+    # the whole panel as the double-tap-to-wake area (aod_enable from the power HAL)
+    write /sys/class/sec/tsp/cmd "set_aod_rect,1440,2960,0,0"
 
     # Lights HAL
     chown system system /sys/class/backlight/panel/brightness
