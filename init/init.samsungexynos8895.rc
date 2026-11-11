@@ -146,6 +146,9 @@ on boot
     # the whole panel as the double-tap-to-wake area (aod_enable from the power HAL)
     write /sys/class/sec/tsp/cmd "set_aod_rect,1440,2960,0,0"
 
+    # the power HAL applies hints once this is set (power-libperfmgr aidl/service.cpp:80-81)
+    setprop vendor.powerhal.init 1
+
     # Lights HAL
     chown system system /sys/class/backlight/panel/brightness
     chown system system /sys/class/sec/led/led_pattern

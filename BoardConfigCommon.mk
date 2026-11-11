@@ -130,6 +130,7 @@ ENABLE_VENDOR_RIL_SERVICE := true
 
 # SELinux
 include device/lineage/sepolicy/libion/sepolicy.mk
+include device/lineage/sepolicy/libperfmgr/sepolicy.mk
 include device/lineage/sepolicy/exynos/sepolicy.mk
 include device/samsung_slsi/sepolicy/sepolicy.mk
 BOARD_VENDOR_SEPOLICY_DIRS += device/samsung_slsi/sepolicy/tee/mobicore/common
