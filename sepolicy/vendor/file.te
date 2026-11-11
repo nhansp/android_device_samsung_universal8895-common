@@ -12,3 +12,7 @@ type sysfs_camera, sysfs_type, fs_type;
 
 # model_info-system_rev in the device tree, read by cbd
 type sysfs_dt_model_info, sysfs_type, fs_type;
+
+# /sys/class/video4linux and the MFC video4linux nodes (s5p-mfc-dec0, s5p-mfc-enc0 and the secure pair)
+type sysfs_v4l, sysfs_type, fs_type;
+type sysfs_v4l_mfc, sysfs_type, fs_type;
