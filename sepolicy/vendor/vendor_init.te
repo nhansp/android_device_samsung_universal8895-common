@@ -1,3 +1,6 @@
 # secril_config_svc.rc copies the vendor radio properties into ro.telephony.*
 get_prop(vendor_init, vendor_radio_prop)
 set_prop(vendor_init, vendor_radio_prop)
+
+# /sys/class/sec/tsp/cmd: the double-tap-to-wake area at boot
+allow vendor_init sysfs_touchscreen_writable:file w_file_perms;

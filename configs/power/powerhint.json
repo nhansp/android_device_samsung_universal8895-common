@@ -29,6 +29,16 @@
             ],
             "DefaultIndex": 1,
             "HoldFd": true
+        },
+        {
+            "Name": "DoubleTapToWakeEnable",
+            "Path": "/sys/class/sec/tsp/cmd",
+            "Values": [
+                "aod_enable,0",
+                "aod_enable,1"
+            ],
+            "DefaultIndex": 0,
+            "ResetOnInit": false
         }
     ],
     "Actions": [
@@ -85,6 +95,12 @@
             "Node": "PMQoSCpuDmaLatency",
             "Duration": 0,
             "Value": "44"
+        },
+        {
+            "PowerHint": "DOUBLE_TAP_TO_WAKE",
+            "Node": "DoubleTapToWakeEnable",
+            "Duration": 0,
+            "Value": "aod_enable,1"
         }
     ]
 }
