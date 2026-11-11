@@ -38,7 +38,7 @@
                 "aod_enable,1"
             ],
             "DefaultIndex": 0,
-            "ResetOnInit": false
+            "ResetOnInit": true
         }
     ],
     "Actions": [
