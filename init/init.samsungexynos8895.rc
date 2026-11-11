@@ -30,6 +30,10 @@ on late-fs
     mount_all /vendor/etc/fstab.${ro.hardware} --late
 
 on post-fs-data
+    # GNSS standby line, switched by lhd (stock vendor/etc/init/init.gps.rc:3-4)
+    chown root system /sys/class/sec/gps/GPS_PWR_EN/value
+    chmod 0664 /sys/class/sec/gps/GPS_PWR_EN/value
+
     mkdir /data/vendor 0771 root system
     mkdir /data/vendor/log 0771 root system
 
