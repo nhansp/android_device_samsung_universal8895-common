@@ -37,3 +37,7 @@ genfscon sysfs /devices/virtual/sec/gps/GPS_PWR_EN/value                      u:
 
 # GPU frequency floor the power HAL writes (powerhint.json GPUMinFreq)
 genfscon sysfs /devices/platform/soc@0/13900000.mali/devfreq/13900000.mali/min_freq u:object_r:sysfs_gpu:s0
+
+# video4linux: the class directory the Exynos OMX components scan for the MFC, and the MFC nodes
+genfscon sysfs /class/video4linux                                       u:object_r:sysfs_v4l:s0
+genfscon sysfs /devices/platform/soc@0/13ce0000.codec/video4linux       u:object_r:sysfs_v4l_mfc:s0

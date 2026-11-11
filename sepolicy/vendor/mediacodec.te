@@ -1,0 +1,5 @@
+# The Exynos OMX components find the MFC by reading /sys/class/video4linux/video*/name
+allow mediacodec sysfs_v4l:dir r_dir_perms;
+allow mediacodec sysfs_v4l:lnk_file { getattr read };
+allow mediacodec sysfs_v4l_mfc:dir r_dir_perms;
+allow mediacodec sysfs_v4l_mfc:file r_file_perms;
