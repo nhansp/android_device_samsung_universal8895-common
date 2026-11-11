@@ -126,6 +126,9 @@ on post-fs-data
     mkdir /data/vendor/wifi/wpa/sockets 0770 wifi wifi
 
 on boot
+    # stock init.samsungexynos8895.rc "SSWAP"
+    write /proc/sys/vm/swappiness 130
+
     # mDNIe (stock init.samsungexynos8895.rc, "Permissions for MDNIE"): LiveDisplay runs as system
     chown system media_rw /sys/class/mdnie/mdnie/bypass
     chown system media_rw /sys/class/mdnie/mdnie/mode

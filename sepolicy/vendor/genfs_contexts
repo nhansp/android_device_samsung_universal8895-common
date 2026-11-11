@@ -41,3 +41,5 @@ genfscon sysfs /devices/platform/soc@0/13900000.mali/devfreq/13900000.mali/min_f
 # video4linux: the class directory the Exynos OMX components scan for the MFC, and the MFC nodes
 genfscon sysfs /class/video4linux                                       u:object_r:sysfs_v4l:s0
 genfscon sysfs /devices/platform/soc@0/13ce0000.codec/video4linux       u:object_r:sysfs_v4l_mfc:s0
+
+genfscon proc /sys/vm/swappiness                                        u:object_r:vendor_proc_swappiness:s0
