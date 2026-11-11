@@ -1,0 +1,2 @@
+# libnfc-nci looks for /data/vendor/nfc/libnfc-nci-update.conf
+allow nfc nfc_vendor_data_file:dir search;
