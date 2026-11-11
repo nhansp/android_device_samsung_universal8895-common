@@ -7,7 +7,7 @@ genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0036/power_supply u:object_r:sysfs_battery:s0
 
 # IIO: the SSP sensor hub on spi10.0 and the other IIO devices the sensors HAL scans by name
-genfscon sysfs /devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device u:object_r:sysfs_iio:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device u:object_r:sysfs_sensors_writable:s0
 genfscon sysfs /devices/platform/soc@0/15b70000.adc/iio:device                          u:object_r:sysfs_iio:s0
 genfscon sysfs /devices/platform/thermal-sensor-ap/iio:device                           u:object_r:sysfs_iio:s0
 genfscon sysfs /devices/platform/thermal-sensor-battery/iio:device                      u:object_r:sysfs_iio:s0
