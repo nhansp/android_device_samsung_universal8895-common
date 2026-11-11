@@ -4,17 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * hardware/interfaces/graphics/composer/2.1/default/service.cpp, loading the HWC through a
- * HwcHal that keeps solid-color layers away from the stock HWC1, reports HWC2 present fences and
- * enters DOZE_SUSPEND through DOZE (see SolidColorHwcHal).
+ * HwcHal that keeps solid-color layers away from the stock HWC1, reports HWC2 present fences,
+ * enters DOZE_SUSPEND through DOZE and offers the stock display scaler's resolutions as display
+ * configs (see SolidColorHwcHal).
  */
 
 #define LOG_TAG "android.hardware.graphics.composer@2.1-service"
 
+#include <dlfcn.h>
 #include <sched.h>
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -24,17 +28,114 @@
 
 #include <binder/ProcessState.h>
 #include <composer-passthrough/2.1/HwcLoader.h>
+#include <hwc2on1adapter/HWC2On1Adapter.h>
 #include <hidl/LegacySupport.h>
 
+using android::HWC2On1Adapter;
+using android::hardware::graphics::composer::V2_1::Config;
 using android::hardware::graphics::composer::V2_1::Display;
+using android::hardware::graphics::composer::V2_1::IComposerCallback;
 using android::hardware::graphics::composer::V2_1::Error;
 using android::hardware::graphics::composer::V2_1::IComposer;
 using android::hardware::graphics::composer::V2_1::IComposerClient;
 using android::hardware::graphics::composer::V2_1::Layer;
 using android::hardware::graphics::composer::V2_1::passthrough::HwcHal;
+using android::hardware::graphics::composer::V2_1::hal::ComposerHal;
 using android::hardware::graphics::composer::V2_1::passthrough::HwcLoader;
+using android::hardware::hidl_vec;
 
 namespace {
+
+// The display scaler (DSU) of the stock HWC: the panel shows a lower resolution, scaled up by the
+// DECON and the panel's DDI. Stock SurfaceFlinger drove it through ExynosDisplay::
+// setDDIScalerEnable(w, h) (libexynosdisplay 0x23610: primary display only, stores w and h as
+// mXres/mYres and mScaledXres/mScaledYres; the next frame's WIN_CONFIG carries the scaler mode,
+// ExynosDisplay::getDDIScalerMode(), 0x1efc0). The modes are the HWC's mDSUInfo, which it reads
+// from the DECON's psr_info: a count at +0xc48 and {width, height} pairs from +0xc4c (as
+// getDDIScalerMode() reads them). The ExynosDevice is stored at +0xe8 of the HWC1 device
+// (hwcomposer.exynos5.so exynos_open(), 0x20a0-0x20b0); ExynosDevice::getDisplay(type), 0x23908,
+// returns the display of that HWC1 type.
+class ExynosScaler {
+  public:
+    struct Mode {
+        int32_t width;
+        int32_t height;
+    };
+
+    bool init(hwc_composer_device_1* hwc1) {
+        void* lib = dlopen("libexynosdisplay.so", RTLD_NOW | RTLD_NOLOAD);
+        if (lib == nullptr) {
+            ALOGE("scaler: libexynosdisplay.so is not loaded");
+            return false;
+        }
+        auto getDisplay = reinterpret_cast<void* (*)(void*, uint32_t)>(
+                dlsym(lib, "_ZN12ExynosDevice10getDisplayEj"));
+        mSetScaler = reinterpret_cast<void (*)(void*, int, int)>(
+                dlsym(lib, "_ZN13ExynosDisplay18setDDIScalerEnableEii"));
+        if (getDisplay == nullptr || mSetScaler == nullptr) {
+            ALOGE("scaler: libexynosdisplay.so lacks the scaler symbols");
+            return false;
+        }
+
+        void* device = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(hwc1) + 0xe8);
+        mDisplay = device != nullptr ? getDisplay(device, HWC_DISPLAY_PRIMARY) : nullptr;
+        if (mDisplay == nullptr) {
+            ALOGE("scaler: no primary ExynosDisplay");
+            return false;
+        }
+        return true;
+    }
+
+    // mDSUInfo is filled from psr_info by the HWC, read at each use
+    std::vector<Mode> modes() const {
+        std::vector<Mode> modes;
+        if (mDisplay == nullptr) {
+            return modes;
+        }
+        const uint8_t* display = static_cast<const uint8_t*>(mDisplay);
+        uint32_t count = *reinterpret_cast<const uint32_t*>(display + 0xc48);
+        for (uint32_t i = 0; i < count && i < kMaxModes; i++) {
+            const int32_t* mode = reinterpret_cast<const int32_t*>(display + 0xc4c + 8 * i);
+            if (mode[0] > 0 && mode[1] > 0) {
+                modes.push_back({mode[0], mode[1]});
+            }
+        }
+        return modes;
+    }
+
+    void set(const Mode& mode) const { mSetScaler(mDisplay, mode.width, mode.height); }
+
+  private:
+    static constexpr uint32_t kMaxModes = 3;  // DSU_MODE_1..3, the HWC's own bound
+    void* mDisplay = nullptr;
+    void (*mSetScaler)(void*, int, int) = nullptr;
+};
+
+// Notes the first display connected, the primary (HWC2On1Adapter connects HWC_DISPLAY_PRIMARY
+// first), and forwards the events.
+class HotplugTracker : public ComposerHal::EventCallback {
+  public:
+    void setTarget(ComposerHal::EventCallback* target) { mTarget = target; }
+    Display primary() const { return mPrimary.load(); }
+
+    void onHotplug(Display display, IComposerCallback::Connection connected) override {
+        Display none = kNone;
+        if (connected == IComposerCallback::Connection::CONNECTED) {
+            mPrimary.compare_exchange_strong(none, display);
+        }
+        mTarget->onHotplug(display, connected);
+    }
+    void onRefresh(Display display) override { mTarget->onRefresh(display); }
+    void onVsync(Display display, int64_t timestamp) override {
+        mTarget->onVsync(display, timestamp);
+    }
+
+    static constexpr Display kNone = ~Display(0);
+
+  private:
+    ComposerHal::EventCallback* mTarget = nullptr;
+    std::atomic<Display> mPrimary{kNone};
+};
 
 // The stock libexynosdisplay create_layers() passes hwc_layer_1.handle of every layer to
 // ExynosLayer::setLayerBuffer(), which dereferences it. For a SOLID_COLOR layer the HWC1 adapter
@@ -62,8 +163,102 @@ namespace {
 // requests reach the HAL as one, ON to DOZE_SUSPEND. So enter DOZE_SUSPEND from ON as DOZE, ask
 // for a frame, and suspend after it is presented: the HWC presents it in DOZE and the panel shows
 // it in ALPM.
+//
+// The stock HWC1 reports one config, 1440x2960, and ignores setActiveConfig on the primary
+// display (exynos_hwc1_setActiveConfig() passes 0, libexynosdisplay 0x152a0). For each further
+// scaler mode the primary display gets a config of that size, the same vsync, and a DPI scaled
+// with it (the same physical size); setActiveConfig selects the scaler mode. SurfaceFlinger
+// renders at the config's size, which the HWC composes into the scaled window.
 class SolidColorHwcHal : public HwcHal {
   public:
+    void initScaler(hwc_composer_device_1* hwc1) { mScalerReady = mScaler.init(hwc1); }
+
+    void registerEventCallback(ComposerHal::EventCallback* callback) override {
+        mHotplug.setTarget(callback);
+        HwcHal::registerEventCallback(&mHotplug);
+    }
+
+    Error getDisplayConfigs(Display display, hidl_vec<Config>* outConfigs) override {
+        Error err = HwcHal::getDisplayConfigs(display, outConfigs);
+        if (err != Error::NONE || !isScaled(display) || outConfigs->size() != 1) {
+            return err;
+        }
+
+        std::vector<ExynosScaler::Mode> modes = mScaler.modes();
+        if (modes.size() < 2) {
+            return err;
+        }
+
+        std::lock_guard<std::mutex> lock(mScalerMutex);
+        mBaseConfig = (*outConfigs)[0];
+        std::vector<Config> configs{mBaseConfig};
+        for (size_t i = 1; i < modes.size(); i++) {
+            configs.push_back(static_cast<Config>(mBaseConfig + i));
+        }
+        mModes = modes;
+        *outConfigs = configs;
+        return err;
+    }
+
+    Error getDisplayAttribute(Display display, Config config, IComposerClient::Attribute attribute,
+                              int32_t* outValue) override {
+        size_t index;
+        if (!isScaled(display) || !scalerIndex(config, &index) || index == 0) {
+            return HwcHal::getDisplayAttribute(display, config, attribute, outValue);
+        }
+
+        ExynosScaler::Mode base, mode;
+        {
+            std::lock_guard<std::mutex> lock(mScalerMutex);
+            base = mModes[0];
+            mode = mModes[index];
+        }
+        Error err = HwcHal::getDisplayAttribute(display, mBaseConfig, attribute, outValue);
+        if (err != Error::NONE) {
+            return err;
+        }
+        switch (attribute) {
+            case IComposerClient::Attribute::WIDTH:
+                *outValue = mode.width;
+                break;
+            case IComposerClient::Attribute::HEIGHT:
+                *outValue = mode.height;
+                break;
+            case IComposerClient::Attribute::DPI_X:
+                *outValue = static_cast<int32_t>(int64_t(*outValue) * mode.width / base.width);
+                break;
+            case IComposerClient::Attribute::DPI_Y:
+                *outValue = static_cast<int32_t>(int64_t(*outValue) * mode.height / base.height);
+                break;
+            default:
+                break;
+        }
+        return err;
+    }
+
+    Error getActiveConfig(Display display, Config* outConfig) override {
+        if (isScaled(display)) {
+            std::lock_guard<std::mutex> lock(mScalerMutex);
+            if (!mModes.empty()) {
+                *outConfig = mActiveConfig.value_or(mBaseConfig);
+                return Error::NONE;
+            }
+        }
+        return HwcHal::getActiveConfig(display, outConfig);
+    }
+
+    Error setActiveConfig(Display display, Config config) override {
+        size_t index;
+        if (!isScaled(display) || !scalerIndex(config, &index)) {
+            return HwcHal::setActiveConfig(display, config);
+        }
+
+        std::lock_guard<std::mutex> lock(mScalerMutex);
+        mScaler.set(mModes[index]);
+        mActiveConfig = config;
+        return Error::NONE;
+    }
+
     Error setPowerMode(Display display, IComposerClient::PowerMode mode) override {
         std::lock_guard<std::mutex> lock(mPowerMutex);
         PowerState& state = mPower[display];
@@ -181,6 +376,27 @@ class SolidColorHwcHal : public HwcHal {
     }
 
   private:
+    bool isScaled(Display display) const {
+        return mScalerReady && display == mHotplug.primary();
+    }
+
+    bool scalerIndex(Config config, size_t* outIndex) {
+        std::lock_guard<std::mutex> lock(mScalerMutex);
+        if (mModes.empty() || config < mBaseConfig || config - mBaseConfig >= mModes.size()) {
+            return false;
+        }
+        *outIndex = config - mBaseConfig;
+        return true;
+    }
+
+    ExynosScaler mScaler;
+    bool mScalerReady = false;
+    HotplugTracker mHotplug;
+    std::mutex mScalerMutex;
+    std::vector<ExynosScaler::Mode> mModes;
+    Config mBaseConfig = 0;
+    std::optional<Config> mActiveConfig;
+
     void enterPendingDozeSuspend(Display display) {
         std::lock_guard<std::mutex> lock(mPowerMutex);
         auto it = mPower.find(display);
@@ -205,7 +421,9 @@ class SolidColorHwcHal : public HwcHal {
     std::unordered_map<Display, android::base::unique_fd> mPreviousRetire;
 };
 
-// HwcLoader::load() with SolidColorHwcHal in place of HwcHal.
+// HwcLoader::load() with SolidColorHwcHal in place of HwcHal; the HWC1 device is opened and
+// adapted here as HwcLoader::openDeviceWithAdapter() and adaptHwc1Device() do, to keep it for
+// the scaler.
 class SolidColorHwcLoader : public HwcLoader {
   public:
     static IComposer* load() {
@@ -214,15 +432,33 @@ class SolidColorHwcLoader : public HwcLoader {
             return nullptr;
         }
 
-        bool adapted = false;
-        hwc2_device_t* device = openDeviceWithAdapter(module, &adapted);
-        if (!device) {
+        hw_device_t* device;
+        int error = module->methods->open(module, HWC_HARDWARE_COMPOSER, &device);
+        if (error) {
+            ALOGE("failed to open hwcomposer device: %s", strerror(-error));
             return nullptr;
         }
 
+        hwc_composer_device_1* hwc1 = nullptr;
+        hwc2_device_t* hwc2;
+        if (((device->version >> 24) & 0xf) != 2) {
+            hwc1 = reinterpret_cast<hwc_composer_device_1*>(device);
+            if (((hwc1->common.version >> 16) & 0xf) < 1) {
+                ALOGE("hwcomposer 1.0 is not supported");
+                hwc1->common.close(&hwc1->common);
+                return nullptr;
+            }
+            hwc2 = new HWC2On1Adapter(hwc1);
+        } else {
+            hwc2 = reinterpret_cast<hwc2_device_t*>(device);
+        }
+
         auto hal = std::make_unique<SolidColorHwcHal>();
-        if (!hal->initWithDevice(device, !adapted)) {
+        if (!hal->initWithDevice(hwc2, hwc1 == nullptr)) {
             return nullptr;
+        }
+        if (hwc1 != nullptr) {
+            hal->initScaler(hwc1);
         }
 
         return createComposer(std::move(hal));
