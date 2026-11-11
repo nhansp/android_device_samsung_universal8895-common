@@ -29,3 +29,8 @@ genfscon sysfs /devices/platform/bluetooth/rfkill/rfkill0/state                 
 genfscon sysfs /devices/platform/soc@0/12870000.dsi/12870000.dsi.0/backlight/panel  u:object_r:sysfs_backlight_writable:s0
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10460000/10460000.spi/spi_master/spi3/spi3.0/madera-extcon/extcon u:object_r:sysfs_extcon:s0
 genfscon sysfs /devices/platform/soc@0/11120000.ufs/host0                          u:object_r:sysfs_scsi_host_writable:s0
+
+# Sensor hub MCU rail and GNSS standby line, switched by lhd (lhd.conf GpioNPowerPath and
+# GpioNStdbyPath; device/samsung_slsi/sepolicy common/vendor/lhd.te grants it these types)
+genfscon sysfs /devices/virtual/sec/sensorhub/mcu_power                       u:object_r:sysfs_sensorhub_writable:s0
+genfscon sysfs /devices/virtual/sec/gps/GPS_PWR_EN/value                      u:object_r:sysfs_gps_writable:s0
