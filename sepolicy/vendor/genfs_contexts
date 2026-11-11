@@ -43,3 +43,6 @@ genfscon sysfs /class/video4linux                                       u:object
 genfscon sysfs /devices/platform/soc@0/13ce0000.codec/video4linux       u:object_r:sysfs_v4l_mfc:s0
 
 genfscon proc /sys/vm/swappiness                                        u:object_r:vendor_proc_swappiness:s0
+
+# MAX77865 RGB LED, Samsung's sec led interface (/sys/class/sec/led): led_blink for the lights HAL
+genfscon sysfs /devices/virtual/sec/led                                 u:object_r:sysfs_leds:s0
