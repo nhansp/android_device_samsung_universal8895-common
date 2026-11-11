@@ -19,5 +19,5 @@
 
 # VOLD
 /dev/block/by-name/HIDDEN                /preload     ext4    defaults                                                                                 voldmanaged=preload:auto
-/devices/platform/soc@0/11500000.mmc/mmc_host*      auto  auto  defaults                                                                           voldmanaged=sdcard:auto,encryptable=userdata
-/devices/platform/soc@0/10c00000.usb/10c00000.usb*  auto  auto  defaults                                                                           voldmanaged=usb:auto
+/devices/platform/soc@0/11500000.mmc/mmc_host*            auto  auto  defaults                                                                         voldmanaged=sdcard:auto,encryptable=userdata
+/devices/platform/soc@0/soc@0:usb@10c00000/10c00000.usb*  auto  auto  defaults                                                                         voldmanaged=usb:auto
