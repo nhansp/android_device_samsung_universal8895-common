@@ -16,3 +16,6 @@ type sysfs_dt_model_info, sysfs_type, fs_type;
 # /sys/class/video4linux and the MFC video4linux nodes (s5p-mfc-dec0, s5p-mfc-enc0 and the secure pair)
 type sysfs_v4l, sysfs_type, fs_type;
 type sysfs_v4l_mfc, sysfs_type, fs_type;
+
+# /proc/sys/vm/swappiness, set at boot by the vendor init
+type vendor_proc_swappiness, fs_type, proc_type;

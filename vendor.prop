@@ -43,3 +43,11 @@ ro.frp.pst=/dev/block/persistent
 # SurfaceFlinger: background blur (tested on this Mali G71: renders correctly), expensive on it
 ro.surface_flinger.supports_background_blur=1
 ro.sf.blurs_are_expensive=1
+
+# Memory: mmd sets up zram at the size stock swaps on (sswap "-f 2048", MB), with recompression
+mmd.zram.enabled=true
+mmd.zram.size=2147483648
+mmd.zram.comp_algorithm=lzo-rle
+mmd.zram.recompression.enabled=true
+mmd.zram.recompression.algorithm=zstd
+mmd.zram.writeback.enabled=false
