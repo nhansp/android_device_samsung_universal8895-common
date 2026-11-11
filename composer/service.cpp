@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * hardware/interfaces/graphics/composer/2.1/default/service.cpp, loading the HWC through a
- * HwcHal that keeps solid-color layers away from the stock HWC1 and reports HWC2 present fences
- * (see SolidColorHwcHal).
+ * HwcHal that keeps solid-color layers away from the stock HWC1, reports HWC2 present fences and
+ * enters DOZE_SUSPEND through DOZE (see SolidColorHwcHal).
  */
 
 #define LOG_TAG "android.hardware.graphics.composer@2.1-service"
@@ -52,8 +52,44 @@ namespace {
 // present time), then composes every other vsync. The retire fence of frame N-1 signals when N
 // replaces it on the panel, which is what the HWC2 present fence of N means; return that one.
 // Release fences are not touched.
+//
+// The stock HWC blanks the display (FBIOBLANK POWERDOWN) when it leaves ON for DOZE or
+// DOZE_SUSPEND, then sets the doze mode with S3CFB_POWER_MODE; from a doze mode it sets the new
+// mode only (libexynosdisplay ExynosPrimaryDisplay::setPowerMode, 0x26bfc-0x26c84). DOZE then
+// brings the panel back up in ALPM with the next frame, but DOZE_SUSPEND from a blanked display
+// leaves the panel off (kernel decon_set_doze_suspend() with the DECON off). The framework asks
+// for DOZE before DOZE_SUSPEND (DisplayPowerController.animateScreenStateChange), but the two
+// requests reach the HAL as one, ON to DOZE_SUSPEND. So enter DOZE_SUSPEND from ON as DOZE, ask
+// for a frame, and suspend after it is presented: the HWC presents it in DOZE and the panel shows
+// it in ALPM.
 class SolidColorHwcHal : public HwcHal {
   public:
+    Error setPowerMode(Display display, IComposerClient::PowerMode mode) override {
+        std::lock_guard<std::mutex> lock(mPowerMutex);
+        PowerState& state = mPower[display];
+        state.suspendPending = false;
+        if (mode == IComposerClient::PowerMode::DOZE_SUSPEND &&
+            state.mode == IComposerClient::PowerMode::ON) {
+            Error err = HwcHal::setPowerMode(display, IComposerClient::PowerMode::DOZE);
+            if (err == Error::NONE) {
+                state.mode = IComposerClient::PowerMode::DOZE;
+                state.suspendPending = true;
+                // the doze frame: SurfaceFlinger has nothing new to draw after the screen-off
+                // animation (IComposerCallback.onRefresh is oneway)
+                if (mEventCallback != nullptr) {
+                    mEventCallback->onRefresh(display);
+                }
+            }
+            return err;
+        }
+
+        Error err = HwcHal::setPowerMode(display, mode);
+        if (err == Error::NONE) {
+            state.mode = mode;
+        }
+        return err;
+    }
+
     Error presentDisplay(Display display, int32_t* outPresentFence, std::vector<Layer>* outLayers,
                          std::vector<int32_t>* outReleaseFences) override {
         Error err = HwcHal::presentDisplay(display, outPresentFence, outLayers, outReleaseFences);
@@ -73,6 +109,7 @@ class SolidColorHwcHal : public HwcHal {
         // -1 for the first frame: no fence means presented
         *outPresentFence = previousRetire.release();
         previousRetire.reset(retire);
+        enterPendingDozeSuspend(display);
         return err;
     }
 
@@ -144,6 +181,25 @@ class SolidColorHwcHal : public HwcHal {
     }
 
   private:
+    void enterPendingDozeSuspend(Display display) {
+        std::lock_guard<std::mutex> lock(mPowerMutex);
+        auto it = mPower.find(display);
+        if (it == mPower.end() || !it->second.suspendPending) {
+            return;
+        }
+        it->second.suspendPending = false;
+        if (HwcHal::setPowerMode(display, IComposerClient::PowerMode::DOZE_SUSPEND) == Error::NONE) {
+            it->second.mode = IComposerClient::PowerMode::DOZE_SUSPEND;
+        }
+    }
+
+    struct PowerState {
+        IComposerClient::PowerMode mode = IComposerClient::PowerMode::OFF;
+        bool suspendPending = false;
+    };
+
+    std::mutex mPowerMutex;
+    std::unordered_map<Display, PowerState> mPower;
     std::mutex mMutex;
     std::unordered_map<Display, std::unordered_set<Layer>> mSolidColorLayers;
     std::unordered_map<Display, android::base::unique_fd> mPreviousRetire;
