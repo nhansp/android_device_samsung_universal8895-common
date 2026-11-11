@@ -1,0 +1,11 @@
+# The stock OMX service also runs in group m2mscaler (gid 1998), which owns /dev/m2m1shot_scaler0
+# (stock vendor/etc/init/android.hardware.media.omx@1.0-service_slsi.rc). The file name sorts after
+# android.hardware.media.omx@1.0-service.rc, so that "override" finds the service already defined;
+# the other options are those of frameworks/av/services/mediacodec.
+service vendor.media.omx /vendor/bin/hw/android.hardware.media.omx@1.0-service
+    override
+    class main
+    user mediacodec
+    group camera drmrpc mediadrm audio 1998
+    ioprio rt 4
+    task_profiles ProcessCapacityHigh
