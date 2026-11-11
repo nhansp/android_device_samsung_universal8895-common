@@ -51,3 +51,6 @@ mmd.zram.comp_algorithm=lzo-rle
 mmd.zram.recompression.enabled=true
 mmd.zram.recompression.algorithm=zstd
 mmd.zram.writeback.enabled=false
+
+# NFC: the S3NRN82 halimpl reads the firmware version out of the CORE_INIT_RSP (NCI 1.0)
+ro.vendor.nfc.legacy_core_init_rsp=true
