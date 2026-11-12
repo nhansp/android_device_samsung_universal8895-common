@@ -1,5 +1,6 @@
 type nfc_vendor_data_file, file_type, data_file_type;
 type cpefs_file, file_type;
+type vendor_camera_data_file, file_type, data_file_type;
 
 # DECON (12860000.decon_f) sysfs: vsync and psr_info, read by the stock composer
 type sysfs_display, sysfs_type, fs_type;
