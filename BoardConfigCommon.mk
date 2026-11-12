@@ -84,6 +84,7 @@ TARGET_KERNEL_CONFIG := \
     greatlte_l6c.config \
     greatlte_l6b.config \
     greatlte_l6g.config \
+    greatlte_l6h.config \
     greatlte_l6i.config \
     greatlte_l6k.config \
     greatlte_l6l.config \
