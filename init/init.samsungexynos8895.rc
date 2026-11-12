@@ -57,6 +57,9 @@ on post-fs-data
     # NFC
     mkdir /data/vendor/nfc 0770 nfc nfc
 
+    # Fingerprint (stock init.rc:865)
+    mkdir /data/vendor/biometrics 0770 system system
+
     # Bluetooth
     mkdir /efs/bluetooth 0770 system bluetooth
     chown system bluetooth /efs/bluetooth
