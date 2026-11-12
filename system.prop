@@ -20,3 +20,6 @@ debug.sf.late.app.duration=16600000
 # ADPF hint sessions for SurfaceFlinger and HWUI, as hardware/google/pixel/power-libperfmgr/aidl/device.mk
 debug.sf.enable_adpf_cpu_hint=true
 debug.hwui.use_hint_manager=true
+
+# SoC name, as stock N950NKSU5DZE2 /system/build.prop and codeberg universal8895 lineage-23.2 system.prop:24
+ro.arch=exynos8895
