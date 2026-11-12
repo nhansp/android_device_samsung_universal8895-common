@@ -15,7 +15,7 @@ system/lib/lib_SamsungRec_06006.so:vendor/lib/lib_SamsungRec_06006.so|0d86504993
 system/lib/lib_SoundAlive_SRC384_ver320.so:vendor/lib/lib_SoundAlive_SRC384_ver320.so|2a36eb8aa40f604e5541f51ece552651976a29b5
 system/lib/lib_soundaliveresampler.so:vendor/lib/lib_soundaliveresampler.so|f8c384b9cd05ab9af18e5491deda76985dd22017
 system/lib/libaudio-ril.so:vendor/lib/libaudio-ril.so|67a22c799ecb1c8ea39da44cd023c772764c9ec1
-system/lib/libaudioroute.so:vendor/lib/libaudioroute-samsung.so|e280f78a84e31fce6426df09d2d6df82c1fcf14b|4290069481483d2d3ba63eab565396b0442c5a96
+system/lib/libaudioroute.so:vendor/lib/libaudioroute-samsung.so|e280f78a84e31fce6426df09d2d6df82c1fcf14b|98a584f0fa0eb7c045836e35bb5b43da25dbdd18
 system/lib/librecordalive.so:vendor/lib/librecordalive.so|e7f9ae0e0933f7663de657e0634ea164f6178252
 system/lib/libsamsungDiamondVoice.so:vendor/lib/libsamsungDiamondVoice.so|5c58dce544e20e51f4fac776b5c2f0125bb31d1d
 system/lib/libsecaudiocoreutils.so:vendor/lib/libsecaudiocoreutils.so|df2dbe9f5fcc41557ca01cc4cab857628a72aa8d
