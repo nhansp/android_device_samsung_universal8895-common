@@ -193,6 +193,7 @@ PRODUCT_PACKAGES += \
     android.hardware.usb.host.prebuilt.xml \
     android.hardware.wifi.prebuilt.xml \
     android.hardware.wifi.direct.prebuilt.xml \
+    android.software.ipsec_tunnels.prebuilt.xml \
     android.software.sip.voip.prebuilt.xml \
     com.nxp.mifare.prebuilt.xml
 
