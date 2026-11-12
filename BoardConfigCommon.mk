@@ -23,7 +23,6 @@ TARGET_2ND_CPU_VARIANT := cortex-a53
 
 # Bluetooth
 BOARD_HAVE_BLUETOOTH := true
-BOARD_HAVE_BLUETOOTH_BCM := true
 
 # Boot image
 AB_OTA_UPDATER := false
