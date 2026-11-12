@@ -1,15 +1,15 @@
 # Android fstab file
 #
 # Mount options and flags follow the stock /fstab.samsungexynos8895 of N950NKSU5DZE2, with
-# first-stage mount of /system (system-as-root). /data is not encrypted for now: file-based
-# encryption needs the keymaster before vold can mount it. /metadata lives on the OMR
-# partition (stock: empty) with the ext4 options of the Pixel 8 Pro /metadata entry; it is not
-# first-stage mounted, aconfigd falls back to its post-fs init.
+# first-stage mount of /system (system-as-root). /data uses file-based encryption with the UFS
+# inline crypto engine (FMP). /metadata lives on the OMR partition (stock: empty) with the ext4
+# options of the Pixel 8 Pro /metadata entry; it is not first-stage mounted, aconfigd falls back
+# to its post-fs init.
 #
 #<src>                                   <mnt_point>  <type>  <mnt_flags and options>                                                                  <fs_mgr_flags>
 /dev/block/by-name/SYSTEM                /system      ext4    ro,errors=panic,noload                                                                   wait,first_stage_mount
 /dev/block/by-name/CACHE                 /cache       ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  wait,check
-/dev/block/by-name/USERDATA              /data        ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  latemount,wait,check,quota,fsverity,reservedsize=128M
+/dev/block/by-name/USERDATA              /data        ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic,inlinecrypt  latemount,wait,check,quota,fsverity,reservedsize=128M,fileencryption=aes-256-xts:aes-256-cts:v2
 /dev/block/by-name/EFS                   /efs         ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  wait,check
 /dev/block/by-name/CPEFS                 /cpefs       ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  wait,check,nofail
 /dev/block/by-name/OMR                   /metadata    ext4    noatime,nosuid,nodev,data=journal,commit=1                                               wait,check,formattable
