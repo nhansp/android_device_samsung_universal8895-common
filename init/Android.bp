@@ -44,3 +44,10 @@ prebuilt_etc {
     filename: "ueventd.rc",
     vendor: true,
 }
+
+prebuilt_etc {
+    name: "keymaster@3.0-override.rc",
+    src: "keymaster@3.0-override.rc",
+    relative_install_path: "init",
+    vendor: true,
+}
