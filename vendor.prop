@@ -40,6 +40,9 @@ vendor.sec.rild.libpath=/vendor/lib64/libsec-ril.so
 # FRP
 ro.frp.pst=/dev/block/persistent
 
+# Read by libaudioroute-samsung and libsec-ril (stock ro.product_ship)
+ro.vendor.product_ship=true
+
 # SurfaceFlinger: background blur (tested on this Mali G71: renders correctly)
 ro.surface_flinger.supports_background_blur=1
 
