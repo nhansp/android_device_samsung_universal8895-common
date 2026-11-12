@@ -46,3 +46,40 @@ genfscon proc /sys/vm/swappiness                                        u:object
 
 # MAX77865 RGB LED, Samsung's sec led interface (/sys/class/sec/led): led_blink for the lights HAL
 genfscon sysfs /devices/virtual/sec/led                                 u:object_r:sysfs_leds:s0
+
+# Wakeup sources of platform devices, read by the suspend service (AOSP labels only
+# /class/wakeup and /devices/virtual/wakeup); 6.18 sysfs paths
+genfscon sysfs /devices/platform/10000.mif_pdata/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/13e50000.abox/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/14020000.vts/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/bluetooth/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/certify-hall-keys/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/fimc_is_preprocessor/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/fingerprint/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/firmware:power-management/firmware:power-management:pmic/s2mps17-rtc/rtc/rtc0/alarmtimer.0.auto/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/firmware:power-management/firmware:power-management:pmic/s2mps17-rtc/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/firmware:power-management/firmware:power-management:pmic/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/gpio-keys/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/hall-keys/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/12860000.display-controller/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/12ca0000.fimc_is_sensor/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/12cb0000.fimc_is_sensor/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/12cc0000.fimc_is_sensor/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/12cd0000.fimc_is_sensor/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/12ce0000.fimc_is/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usb@10c00000/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10460000/10460000.spi/spi_master/spi3/spi3.0/madera-extcon/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10480000/10490000.i2c/i2c-10/10-0056/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@108e0000/108e0000.i2c/i2c-23/23-0048/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10900000/10900000.i2c/i2c-40/40-0059/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10900000/10910000.i2c/i2c-41/41-0027/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10940000/10950000.i2c/i2c-44/44-0033/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0025/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0036/power_supply/battery/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0066/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0069/power_supply/ac/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0069/power_supply/max77865-charger/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0069/power_supply/usb/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0069/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/sound/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/ufs-srpmb/wakeup u:object_r:sysfs_wakeup:s0
