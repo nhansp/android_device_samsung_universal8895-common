@@ -1,0 +1,1 @@
+allow hal_sensors_default hrm_device:chr_file r_file_perms;

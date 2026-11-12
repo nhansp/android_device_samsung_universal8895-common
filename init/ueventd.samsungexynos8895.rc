@@ -129,6 +129,9 @@
 /dev/bbd_sio              0660   system     system
 /dev/ttyBCM*              0660   system     system
 
+# Heart rate sensor (stock init.samsungexynos8895.rc:810-811)
+/dev/max_hrm              0600   system     system
+
 # Fingerprint (vfs8xxx)
 /dev/vfsspi               0660   system     system
 
