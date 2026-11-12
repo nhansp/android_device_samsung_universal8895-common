@@ -24,6 +24,10 @@ bluetooth.profile.sap.server.enabled=true
 # Gatekeeper (vendor/lib64/hw/gatekeeper.exynos8895.so)
 ro.hardware.gatekeeper=exynos8895
 
+# SoC
+ro.soc.manufacturer=Samsung
+ro.soc.model=Exynos 8895
+
 # Graphics
 ro.hardware.egl=mali
 ro.opengles.version=196610
