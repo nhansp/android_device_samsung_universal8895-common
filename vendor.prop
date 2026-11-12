@@ -40,9 +40,8 @@ vendor.sec.rild.libpath=/vendor/lib64/libsec-ril.so
 # FRP
 ro.frp.pst=/dev/block/persistent
 
-# SurfaceFlinger: background blur (tested on this Mali G71: renders correctly), expensive on it
+# SurfaceFlinger: background blur (tested on this Mali G71: renders correctly)
 ro.surface_flinger.supports_background_blur=1
-ro.sf.blurs_are_expensive=1
 
 # Memory: mmd sets up zram at the size stock swaps on (sswap "-f 2048", MB), with recompression
 mmd.zram.enabled=true
