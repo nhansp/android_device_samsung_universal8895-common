@@ -304,6 +304,12 @@ service macloader /vendor/bin/hw/macloader
     class main
     oneshot
 
+# Wi-Fi test mode loader (stock wifi.rc)
+service mfgloader /vendor/bin/hw/mfgloader
+    class main
+    disabled
+    oneshot
+
 # Modem boot daemon (stock init.baseband.rc; the RADIO partition by name instead of the 4.4 platform path)
 service cpboot-daemon /vendor/bin/cbd -d -tss310 -bm -mm -P by-name/RADIO -n /efs
     class main
