@@ -115,7 +115,8 @@ PRODUCT_SET_DEBUGFS_RESTRICTIONS := true
 TARGET_KEYMASTER_TEE ?= false
 ifeq ($(TARGET_KEYMASTER_TEE),true)
 PRODUCT_PACKAGES += \
-    android.hardware.keymaster@3.0-impl.exynos8895
+    android.hardware.keymaster@3.0-impl.exynos8895 \
+    keymaster@3.0-override.rc
 PRODUCT_VENDOR_PROPERTIES += \
     ro.hardware.keystore=mdfpp
 else
