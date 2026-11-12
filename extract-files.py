@@ -77,6 +77,9 @@ blob_fixups: blob_fixups_user_type = {
         .add_needed('libshim_keymaster_ctx.so'),
     'vendor/lib64/libcrypto-v28.so': blob_fixup()
         .fix_soname(),
+    # sensors.bio.so dlopens it as libflicker.so; its DT_SONAME is libflicker_sec.so
+    'vendor/lib64/libflicker.so': blob_fixup()
+        .fix_soname(),
     (
         'vendor/lib64/libkeymaster_helper.so',
         'vendor/lib64/libkeymaster_mdfpp.so',

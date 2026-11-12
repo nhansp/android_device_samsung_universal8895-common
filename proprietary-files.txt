@@ -168,6 +168,7 @@ vendor/lib64/vendor.samsung.hardware.radio.bridge@2.0.so|ac01bab3a779374005bb6b9
 vendor/lib64/vendor.samsung.hardware.radio.channel@2.0.so|44d2173ab0187ec3460dd54135e2b406bc93b098
 
 # Sensors
+vendor/lib64/libflicker.so
 vendor/lib64/sensors.bio.so
 vendor/lib64/sensors.grip.so
 vendor/lib64/sensors.sensorhub.so
