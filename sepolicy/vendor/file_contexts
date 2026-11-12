@@ -30,5 +30,6 @@
 /dev/max_hrm                                            u:object_r:hrm_device:s0
 /dev/m2m1shot_scaler0                                   u:object_r:m2m1shot_device:s0
 /dev/socket/sap_uim_socket[0-9]*                        u:object_r:rild_socket:s0
+/dev/umts_ramdump0                                       u:object_r:vendor_radio_device:s0
 /efs/FactoryApp(/.*)?                                   u:object_r:app_efs_file:s0
 /efs/TEE(/.*)?                                          u:object_r:prov_efs_file:s0
