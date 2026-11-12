@@ -165,6 +165,11 @@ on boot
     # the whole panel as the double-tap-to-wake area (aod_enable from the power HAL)
     write /sys/class/sec/tsp/cmd "set_aod_rect,1440,2960,0,0"
 
+    # Pressure home key tick strength, the stock default (Hard press vibration feedback at its
+    # top level, 10000)
+    chown system system /sys/class/timed_output/vibrator/force_touch_intensity
+    write /sys/class/timed_output/vibrator/force_touch_intensity 10000
+
     # the power HAL applies hints once this is set (power-libperfmgr aidl/service.cpp:80-81)
     setprop vendor.powerhal.init 1
 

@@ -83,3 +83,5 @@ genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0069/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/sound/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/ufs-srpmb/wakeup u:object_r:sysfs_wakeup:s0
+
+genfscon sysfs /devices/virtual/timed_output/vibrator/force_touch_intensity u:object_r:sysfs_vibrator:s0
