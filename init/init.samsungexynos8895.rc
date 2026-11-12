@@ -337,6 +337,13 @@ service ril-daemon /vendor/bin/hw/rild -l ${vendor.sec.rild.libpath}
 on property:ro.vendor.multisim.simslotcount=*
     write /sys/module/modem_ctrl_ss310ap/parameters/ds_detect ${ro.vendor.multisim.simslotcount}
 
+# SIM configuration for libsec-ril (stock init.baseband.rc:50-54)
+on property:ro.vendor.multisim.simslotcount=1
+    setprop persist.radio.multisim.config ss
+
+on property:ro.vendor.multisim.simslotcount=2
+    setprop persist.radio.multisim.config dsds
+
 # GNSS (stock init.gps.rc)
 service lhd /vendor/bin/hw/lhd /vendor/etc/sensor/lhd.conf
     class main

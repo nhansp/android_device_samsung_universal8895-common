@@ -1,6 +1,9 @@
 # Graphics: as stock N950NKSU5DZE2 /system/build.prop
 ro.zygote.disable_gl_preload=true
 
+# RIL: single SIM, as stock default.prop (read by gpsd and libsemnativecarrierfeature)
+ro.multisim.simslotcount=1
+
 # SurfaceFlinger for the HWC1 composer, as codeberg universal8895 lineage-23.2 system.prop:43-48
 # (the properties lineage-24.0 SurfaceFlinger.cpp:511,560,563 still reads; debug.hwc.winupdate is
 # read by the HWC)
