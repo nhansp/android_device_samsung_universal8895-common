@@ -1,3 +1,7 @@
 on init
     setprop sys.usb.configfs 1
     setprop sys.usb.controller 10c00000.usb
+
+on boot
+    # Pressure home key tick strength, as in Android
+    write /sys/class/timed_output/vibrator/force_touch_intensity 10000
