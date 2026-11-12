@@ -1,2 +1,5 @@
 # /dev/m2m1shot_scaler0: the MScaler, used by the OMX components and the camera for conversions
 type m2m1shot_device, dev_type;
+
+# /dev/max_hrm: the heart rate sensor, opened by sensors.bio.so
+type hrm_device, dev_type;

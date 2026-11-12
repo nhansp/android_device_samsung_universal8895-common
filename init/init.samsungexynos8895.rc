@@ -157,8 +157,8 @@ on boot
     setprop vendor.powerhal.init 1
 
     # Sensors: the sysfs nodes the stock sensors HAL writes as system (stock
-    # init.samsungexynos8895.rc:711-870, 880; fingerprint, EFS FactoryApp, HRM device
-    # node and MOBEAM left out)
+    # init.samsungexynos8895.rc:711-870, 880; fingerprint, EFS FactoryApp and MOBEAM left
+    # out)
     chown system radio /sys/class/sensors/accelerometer_sensor/raw_data
     chown system radio /sys/class/sensors/accelerometer_sensor/calibration
     chown system radio /sys/class/sensors/accelerometer_sensor/reactive_alert
