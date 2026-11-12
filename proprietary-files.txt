@@ -59,6 +59,7 @@ vendor/lib/hw/gatekeeper.exynos8895.so
 vendor/lib64/hw/gatekeeper.exynos8895.so
 
 # GNSS
+system/etc/init/init.gpscommon.rc
 vendor/bin/hw/gpsd
 vendor/bin/hw/lhd
 vendor/etc/gnss/gps.cer
