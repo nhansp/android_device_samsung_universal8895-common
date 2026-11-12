@@ -1,6 +1,5 @@
 # Device node permissions of universal8895, from the stock /ueventd.samsungexynos8895.rc
 # (N950NKSU5DZE2), less nodes owned by Samsung-private AIDs.
-# Group 1998 is the stock m2mscaler AID (the table of the stock init); AOSP has no such name.
 
 # Graphics
 /dev/mali0                0666   system     system
@@ -23,7 +22,7 @@
 
 # MScaler
 /dev/video50              0660   media      graphics
-/dev/m2m1shot_scaler0     0660   cameraserver 1998
+/dev/m2m1shot_scaler0     0660   cameraserver camera
 
 # MFC
 /dev/video6               0660   mediacodec mediadrm
