@@ -26,6 +26,10 @@ on fs
     chown radio radio /efs/factory.prop
     chmod 0600 /efs/factory.prop
 
+on post-fs
+    # mcDriverDaemon sets it to true once it runs (stock init.rc:396)
+    setprop sys.mobicoredaemon.enable stopped
+
 on late-fs
     mount_all /vendor/etc/fstab.${ro.hardware} --late
 
@@ -300,7 +304,7 @@ on boot
     chown bluetooth bluetooth /sys/class/rfkill/rfkill0/type
 
 # Trustonic Kinibi daemon (stock init.rc; its fourth -r image, ...d0000000000000000000001c.tlbin, is not
-# shipped in /vendor/app/mcRegistry)
+# part of the stock firmware)
 service mobicore /vendor/bin/mcDriverDaemon -r /vendor/app/mcRegistry/FFFFFFFF000000000000000000000001.drbin -r /vendor/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin -r /vendor/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
     class core
     user system
