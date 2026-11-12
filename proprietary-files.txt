@@ -39,6 +39,9 @@ vendor/firmware/dsm.bin
 vendor/firmware/dsm_tune.bin
 vendor/firmware/vts.bin
 
+# Bluetooth
+vendor/lib64/libbt-vendor.so
+
 # Bluetooth - firmware
 vendor/firmware/bcm4361B0_murata.hcd
 vendor/firmware/bcm4361B0_semco.hcd

@@ -36,12 +36,9 @@ PRODUCT_COPY_FILES += \
     frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usb_audio_policy_configuration.xml
 
 # Bluetooth
-$(call soong_config_set,brcm_libbt,custom_bt_config,//$(COMMON_PATH)/bluetooth:vnd_universal8895.txt)
-
 PRODUCT_PACKAGES += \
     android.hardware.bluetooth@1.0-impl \
-    android.hardware.bluetooth@1.0-service \
-    libbt-vendor
+    android.hardware.bluetooth@1.0-service
 
 # Boot image
 PRODUCT_HOST_PACKAGES += \
@@ -238,7 +235,6 @@ PRODUCT_PACKAGES += \
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \
     $(COMMON_PATH) \
-    hardware/broadcom/libbt \
     hardware/google/interfaces \
     hardware/google/pixel/power-libperfmgr \
     hardware/google/pixel/thermal \
