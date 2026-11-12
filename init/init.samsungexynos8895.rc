@@ -27,8 +27,13 @@ on fs
     chmod 0600 /efs/factory.prop
 
 on post-fs
-    # mcDriverDaemon sets it to true once it runs (stock init.rc:396)
+    # Trustonic Kinibi. mcDriverDaemon sets the property to true once its
+    # trustlets are loaded, and the keymaster waits for that. The keymaster
+    # and keystore2 start at late-fs, so the daemon has to start before them.
     setprop sys.mobicoredaemon.enable stopped
+    export MC_AUTH_TOKEN_PATH /efs
+    mkdir /efs/TEE 0770 radio system
+    start mobicore
 
 on late-fs
     mount_all /vendor/etc/fstab.${ro.hardware} --late
@@ -44,11 +49,8 @@ on post-fs-data
     # RIL
     mkdir /data/vendor/secradio 0770 radio radio
 
-    # Trustonic Kinibi (stock init.rc:516-521, :1632)
+    # Trustonic Kinibi (stock init.rc:1632)
     mkdir /data/vendor/mcRegistry 0775 system system
-    export MC_AUTH_TOKEN_PATH /efs
-    mkdir /efs/TEE 0770 radio system
-    start mobicore
 
     # GNSS (stock init.gps.rc)
     mkdir /data/vendor/gps 0771 system system
