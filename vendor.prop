@@ -21,6 +21,10 @@ bluetooth.profile.pan.panu.enabled=true
 bluetooth.profile.pbap.server.enabled=true
 bluetooth.profile.sap.server.enabled=true
 
+# Camera: the provider loads the stock HAL through camera.universal8895_wrapper, which adds
+# torch strength levels
+ro.hardware.camera=universal8895_wrapper
+
 # Gatekeeper (vendor/lib64/hw/gatekeeper.exynos8895.so)
 ro.hardware.gatekeeper=exynos8895
 

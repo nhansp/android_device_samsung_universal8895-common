@@ -133,6 +133,9 @@ on post-fs-data
     chown system radio /sys/class/camera/secure/iris_checkfw_user
     chown system system /sys/class/camera/secure/iris_hwparam
 
+    # Torch strength levels, set by camera.universal8895_wrapper
+    chown cameraserver system /sys/class/leds/torch-sec1/brightness
+
     # Wi-Fi (stock wifi.rc)
     mkdir /data/vendor/conn 0771 wifi root
     mkdir /data/vendor/wifi 0771 wifi wifi

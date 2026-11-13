@@ -1,0 +1,22 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+cc_library_shared {
+    name: "camera.universal8895_wrapper",
+    defaults: ["samsung_camera3_defaults"],
+    vendor: true,
+    relative_install_path: "hw",
+    compile_multilib: "32",
+    srcs: ["CameraWrapper.cpp"],
+    header_libs: [
+        "libhardware_headers.camera3_samsung",
+        "libhardware_headers",
+    ],
+    shared_libs: [
+        "libbase",
+        "libcamera_metadata",
+        "liblog",
+    ],
+}
