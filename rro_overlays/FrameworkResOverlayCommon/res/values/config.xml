@@ -49,6 +49,10 @@
     <!-- The panel's low-power mode has two luminances only: no brightness ramps in doze. -->
     <bool name="config_displayBrightnessBucketsInDoze">true</bool>
 
+    <!-- The sensor hub's pick-up gesture (android.sensor.pick_up_gesture, one-shot, wake-up):
+         "Lift to check phone" wakes the device. -->
+    <bool name="config_dozePulsePickup">true</bool>
+
     <!-- Automatic brightness: the stock lux thresholds and luminance (nits) per bucket. -->
     <integer-array name="config_autoBrightnessLevels">
         <item>1</item>
