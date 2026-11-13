@@ -44,7 +44,7 @@
             "Name": "GPUMinFreq",
             "Path": "/sys/class/devfreq/13900000.mali/min_freq",
             "Values": [
-                "455000000",
+                "385000000",
                 "260000000"
             ],
             "ResetOnInit": true
@@ -130,7 +130,7 @@
             "PowerHint": "EXPENSIVE_RENDERING",
             "Node": "GPUMinFreq",
             "Duration": 0,
-            "Value": "455000000"
+            "Value": "385000000"
         }
     ],
     "AdpfConfig": [
