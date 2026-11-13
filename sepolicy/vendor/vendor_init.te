@@ -9,3 +9,6 @@ allow vendor_init vendor_proc_swappiness:file w_file_perms;
 
 # sys.mobicoredaemon.enable, seeded before mcDriverDaemon starts
 set_prop(vendor_init, tee_prop)
+
+# /dev/cpuctl/top-app/cpu.uclamp.min: handed to the power HAL at boot
+allow vendor_init cgroup:file setattr;
