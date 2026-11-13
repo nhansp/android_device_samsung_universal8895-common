@@ -21,7 +21,8 @@
 /dev/video31              0660   media      graphics
 
 # MScaler
-/dev/video50              0660   media      graphics
+# Stock owner is media; the camera provider runs as cameraserver without graphics.
+/dev/video50              0660   cameraserver graphics
 /dev/m2m1shot_scaler0     0660   cameraserver camera
 
 # MFC
