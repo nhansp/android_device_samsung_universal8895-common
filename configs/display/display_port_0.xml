@@ -797,33 +797,4 @@
             <timeMinSecs>60</timeMinSecs>
         </timing>
     </highBrightnessMode>
-    <!--
-         Always-on display brightness from the light sensor, used with adaptive brightness
-         (config_allowAutoBrightnessWhileDozing). Stock's AOD service (AODService_v40
-         AODUiController.onLightSensorChanged) switches the panel to its 60-nit low-power level
-         above 2 lux and to its 2-nit level otherwise, with the platform levels of framework-res
-         config_aodBrightnessValues = {1, 97}: up to 2 lux the lowest HAL step (stock level 1 is
-         below it), from 3 lux the step of level 97 (0.259843). The panel driver takes a doze level
-         from 97 up as its 60-nit level and any lower one as its 2-nit level. The light sensor
-         reports whole lux. The other auto-brightness values stay those of config.xml.
-    -->
-    <autoBrightness>
-        <luxToBrightnessMapping>
-            <mode>doze</mode>
-            <map>
-                <point>
-                    <first>0</first>
-                    <second>0.0</second>
-                </point>
-                <point>
-                    <first>2</first>
-                    <second>0.0</second>
-                </point>
-                <point>
-                    <first>3</first>
-                    <second>0.259843</second>
-                </point>
-            </map>
-        </luxToBrightnessMapping>
-    </autoBrightness>
 </displayConfiguration>

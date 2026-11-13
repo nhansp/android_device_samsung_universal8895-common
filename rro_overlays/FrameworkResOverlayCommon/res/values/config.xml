@@ -42,8 +42,8 @@
          config_aodBrightnessValues = [1, 97] (dark, lit); level 97 is 70.1 nits, which the HAL
          step 0.259843 reproduces exactly. The panel shows a doze level from 97 up at its 60-nit
          low-power level and a lower one at 2 nits. The lit value is the default; SystemUI lowers
-         it to the user's brightness when that is lower. With adaptive brightness the light
-         sensor picks dark or lit as stock did (doze mapping in display_port_0.xml). -->
+         it to the user's brightness when that is lower. With adaptive brightness the display
+         keeps following the light sensor while dozing, on the normal auto-brightness curve. -->
     <item name="config_screenBrightnessDozeFloat" format="float" type="dimen">0.259843</item>
     <bool name="config_allowAutoBrightnessWhileDozing">true</bool>
     <!-- The panel's low-power mode has two luminances only: no brightness ramps in doze. -->
