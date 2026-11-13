@@ -143,6 +143,12 @@ on boot
     # stock init.samsungexynos8895.rc "SSWAP"
     write /proc/sys/vm/swappiness 130
 
+    # cpusets (stock init.samsungexynos8895.rc "CPUSET(8895)", on boot)
+    write /dev/cpuset/top-app/cpus 0-7
+    write /dev/cpuset/foreground/cpus 0-2,4-7
+    write /dev/cpuset/background/cpus 0-1
+    write /dev/cpuset/system-background/cpus 0-2
+
     # mDNIe (stock init.samsungexynos8895.rc, "Permissions for MDNIE"): LiveDisplay runs as system
     chown system media_rw /sys/class/mdnie/mdnie/bypass
     chown system media_rw /sys/class/mdnie/mdnie/mode
