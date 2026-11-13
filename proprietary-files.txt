@@ -160,7 +160,7 @@ vendor/lib/libvkmanager_vendor.so|9227ca82047d99fbe3a6ffdf203e41b862e48691
 vendor/lib/vendor.samsung.hardware.radio.channel@2.0.so|8f1ef76608e97b5864e30ea2f2aff2f685eb4d8e
 vendor/lib64/libengmode_client.so|ac3615bb78e4e569841abd804c0278c6de181b2c
 vendor/lib64/libril.so|d81e76523a5a28fdf488fa42c0e1d4a2b15fff19
-vendor/lib64/libsec-ril.so|31d0692a989da0c1be83bbc02a5f8fa8cb6c1d2f|bc62d7610dc6b5140e7f4ca0af2a6ce9e4162397
+vendor/lib64/libsec-ril.so:vendor/lib64/libsec-ril-impl.so|31d0692a989da0c1be83bbc02a5f8fa8cb6c1d2f|dfa162fb0e26b736f7453f5daf3525e25c5fe963
 vendor/lib64/libsec_semRil.so|7987ec9be7bf937438c43fc0b9859f6c9b4b5787
 vendor/lib64/libsecril-client.so|86b71fb3fb1daa5bc5293d38779c528126e0cfa3
 vendor/lib64/libsemnativecarrierfeature.so|3a1058f01dd6a7663272fdba6a0ea53b9253f934
