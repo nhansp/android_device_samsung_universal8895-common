@@ -12,7 +12,9 @@
 #define LOG_TAG "android.hardware.graphics.composer@2.1-service"
 
 #include <dlfcn.h>
+#include <fcntl.h>
 #include <sched.h>
+#include <sys/ioctl.h>
 
 #include <algorithm>
 #include <atomic>
@@ -156,13 +158,21 @@ class HotplugTracker : public ComposerHal::EventCallback {
 //
 // The stock HWC blanks the display (FBIOBLANK POWERDOWN) when it leaves ON for DOZE or
 // DOZE_SUSPEND, then sets the doze mode with S3CFB_POWER_MODE; from a doze mode it sets the new
-// mode only (libexynosdisplay ExynosPrimaryDisplay::setPowerMode, 0x26bfc-0x26c84). DOZE then
-// brings the panel back up in ALPM with the next frame, but DOZE_SUSPEND from a blanked display
-// leaves the panel off (kernel decon_set_doze_suspend() with the DECON off). The framework asks
-// for DOZE before DOZE_SUSPEND (DisplayPowerController.animateScreenStateChange), but the two
-// requests reach the HAL as one, ON to DOZE_SUSPEND. So enter DOZE_SUSPEND from ON as DOZE, ask
-// for a frame, and suspend after it is presented: the HWC presents it in DOZE and the panel shows
-// it in ALPM.
+// mode only, except that it enters DOZE_SUSPEND after posting six black colour windows
+// (libexynosdisplay ExynosPrimaryDisplay::setPowerMode, 0x26bfc-0x26d38, and
+// ExynosDisplay::clearAllDisplay, 0x21558), which the DECON shows before it stops
+// (decon_set_doze_suspend() flushes the update worker). With the display off, DOZE brings the
+// panel up in ALPM with the next frame; DOZE_SUSPEND before that frame leaves it off, and in
+// DOZE_SUSPEND the DECON drops every frame (check_decon_state()). The framework reaches
+// DOZE_SUSPEND as ON to DOZE_SUSPEND (DisplayPowerController.animateScreenStateChange asks for
+// DOZE first, but the two requests reach the HAL as one), and as DOZE and DOZE_SUSPEND back to
+// back from OFF or from DOZE_SUSPEND (LocalDisplayAdapter leaves a suspended state through DOZE,
+// for a new state or a new doze brightness), before SurfaceFlinger draws.
+// So on the primary display DOZE_SUSPEND waits for a frame presented in DOZE (from ON the display
+// enters DOZE and a frame is requested), and is then set on the framebuffer directly, keeping
+// that frame in ALPM; the HWC stays in DOZE and the kernel releases the window buffers when the
+// display pipe goes off. A frame presented in DOZE_SUSPEND, new always-on display content, is
+// shown the same way: DOZE, a new frame, DOZE_SUSPEND.
 //
 // The stock HWC1 reports one config, 1440x2960, and ignores setActiveConfig on the primary
 // display (exynos_hwc1_setActiveConfig() passes 0, libexynosdisplay 0x152a0). For each further
@@ -172,6 +182,13 @@ class HotplugTracker : public ComposerHal::EventCallback {
 class SolidColorHwcHal : public HwcHal {
   public:
     void initScaler(hwc_composer_device_1* hwc1) { mScalerReady = mScaler.init(hwc1); }
+
+    void initDozeSuspend() {
+        mFramebuffer.reset(open("/dev/graphics/fb0", O_RDWR | O_CLOEXEC));
+        if (mFramebuffer < 0) {
+            ALOGE("doze: cannot open /dev/graphics/fb0: %s", strerror(errno));
+        }
+    }
 
     void registerEventCallback(ComposerHal::EventCallback* callback) override {
         mHotplug.setTarget(callback);
@@ -260,27 +277,54 @@ class SolidColorHwcHal : public HwcHal {
     }
 
     Error setPowerMode(Display display, IComposerClient::PowerMode mode) override {
+        if (display != mHotplug.primary()) {
+            return HwcHal::setPowerMode(display, mode);
+        }
+
         std::lock_guard<std::mutex> lock(mPowerMutex);
         PowerState& state = mPower[display];
         state.suspendPending = false;
-        if (mode == IComposerClient::PowerMode::DOZE_SUSPEND &&
-            state.mode == IComposerClient::PowerMode::ON) {
-            Error err = HwcHal::setPowerMode(display, IComposerClient::PowerMode::DOZE);
-            if (err == Error::NONE) {
-                state.mode = IComposerClient::PowerMode::DOZE;
-                state.suspendPending = true;
-                // the doze frame: SurfaceFlinger has nothing new to draw after the screen-off
-                // animation (IComposerCallback.onRefresh is oneway)
-                if (mEventCallback != nullptr) {
-                    mEventCallback->onRefresh(display);
+        switch (mode) {
+            case IComposerClient::PowerMode::DOZE_SUSPEND:
+                if (state.mode == IComposerClient::PowerMode::DOZE_SUSPEND) {
+                    return Error::NONE;
                 }
-            }
-            return err;
+                if (state.mode != IComposerClient::PowerMode::DOZE) {
+                    Error err = HwcHal::setPowerMode(display, IComposerClient::PowerMode::DOZE);
+                    if (err != Error::NONE) {
+                        return err;
+                    }
+                    state.mode = IComposerClient::PowerMode::DOZE;
+                    state.dozeFramePresented = false;
+                }
+                if (!state.dozeFramePresented) {
+                    state.suspendPending = true;
+                    requestDozeFrame(display);
+                    return Error::NONE;
+                }
+                return suspendDoze(state);
+            case IComposerClient::PowerMode::DOZE:
+                if (state.mode == IComposerClient::PowerMode::DOZE_SUSPEND) {
+                    return resumeDoze(state);
+                }
+                break;
+            case IComposerClient::PowerMode::OFF:
+                // the HWC blanks from DOZE; a blank in DOZE_SUSPEND would leave the panel in ALPM
+                if (state.mode == IComposerClient::PowerMode::DOZE_SUSPEND) {
+                    Error err = resumeDoze(state);
+                    if (err != Error::NONE) {
+                        return err;
+                    }
+                }
+                break;
+            default:
+                break;
         }
 
         Error err = HwcHal::setPowerMode(display, mode);
         if (err == Error::NONE) {
             state.mode = mode;
+            state.dozeFramePresented = false;
         }
         return err;
     }
@@ -304,7 +348,7 @@ class SolidColorHwcHal : public HwcHal {
         // -1 for the first frame: no fence means presented
         *outPresentFence = previousRetire.release();
         previousRetire.reset(retire);
-        enterPendingDozeSuspend(display);
+        onDozeFramePresented(display);
         return err;
     }
 
@@ -397,23 +441,82 @@ class SolidColorHwcHal : public HwcHal {
     Config mBaseConfig = 0;
     std::optional<Config> mActiveConfig;
 
-    void enterPendingDozeSuspend(Display display) {
-        std::lock_guard<std::mutex> lock(mPowerMutex);
-        auto it = mPower.find(display);
-        if (it == mPower.end() || !it->second.suspendPending) {
-            return;
-        }
-        it->second.suspendPending = false;
-        if (HwcHal::setPowerMode(display, IComposerClient::PowerMode::DOZE_SUSPEND) == Error::NONE) {
-            it->second.mode = IComposerClient::PowerMode::DOZE_SUSPEND;
+    // SurfaceFlinger has nothing new to draw after the screen-off animation or a power mode
+    // change (IComposerCallback.onRefresh is oneway)
+    void requestDozeFrame(Display display) {
+        if (mEventCallback != nullptr) {
+            mEventCallback->onRefresh(display);
         }
     }
 
+    // S3CFB_POWER_MODE and the DECON's doze modes (stock decon.h enum doze_mode)
+    static constexpr unsigned int kS3cfbPowerMode = 0x400446df;
+    static constexpr uint32_t kDeconPowerDoze = 1;
+    static constexpr uint32_t kDeconPowerDozeSuspend = 3;
+
     struct PowerState {
         IComposerClient::PowerMode mode = IComposerClient::PowerMode::OFF;
+        // DOZE_SUSPEND waits for a frame presented in DOZE
         bool suspendPending = false;
+        bool dozeFramePresented = false;
     };
 
+    Error setDeconPowerMode(uint32_t mode) {
+        if (mFramebuffer < 0 || ioctl(mFramebuffer.get(), kS3cfbPowerMode, &mode) != 0) {
+            ALOGE("doze: S3CFB_POWER_MODE(%u) failed: %s", mode, strerror(errno));
+            return Error::NO_RESOURCES;
+        }
+        return Error::NONE;
+    }
+
+    Error suspendDoze(PowerState& state) {
+        Error err = setDeconPowerMode(kDeconPowerDozeSuspend);
+        if (err == Error::NONE) {
+            state.mode = IComposerClient::PowerMode::DOZE_SUSPEND;
+        }
+        return err;
+    }
+
+    Error resumeDoze(PowerState& state) {
+        Error err = setDeconPowerMode(kDeconPowerDoze);
+        if (err == Error::NONE) {
+            state.mode = IComposerClient::PowerMode::DOZE;
+            state.dozeFramePresented = false;
+        }
+        return err;
+    }
+
+    void onDozeFramePresented(Display display) {
+        if (display != mHotplug.primary()) {
+            return;
+        }
+
+        std::lock_guard<std::mutex> lock(mPowerMutex);
+        auto it = mPower.find(display);
+        if (it == mPower.end()) {
+            return;
+        }
+
+        PowerState& state = it->second;
+        if (state.mode == IComposerClient::PowerMode::DOZE_SUSPEND) {
+            if (resumeDoze(state) == Error::NONE) {
+                state.suspendPending = true;
+                requestDozeFrame(display);
+            }
+            return;
+        }
+        if (state.mode != IComposerClient::PowerMode::DOZE) {
+            return;
+        }
+
+        state.dozeFramePresented = true;
+        if (state.suspendPending) {
+            state.suspendPending = false;
+            suspendDoze(state);
+        }
+    }
+
+    android::base::unique_fd mFramebuffer;
     std::mutex mPowerMutex;
     std::unordered_map<Display, PowerState> mPower;
     std::mutex mMutex;
@@ -459,6 +562,7 @@ class SolidColorHwcLoader : public HwcLoader {
         }
         if (hwc1 != nullptr) {
             hal->initScaler(hwc1);
+            hal->initDozeSuspend();
         }
 
         return createComposer(std::move(hal));
