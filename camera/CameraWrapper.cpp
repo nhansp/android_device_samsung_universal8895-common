@@ -1,0 +1,324 @@
+/*
+ * SPDX-FileCopyrightText: The LineageOS Project
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define LOG_TAG "CameraWrapper"
+
+#include <dlfcn.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <atomic>
+#include <map>
+#include <mutex>
+#include <string>
+#include <vector>
+
+#include <android-base/file.h>
+#include <android-base/parseint.h>
+#include <android-base/strings.h>
+#include <hardware/camera_common.h>
+#include <hardware/hardware.h>
+#include <log/log.h>
+#include <system/camera_metadata.h>
+
+extern camera_module_t HAL_MODULE_INFO_SYM __attribute__((visibility("default")));
+
+namespace {
+
+#ifdef __LP64__
+constexpr char kVendorModulePath[] = "/vendor/lib64/hw/camera.universal8895.so";
+#else
+constexpr char kVendorModulePath[] = "/vendor/lib/hw/camera.universal8895.so";
+#endif
+
+constexpr char kTorchBrightnessPath[] = "/sys/class/leds/torch-sec1/brightness";
+constexpr char kTorchMaxBrightnessPath[] = "/sys/class/leds/torch-sec1/max_brightness";
+
+// torch-sec1 counts 20 mA steps. Samsung's HAL lights the torch by writing "1" to
+// rear_torch_flash, which the S2MPB02 driver turns into 60 mA (step 3); Samsung's
+// flashlight tops out at 200 mA (step 10). Strength levels 1..8 map to steps 3..10,
+// and level 1, the HAL's own current, is the default.
+constexpr int32_t kMinTorchStep = 3;
+constexpr int32_t kMaxTorchStep = 10;
+constexpr int32_t kDefaultTorchLevel = 1;
+
+std::atomic<const camera_module_callbacks_t*> gCallbacks{nullptr};
+
+std::mutex gStatusLock;
+std::map<std::string, int> gTorchStatus;
+
+std::mutex gTorchLock;
+
+std::mutex gInfoLock;
+std::map<int, camera_metadata_t*> gStaticInfo;
+
+camera_module_t* VendorModule() {
+    static camera_module_t* const module = []() -> camera_module_t* {
+        void* handle = dlopen(kVendorModulePath, RTLD_NOW);
+        if (handle == nullptr) {
+            ALOGE("Failed to load %s: %s", kVendorModulePath, dlerror());
+            return nullptr;
+        }
+        auto* hmi = static_cast<camera_module_t*>(dlsym(handle, HAL_MODULE_INFO_SYM_AS_STR));
+        if (hmi == nullptr || strcmp(hmi->common.id, CAMERA_HARDWARE_MODULE_ID) != 0) {
+            ALOGE("%s is not a camera HAL module", kVendorModulePath);
+            dlclose(handle);
+            return nullptr;
+        }
+        hmi->common.dso = handle;
+        return hmi;
+    }();
+    return module;
+}
+
+int32_t TorchMaxLevel() {
+    static const int32_t level = [] {
+        std::string value;
+        int32_t max = 0;
+        if (!android::base::ReadFileToString(kTorchMaxBrightnessPath, &value) ||
+            !android::base::ParseInt(android::base::Trim(value), &max, 1) ||
+            access(kTorchBrightnessPath, W_OK) != 0) {
+            ALOGW("No torch strength control through %s", kTorchBrightnessPath);
+            return 0;
+        }
+        if (max < kMinTorchStep) {
+            return 0;
+        }
+        return std::min(max, kMaxTorchStep) - kMinTorchStep + 1;
+    }();
+    return level;
+}
+
+int SetEntry(camera_metadata_t* metadata, uint32_t tag, const int32_t* data, size_t count) {
+    camera_metadata_entry_t entry;
+    if (find_camera_metadata_entry(metadata, tag, &entry) == 0) {
+        return update_camera_metadata_entry(metadata, entry.index, data, count, nullptr);
+    }
+    return add_camera_metadata_entry(metadata, tag, data, count);
+}
+
+camera_metadata_t* WithTorchStrength(const camera_metadata_t* src, int32_t maxLevel) {
+    camera_metadata_ro_entry_t entry;
+    if (find_camera_metadata_ro_entry(src, ANDROID_FLASH_INFO_AVAILABLE, &entry) != 0 ||
+        entry.count != 1 || entry.data.u8[0] != ANDROID_FLASH_INFO_AVAILABLE_TRUE) {
+        return nullptr;
+    }
+
+    std::vector<int32_t> keys;
+    if (find_camera_metadata_ro_entry(src, ANDROID_REQUEST_AVAILABLE_CHARACTERISTICS_KEYS,
+                                      &entry) == 0) {
+        keys.assign(entry.data.i32, entry.data.i32 + entry.count);
+    }
+    for (int32_t tag :
+         {ANDROID_FLASH_INFO_STRENGTH_MAXIMUM_LEVEL, ANDROID_FLASH_INFO_STRENGTH_DEFAULT_LEVEL}) {
+        if (std::find(keys.begin(), keys.end(), tag) == keys.end()) {
+            keys.push_back(tag);
+        }
+    }
+
+    const int32_t defaultLevel = std::min(kDefaultTorchLevel, maxLevel);
+    camera_metadata_t* dst = allocate_camera_metadata(
+            get_camera_metadata_entry_count(src) + 3,
+            get_camera_metadata_data_count(src) +
+                    calculate_camera_metadata_entry_data_size(TYPE_INT32, keys.size()));
+    if (dst == nullptr) {
+        return nullptr;
+    }
+    if (append_camera_metadata(dst, src) != 0 ||
+        SetEntry(dst, ANDROID_FLASH_INFO_STRENGTH_MAXIMUM_LEVEL, &maxLevel, 1) != 0 ||
+        SetEntry(dst, ANDROID_FLASH_INFO_STRENGTH_DEFAULT_LEVEL, &defaultLevel, 1) != 0 ||
+        SetEntry(dst, ANDROID_REQUEST_AVAILABLE_CHARACTERISTICS_KEYS, keys.data(), keys.size()) !=
+                0) {
+        free_camera_metadata(dst);
+        return nullptr;
+    }
+    sort_camera_metadata(dst);
+    return dst;
+}
+
+bool IsTorchOn(const char* camera_id) {
+    std::lock_guard<std::mutex> lock(gStatusLock);
+    auto it = gTorchStatus.find(camera_id);
+    return it != gTorchStatus.end() && it->second == TORCH_MODE_STATUS_AVAILABLE_ON;
+}
+
+void CameraDeviceStatusChange(const camera_module_callbacks_t*, int camera_id, int new_status) {
+    const camera_module_callbacks_t* callbacks = gCallbacks.load();
+    if (callbacks != nullptr) {
+        callbacks->camera_device_status_change(callbacks, camera_id, new_status);
+    }
+}
+
+void TorchModeStatusChange(const camera_module_callbacks_t*, const char* camera_id,
+                           int new_status) {
+    if (camera_id != nullptr) {
+        std::lock_guard<std::mutex> lock(gStatusLock);
+        gTorchStatus[camera_id] = new_status;
+    }
+    const camera_module_callbacks_t* callbacks = gCallbacks.load();
+    if (callbacks != nullptr) {
+        callbacks->torch_mode_status_change(callbacks, camera_id, new_status);
+    }
+}
+
+const camera_module_callbacks_t kCallbacks = {
+        .camera_device_status_change = CameraDeviceStatusChange,
+        .torch_mode_status_change = TorchModeStatusChange,
+};
+
+int Open(const hw_module_t*, const char* id, hw_device_t** device) {
+    camera_module_t* vendor = VendorModule();
+    if (vendor == nullptr) {
+        return -ENODEV;
+    }
+    return vendor->common.methods->open(&vendor->common, id, device);
+}
+
+int GetNumberOfCameras() {
+    camera_module_t* vendor = VendorModule();
+    return vendor != nullptr ? vendor->get_number_of_cameras() : 0;
+}
+
+int GetCameraInfo(int camera_id, struct camera_info* info) {
+    camera_module_t* vendor = VendorModule();
+    if (vendor == nullptr) {
+        return -ENODEV;
+    }
+    int ret = vendor->get_camera_info(camera_id, info);
+    const int32_t maxLevel = TorchMaxLevel();
+    if (ret != 0 || maxLevel == 0 || info->device_version < CAMERA_DEVICE_API_VERSION_3_0 ||
+        info->static_camera_characteristics == nullptr) {
+        return ret;
+    }
+
+    std::lock_guard<std::mutex> lock(gInfoLock);
+    auto it = gStaticInfo.find(camera_id);
+    if (it == gStaticInfo.end()) {
+        it = gStaticInfo
+                     .emplace(camera_id,
+                              WithTorchStrength(info->static_camera_characteristics, maxLevel))
+                     .first;
+    }
+    if (it->second != nullptr) {
+        info->static_camera_characteristics = it->second;
+    }
+    return ret;
+}
+
+int SetCallbacks(const camera_module_callbacks_t* callbacks) {
+    camera_module_t* vendor = VendorModule();
+    if (vendor == nullptr) {
+        return -ENODEV;
+    }
+    gCallbacks.store(callbacks);
+    return vendor->set_callbacks(callbacks != nullptr ? &kCallbacks : nullptr);
+}
+
+void GetVendorTagOps(vendor_tag_ops_t* ops) {
+    camera_module_t* vendor = VendorModule();
+    if (vendor != nullptr && vendor->get_vendor_tag_ops != nullptr) {
+        vendor->get_vendor_tag_ops(ops);
+    }
+}
+
+int OpenLegacy(const hw_module_t*, const char* id, uint32_t halVersion, hw_device_t** device) {
+    camera_module_t* vendor = VendorModule();
+    if (vendor == nullptr || vendor->open_legacy == nullptr) {
+        return -ENOSYS;
+    }
+    return vendor->open_legacy(&vendor->common, id, halVersion, device);
+}
+
+int SetTorchMode(const char* camera_id, bool enabled) {
+    camera_module_t* vendor = VendorModule();
+    if (vendor == nullptr) {
+        return -ENODEV;
+    }
+    std::lock_guard<std::mutex> lock(gTorchLock);
+    return vendor->set_torch_mode(camera_id, enabled);
+}
+
+int SetTorchModeStrength(const char* camera_id, bool enabled, int32_t strength) {
+    if (!enabled) {
+        return SetTorchMode(camera_id, false);
+    }
+
+    camera_module_t* vendor = VendorModule();
+    if (vendor == nullptr) {
+        return -ENODEV;
+    }
+    const int32_t maxLevel = TorchMaxLevel();
+    if (maxLevel == 0) {
+        return -ENOSYS;
+    }
+    if (strength < 1 || strength > maxLevel) {
+        return -EINVAL;
+    }
+
+    std::lock_guard<std::mutex> lock(gTorchLock);
+    const bool wasOn = IsTorchOn(camera_id);
+    if (!wasOn) {
+        int ret = vendor->set_torch_mode(camera_id, true);
+        if (ret != 0) {
+            return ret;
+        }
+    }
+    if (!android::base::WriteStringToFile(std::to_string(strength + kMinTorchStep - 1),
+                                          kTorchBrightnessPath)) {
+        int ret = errno != 0 ? -errno : -EIO;
+        ALOGE("Failed to set torch level %d: %s", strength, strerror(-ret));
+        if (!wasOn) {
+            vendor->set_torch_mode(camera_id, false);
+        }
+        return ret;
+    }
+    return 0;
+}
+
+int Init() {
+    camera_module_t* vendor = VendorModule();
+    if (vendor == nullptr) {
+        return -ENODEV;
+    }
+    if (TorchMaxLevel() == 0) {
+        HAL_MODULE_INFO_SYM.set_torch_mode_strength = nullptr;
+    }
+    return vendor->init != nullptr ? vendor->init() : 0;
+}
+
+hw_module_methods_t gModuleMethods = {
+        .open = Open,
+};
+
+}  // namespace
+
+camera_module_t HAL_MODULE_INFO_SYM __attribute__((visibility("default"))) = {
+        .common =
+                {
+                        .tag = HARDWARE_MODULE_TAG,
+                        .module_api_version = CAMERA_MODULE_API_VERSION_2_4,
+                        .hal_api_version = HARDWARE_HAL_API_VERSION,
+                        .id = CAMERA_HARDWARE_MODULE_ID,
+                        .name = "Exynos 8895 camera wrapper",
+                        .author = "The LineageOS Project",
+                        .methods = &gModuleMethods,
+                        .dso = nullptr,
+                        .reserved = {},
+                },
+        .get_number_of_cameras = GetNumberOfCameras,
+        .get_camera_info = GetCameraInfo,
+        .set_callbacks = SetCallbacks,
+        .get_vendor_tag_ops = GetVendorTagOps,
+        .open_legacy = OpenLegacy,
+        .set_torch_mode = SetTorchMode,
+        .init = Init,
+        .get_physical_camera_info = nullptr,
+        .is_stream_combination_supported = nullptr,
+        .notify_device_state_change = nullptr,
+        .set_torch_mode_strength = SetTorchModeStrength,
+        .reserved1 = {},
+};

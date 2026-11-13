@@ -47,6 +47,7 @@ PRODUCT_HOST_PACKAGES += \
 # Camera
 PRODUCT_PACKAGES += \
     android.hardware.camera.provider-service_32.samsung \
+    camera.universal8895_wrapper \
     libcamera_compat \
     libexynoscamera_shim \
     libion

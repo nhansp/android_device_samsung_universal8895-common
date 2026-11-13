@@ -19,6 +19,9 @@ genfscon sysfs /devices/platform/thermal-sensor-wf/iio:device                   
 # Camera class
 genfscon sysfs /devices/virtual/camera                                                  u:object_r:sysfs_camera:s0
 
+# Rear torch LED (/sys/class/leds/torch-sec1), its strength set by the camera HAL wrapper
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10900000/10900000.i2c/i2c-40/40-0059/s2mpb02-led/leds/torch-sec1 u:object_r:sysfs_camera:s0
+
 # Device tree model info
 genfscon sysfs /firmware/devicetree/base/model_info-system_rev                          u:object_r:sysfs_dt_model_info:s0
 
