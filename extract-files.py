@@ -87,14 +87,9 @@ blob_fixups: blob_fixups_user_type = {
         .replace_needed('libcrypto.so', 'libcrypto-v28.so'),
     'vendor/lib/libExynosOMX_Core.so': blob_fixup()
         .binary_regex_replace(b'/system/lib/omx/', b'/vendor/lib/omx/'),
-    # SmsManager::OnGetSmscAddressDone (vaddr 0x1e3cec): complete the failed SMSC request with
-    # no data instead of the SmsCenter object (mov x3, x20 -> mov x3, #0), as codeberg
-    # universal8895 lineage-23.2 extract-files.sh:75-79
-    'vendor/lib64/libsec-ril.so': blob_fixup()
-        .remove_needed('libhidltransport.so')
-        .remove_needed('libhwbinder.so')
-        .sig_replace('60 0E 40 F9 82 0C 80 52 E1 03 15 AA E3 03 14 AA',
-                     '60 0E 40 F9 82 0C 80 52 E1 03 15 AA 03 00 80 D2'),
+    # dlopened by the libsec-ril shim (shims/libsec-ril), which rild loads in its place
+    'vendor/lib64/libsec-ril-impl.so': blob_fixup()
+        .fix_soname(),
     (
         'vendor/lib/libexynosdisplay.so',
         'vendor/lib64/libexynosdisplay.so',
