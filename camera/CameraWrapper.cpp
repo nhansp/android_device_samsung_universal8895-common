@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <iterator>
 #include <map>
 #include <mutex>
 #include <string>
@@ -38,12 +39,11 @@ constexpr char kVendorModulePath[] = "/vendor/lib/hw/camera.universal8895.so";
 constexpr char kTorchBrightnessPath[] = "/sys/class/leds/torch-sec1/brightness";
 constexpr char kTorchMaxBrightnessPath[] = "/sys/class/leds/torch-sec1/max_brightness";
 
-// torch-sec1 counts 20 mA steps. Samsung's HAL lights the torch by writing "1" to
-// rear_torch_flash, which the S2MPB02 driver turns into 60 mA (step 3); Samsung's
-// flashlight tops out at 200 mA (step 10). Strength levels 1..8 map to steps 3..10,
-// and level 1, the HAL's own current, is the default.
-constexpr int32_t kMinTorchStep = 3;
-constexpr int32_t kMaxTorchStep = 10;
+// torch-sec1 counts 20 mA steps. The Samsung camera provider offers five strength
+// levels. Level 1 is the 60 mA (step 3) that Samsung's HAL lights through
+// rear_torch_flash; the others are 80, 120, 160 and 200 mA from the greatlte
+// torch_table, about 1.35x apart so the steps look even.
+constexpr int32_t kTorchSteps[] = {3, 4, 6, 8, 10};
 constexpr int32_t kDefaultTorchLevel = 1;
 
 std::atomic<const camera_module_callbacks_t*> gCallbacks{nullptr};
@@ -85,10 +85,8 @@ int32_t TorchMaxLevel() {
             ALOGW("No torch strength control through %s", kTorchBrightnessPath);
             return 0;
         }
-        if (max < kMinTorchStep) {
-            return 0;
-        }
-        return std::min(max, kMaxTorchStep) - kMinTorchStep + 1;
+        return static_cast<int32_t>(std::count_if(std::begin(kTorchSteps), std::end(kTorchSteps),
+                                                  [max](int32_t step) { return step <= max; }));
     }();
     return level;
 }
@@ -267,7 +265,7 @@ int SetTorchModeStrength(const char* camera_id, bool enabled, int32_t strength) 
             return ret;
         }
     }
-    if (!android::base::WriteStringToFile(std::to_string(strength + kMinTorchStep - 1),
+    if (!android::base::WriteStringToFile(std::to_string(kTorchSteps[strength - 1]),
                                           kTorchBrightnessPath)) {
         int ret = errno != 0 ? -errno : -EIO;
         ALOGE("Failed to set torch level %d: %s", strength, strerror(-ret));
