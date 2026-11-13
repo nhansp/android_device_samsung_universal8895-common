@@ -77,6 +77,7 @@
 	<ctl name="IN1L Mux" value="B" />
 	<ctl name="IN1R Mux" value="A" />
 	<ctl name="IN2L Mux" value="A" />
+	<ctl name="IN2 Mode" value="Digital" />
 
 	<ctl name="IN2 OSR" value="3.072MHz" />
 	<ctl name="IN3 OSR" value="3.072MHz" />
