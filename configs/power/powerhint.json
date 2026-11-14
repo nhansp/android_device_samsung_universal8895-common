@@ -6,6 +6,7 @@
             "Values": [
                 "1690000",
                 "1248000",
+                "715000",
                 "455000"
             ],
             "ResetOnInit": true
@@ -15,6 +16,7 @@
             "Path": "/sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq",
             "Values": [
                 "2314000",
+                "1703000",
                 "1469000",
                 "741000"
             ],
@@ -116,6 +118,18 @@
             "Node": "PMQoSCpuDmaLatency",
             "Duration": 1000,
             "Value": "44"
+        },
+        {
+            "PowerHint": "IRIS_CAPTURE",
+            "Node": "CPUBigClusterMinFreq",
+            "Duration": 9000,
+            "Value": "1703000"
+        },
+        {
+            "PowerHint": "IRIS_CAPTURE",
+            "Node": "CPULittleClusterMinFreq",
+            "Duration": 9000,
+            "Value": "715000"
         },
         {
             "PowerHint": "AUDIO_LAUNCH",

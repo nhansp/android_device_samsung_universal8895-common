@@ -1,0 +1,2 @@
+# vendor.lineage.biometrics.iris: the preview of the iris card, served by the iris face HAL
+hal_attribute_lineage(lineage_iris_preview)

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: The LineageOS Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.lineageos.iris">
+
+    <uses-permission android:name="android.permission.INTERNAL_SYSTEM_WINDOW" />
+    <uses-permission android:name="android.permission.MANAGE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC_INTERNAL" />
+    <!-- FaceService.registerBiometricStateListener() lists the users on the caller's behalf -->
+    <uses-permission android:name="android.permission.MANAGE_USERS" />
+
+    <application
+        android:name=".IrisApp"
+        android:defaultToDeviceProtectedStorage="true"
+        android:directBootAware="true"
+        android:label="@string/app_name"
+        android:persistent="true">
+
+        <!-- Settings' face enrollment hands over a hardware auth token: callers need the same
+             permission Settings uses for biometrics -->
+        <activity
+            android:name=".IrisEnrollActivity"
+            android:exported="true"
+            android:permission="android.permission.USE_BIOMETRIC_INTERNAL"
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+    </application>
+</manifest>

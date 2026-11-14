@@ -1,0 +1,5 @@
+binder_call(hal_lineage_iris_preview_client, hal_lineage_iris_preview_server)
+# IIrisPreviewListener
+binder_call(hal_lineage_iris_preview_server, hal_lineage_iris_preview_client)
+
+hal_attribute_service(hal_lineage_iris_preview, hal_lineage_iris_preview_service)

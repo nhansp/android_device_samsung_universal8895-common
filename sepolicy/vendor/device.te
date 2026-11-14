@@ -4,5 +4,8 @@ type m2m1shot_device, dev_type;
 # /dev/max_hrm: the heart rate sensor, opened by sensors.bio.so
 type hrm_device, dev_type;
 
+# /dev/s5p-smem: the physical address of an ION buffer, for the iris trustlet
+type secmem_device, dev_type;
+
 # SYSTEM and HIDDEN hold the super partition
 typeattribute system_block_device super_block_device_type;

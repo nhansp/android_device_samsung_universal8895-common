@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: The LineageOS Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- The face sensor is the iris scanner: enrollment runs in the iris app, which shows the
+         iris camera's preview (FaceEnrollEducation launches this after the education page) -->
+    <string name="config_face_enroll" translatable="false">org.lineageos.iris/org.lineageos.iris.IrisEnrollActivity</string>
+</resources>

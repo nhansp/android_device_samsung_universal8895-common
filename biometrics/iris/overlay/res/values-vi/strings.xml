@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: The LineageOS Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <string name="app_name">Mống mắt</string>
+    <string name="iris_guide">Nhìn vào đây để dùng mống mắt</string>
+    <string name="iris_use_pin">Dùng mã PIN</string>
+    <string name="iris_no_match">Không khớp</string>
+    <string name="iris_acquired_move_closer">Đưa đ.thoại lại gần hơn</string>
+    <string name="iris_acquired_move_farther">Đưa đ.thoại ra xa hơn</string>
+    <string name="iris_acquired_open_wider">Mở mắt hoàn toàn</string>
+    <string name="iris_acquired_move_somewhere_darker">Chuyển đến nơi tối hơn</string>
+    <string name="iris_acquired_change_your_position">Đưa đ.thoại lên cao hơn</string>
+    <string name="iris_enroll_title">Đăng ký mống mắt</string>
+    <string name="iris_enroll_guide">Hãy mở to mắt và nhìn vào màn hình.</string>
+    <string name="iris_enroll_progress">Đang quét mống mắt của bạn…</string>
+    <string name="iris_enroll_complete">Đã đăng ký các mống mắt.</string>
+    <string name="iris_enroll_failed">Không thể đăng ký mống mắt</string>
+    <string name="iris_enroll_done">Xong</string>
+    <string name="iris_enroll_try_again">Thử lại</string>
+    <string name="iris_enroll_progress_description">Đang đăng ký mống mắt</string>
+</resources>

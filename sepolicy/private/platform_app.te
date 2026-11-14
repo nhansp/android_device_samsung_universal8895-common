@@ -1,0 +1,2 @@
+# org.lineageos.iris draws the iris card's preview through vendor.lineage.biometrics.iris
+hal_client_domain(platform_app, hal_lineage_iris_preview)
