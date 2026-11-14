@@ -236,3 +236,7 @@ vendor/etc/wifi/wpa_supplicant_overlay.conf
 
 ## libcrypto - from AOSP prebuilts/vndk/v28 android-13.0.0_r84
 vendor/lib64/libcrypto-v28.so|96165e8dc1f57cfd6993dd7b8161792005b0d555|78c3084a49293c8ce29cfc0e349a798fdab14165
+
+# Dolby DAP (SamsungDAP): the effect and the profile storage it links
+system/lib/libprofileparamstorage.so:vendor/lib/libprofileparamstorage.so
+vendor/lib/soundfx/libswdap.so
