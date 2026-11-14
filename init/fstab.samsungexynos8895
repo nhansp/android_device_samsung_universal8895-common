@@ -1,13 +1,18 @@
 # Android fstab file
 #
-# Mount options and flags follow the stock /fstab.samsungexynos8895 of N950NKSU5DZE2, with
-# first-stage mount of /system (system-as-root). /data uses file-based encryption with the UFS
-# inline crypto engine (FMP). /metadata lives on the OMR partition (stock: empty) with the ext4
-# options of the Pixel 8 Pro /metadata entry; it is not first-stage mounted, aconfigd falls back
-# to its post-fs init.
+# Mount options and flags follow the stock /fstab.samsungexynos8895 of N950NKSU5DZE2. The
+# read-only partitions are logical partitions of the super partition on SYSTEM and HIDDEN,
+# mounted in first stage. /data uses file-based encryption with the UFS inline crypto engine
+# (FMP). /metadata lives on the OMR partition (stock: empty) with the ext4 options of the
+# Pixel 8 Pro /metadata entry; it is not first-stage mounted, aconfigd falls back to its post-fs
+# init.
 #
 #<src>                                   <mnt_point>  <type>  <mnt_flags and options>                                                                  <fs_mgr_flags>
-/dev/block/by-name/SYSTEM                /system      ext4    ro,errors=panic,noload                                                                   wait,first_stage_mount
+system                                   /system      ext4    ro,errors=panic,noload                                                                   wait,logical,first_stage_mount
+system_ext                               /system_ext  ext4    ro,errors=panic,noload                                                                   wait,logical,first_stage_mount
+product                                  /product     ext4    ro,errors=panic,noload                                                                   wait,logical,first_stage_mount
+vendor                                   /vendor      ext4    ro,errors=panic,noload                                                                   wait,logical,first_stage_mount
+odm                                      /odm         ext4    ro,errors=panic,noload                                                                   wait,logical,first_stage_mount
 /dev/block/by-name/CACHE                 /cache       ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  wait,check
 /dev/block/by-name/USERDATA              /data        ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic,inlinecrypt  latemount,wait,check,quota,fsverity,reservedsize=128M,fileencryption=aes-256-xts:aes-256-cts:v2
 /dev/block/by-name/EFS                   /efs         ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  wait,check
@@ -18,6 +23,5 @@
 /dev/block/by-name/RECOVERY              /recovery    emmc    defaults                                                                                 defaults
 
 # VOLD
-/dev/block/by-name/HIDDEN                /preload     ext4    defaults                                                                                 voldmanaged=preload:auto
 /devices/platform/soc@0/11500000.mmc/mmc_host*            auto  auto  defaults                                                                         voldmanaged=sdcard:auto,encryptable=userdata
 /devices/platform/soc@0/soc@0:usb@10c00000/10c00000.usb*  auto  auto  defaults                                                                         voldmanaged=usb:auto
