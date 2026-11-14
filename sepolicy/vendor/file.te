@@ -23,3 +23,6 @@ type vendor_proc_swappiness, fs_type, proc_type;
 
 # /dev/socket/iris_camera: IR frames from the iris camera daemon to the face HAL
 type iris_camera_socket, file_type;
+
+# Memory bus (MIF) devfreq frequency floor (powerhint.json MIFMinFreq)
+type sysfs_devfreq_mif, sysfs_type, fs_type;

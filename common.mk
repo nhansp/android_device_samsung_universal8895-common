@@ -214,9 +214,9 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.midi.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.midi.xml \
     frameworks/native/data/etc/com.android.nfc_extras.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/com.android.nfc_extras.xml
 
-# Power
+# Power: LineageOS's maintained libperfmgr service (hardware/lineage/interfaces), with PowerExt
 PRODUCT_PACKAGES += \
-    android.hardware.power-service.pixel-libperfmgr
+    android.hardware.power-service.lineage-libperfmgr
 
 PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/configs/power/powerhint.json:$(TARGET_COPY_OUT_VENDOR)/etc/powerhint.json \
@@ -249,6 +249,7 @@ PRODUCT_SOONG_NAMESPACES += \
     $(COMMON_PATH) \
     hardware/google/interfaces \
     hardware/google/pixel/power-libperfmgr \
+    hardware/lineage/interfaces/power-libperfmgr \
     hardware/google/pixel/thermal \
     hardware/google/pixel/pixelstats \
     hardware/samsung
