@@ -5,7 +5,9 @@
 # mounted in first stage. /data uses file-based encryption with the UFS inline crypto engine
 # (FMP). /metadata lives on the OMR partition (stock: empty) with the ext4 options of the
 # Pixel 8 Pro /metadata entry; it is not first-stage mounted, aconfigd falls back to its post-fs
-# init.
+# init. /data may be f2fs, with the mount options of samsung/a55x's userdata entry,
+# AID_RESERVED_DISK (1065) for its reserved blocks and the compression options of the Pixel 8
+# (zuma) entry (lz4, the kernel default), or the stock ext4.
 #
 #<src>                                   <mnt_point>  <type>  <mnt_flags and options>                                                                  <fs_mgr_flags>
 system                                   /system      ext4    ro,errors=panic,noload                                                                   wait,logical,first_stage_mount
@@ -14,6 +16,7 @@ product                                  /product     ext4    ro,errors=panic,no
 vendor                                   /vendor      ext4    ro,errors=panic,noload                                                                   wait,logical,first_stage_mount
 odm                                      /odm         ext4    ro,errors=panic,noload                                                                   wait,logical,first_stage_mount
 /dev/block/by-name/CACHE                 /cache       ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  wait,check
+/dev/block/by-name/USERDATA              /data        f2fs    noatime,nosuid,nodev,discard,usrquota,grpquota,fsync_mode=nobarrier,reserve_root=32768,resgid=1065,inlinecrypt,compress_extension=apk,compress_extension=so,compress_extension=vdex,compress_extension=odex,compress_cache  latemount,wait,check,formattable,quota,fsverity,fscompress,reservedsize=128M,fileencryption=aes-256-xts:aes-256-cts:v2
 /dev/block/by-name/USERDATA              /data        ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic,inlinecrypt  latemount,wait,check,quota,fsverity,reservedsize=128M,fileencryption=aes-256-xts:aes-256-cts:v2
 /dev/block/by-name/EFS                   /efs         ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  wait,check
 /dev/block/by-name/CPEFS                 /cpefs       ext4    noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic  wait,check,nofail
