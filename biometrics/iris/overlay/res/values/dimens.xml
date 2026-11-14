@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: The LineageOS Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- The preview field, the same on the bouncer, in BiometricPrompt and in enrollment. It
+         starts under the status bar (WindowInsets.statusBars) and ends where the bouncer's PIN
+         field ends: pinEntry bottom 680 px on the 1080 x 2220, 420 dpi display (bouncer
+         uiautomator dump, 2026-11-14), so 259 dp. Width and corners from the iris design boards
+         (390 x 802 units, 1 unit = 1.055 dp). -->
+    <dimen name="iris_card_width">375.2dp</dimen>
+    <dimen name="iris_field_bottom">259dp</dimen>
+    <dimen name="iris_card_radius">21.1dp</dimen>
+    <!-- M3 elevation level 2 and an outline-weight border (design decision: Monet-tinted) -->
+    <dimen name="iris_card_elevation">3dp</dimen>
+    <dimen name="iris_card_border">1dp</dimen>
+    <!-- Board 7: "Use PIN" 16.9 dp under the card -->
+    <dimen name="iris_pin_button_gap">16.9dp</dimen>
+    <dimen name="iris_pin_button_width">124.5dp</dimen>
+    <dimen name="iris_pin_button_height">48.5dp</dimen>
+    <!-- Board 8: the pill the prompt card grows from -->
+    <dimen name="iris_island_pill_width">116dp</dimen>
+    <dimen name="iris_island_pill_height">31.6dp</dimen>
+    <!-- Board 7: blur 14 units over the PIN layer -->
+    <dimen name="iris_blur_radius">14.8dp</dimen>
+    <!-- Stock SecIrisService iris_authwp_circle_progress_thickness -->
+    <dimen name="iris_eye_ring_thickness">3dp</dimen>
+</resources>

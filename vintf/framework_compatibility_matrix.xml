@@ -8,6 +8,14 @@
         </interface>
     </hal>
     <hal format="aidl" optional="true">
+        <name>vendor.lineage.biometrics.iris</name>
+        <version>1-2</version>
+        <interface>
+            <name>IIrisPreview</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="aidl" optional="true">
         <name>android.hardware.thermal</name>
         <version>3</version>
         <interface>

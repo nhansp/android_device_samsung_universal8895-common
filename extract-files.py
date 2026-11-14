@@ -63,6 +63,19 @@ blob_fixups: blob_fixups_user_type = {
         .clear_symbol_version('AHardwareBuffer_describe')
         .clear_symbol_version('AHardwareBuffer_getNativeHandle')
         .clear_symbol_version('AHardwareBuffer_release'),
+    # Only libc, libc++, liblog and libIrisTlc are used; the others are the A9 framework libraries
+    # the stock irisd had loaded anyway
+    'vendor/lib64/libIrisService.so': blob_fixup()
+        .remove_needed('libbinder.so')
+        .remove_needed('libexif.so')
+        .remove_needed('libexpat.so')
+        .remove_needed('libgui.so')
+        .remove_needed('libsavscmn.so')
+        .remove_needed('libstagefright_foundation.so')
+        .remove_needed('libui.so')
+        .remove_needed('libutils.so'),
+    'vendor/lib64/libIrisTlc.so': blob_fixup()
+        .remove_needed('libutils.so'),
     'vendor/bin/hw/gpsd': blob_fixup()
         .binary_regex_replace(b'SSLv3_client_method', b'SSLv23_method\x00\x00\x00\x00\x00\x00'),
     (

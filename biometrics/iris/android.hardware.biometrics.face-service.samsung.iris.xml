@@ -1,0 +1,12 @@
+<manifest version="1.0" type="device">
+    <hal format="aidl">
+        <name>android.hardware.biometrics.face</name>
+        <version>4</version>
+        <fqname>IFace/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>vendor.lineage.biometrics.iris</name>
+        <version>2</version>
+        <fqname>IIrisPreview/default</fqname>
+    </hal>
+</manifest>

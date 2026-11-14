@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: The LineageOS Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <string name="app_name">Iris</string>
+    <!-- Stock SecIrisService iris_dex_help -->
+    <string name="iris_guide">Look here to use irises</string>
+    <!-- SystemUI biometric_dialog_use_pin -->
+    <string name="iris_use_pin">Use PIN</string>
+    <!-- Stock SystemUI kg_iris_no_match -->
+    <string name="iris_no_match">No match</string>
+    <!-- Stock SecIrisService iris_acquired_*, the hints of IrisViewManager.processAcquiredInfo() -->
+    <string name="iris_acquired_move_closer">Hold phone closer</string>
+    <string name="iris_acquired_move_farther">Hold phone farther away</string>
+    <string name="iris_acquired_open_wider">Open eyes fully</string>
+    <string name="iris_acquired_move_somewhere_darker">Move somewhere darker</string>
+    <string name="iris_acquired_change_your_position">Hold phone higher</string>
+    <!-- Stock SecIrisService enrollment strings -->
+    <string name="iris_enroll_title">Iris registration</string>
+    <string name="iris_enroll_guide">Open your eyes wide and look at the screen.</string>
+    <string name="iris_enroll_progress">Scanning your irises…</string>
+    <string name="iris_enroll_complete">Irises registered.</string>
+    <string name="iris_enroll_failed">Couldn\'t register irises</string>
+    <!-- Settings security_settings_face_enroll_done, SystemUI biometric_dialog_try_again -->
+    <string name="iris_enroll_done">Done</string>
+    <string name="iris_enroll_try_again">Try again</string>
+    <!-- Content description of the progress indicator (M3 progress indicator accessibility) -->
+    <string name="iris_enroll_progress_description">Registering irises</string>
+</resources>

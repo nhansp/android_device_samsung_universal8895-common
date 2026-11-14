@@ -100,6 +100,11 @@ vendor/lib64/libexynosv4l2.so
 vendor/lib64/libion_exynos.so
 vendor/lib64/libmpp.so
 
+# Iris (the matching itself is in the iris trustlets under TEE)
+system/lib64/libIrisLibrary_preview.so:vendor/lib64/libIrisLibrary_preview.so
+system/lib64/libIrisService.so:vendor/lib64/libIrisService.so
+system/lib64/libIrisTlc.so:vendor/lib64/libIrisTlc.so
+
 # Keymaster
 vendor/lib64/hw/keystore.mdfpp.so
 vendor/lib64/libkeymaster_helper.so

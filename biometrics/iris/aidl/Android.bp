@@ -1,0 +1,40 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+aidl_interface {
+    name: "vendor.lineage.biometrics.iris",
+    owner: "lineageos",
+    vendor_available: true,
+    srcs: ["vendor/lineage/biometrics/iris/*.aidl"],
+    include_dirs: ["frameworks/native/aidl/gui"],
+    stability: "vintf",
+    backend: {
+        java: {
+            platform_apis: true,
+        },
+        cpp: {
+            enabled: false,
+        },
+        rust: {
+            enabled: false,
+        },
+        ndk: {
+            additional_shared_libraries: ["libnativewindow"],
+        },
+    },
+    frozen: true,
+    versions_with_info: [
+        {
+            version: "1",
+            imports: [],
+        },
+        {
+            version: "2",
+            imports: [],
+        },
+
+    ],
+
+}

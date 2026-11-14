@@ -142,6 +142,9 @@
 # tee_device entirely.
 /dev/mobicore             0700   system     system
 /dev/mobicore-user        0666   radio      system
+
+# Iris: the physical address of each IR frame for the iris trustlet (stock ueventd.rc:145)
+/dev/s5p-smem             0660   system     system
 /dev/t-base-tui           0660   system     system
 /dev/tzic                 0660   system     net_bt_admin
 
