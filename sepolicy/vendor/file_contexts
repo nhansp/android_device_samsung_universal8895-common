@@ -10,6 +10,9 @@
 # Modem partition mounted at the root (BOARD_ROOT_EXTRA_FOLDERS)
 /cpefs(/.*)?    u:object_r:cpefs_file:s0
 
+# HIDDEN is part of the super partition (BoardConfigCommon.mk)
+/dev/block/platform/soc@0/11120000\.ufs/by-name/HIDDEN    u:object_r:system_block_device:s0
+
 # /metadata lives on OMR; more specific than the samsung_slsi (omr|OMR) entry, so it wins
 /dev/block/platform/soc@0/11120000\.ufs/by-name/OMR    u:object_r:metadata_block_device:s0
 

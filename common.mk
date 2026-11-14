@@ -166,6 +166,9 @@ PRODUCT_PACKAGES += \
 
 PRODUCT_ENFORCE_RRO_TARGETS := *
 
+# Partitions
+PRODUCT_USE_DYNAMIC_PARTITIONS := true
+
 # Permissions
 PRODUCT_PACKAGES += \
     android.hardware.bluetooth.prebuilt.xml \

@@ -48,9 +48,11 @@ BOARD_RAMDISK_USE_XZ := true
 BOARD_INCLUDE_DTB_IN_BOOTIMG := true
 
 # Filesystem
+DYNAMIC_PARTITIONS := odm product system system_ext vendor
+$(foreach p, $(call to-upper, $(DYNAMIC_PARTITIONS)), \
+    $(eval BOARD_$(p)IMAGE_FILE_SYSTEM_TYPE := ext4) \
+    $(eval TARGET_COPY_OUT_$(p) := $(call to-lower, $(p))))
 BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
-BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE := ext4
-TARGET_COPY_OUT_VENDOR := system/vendor
 TARGET_USERIMAGES_USE_EXT4 := true
 TARGET_USERIMAGES_USE_F2FS := true
 
@@ -98,8 +100,23 @@ TARGET_KERNEL_CONFIG := \
 BOARD_BOOTIMAGE_PARTITION_SIZE := 41943040
 BOARD_CACHEIMAGE_PARTITION_SIZE := 314572800
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 48234496
-BOARD_SYSTEMIMAGE_PARTITION_SIZE := 4508876800
 BOARD_FLASH_BLOCK_SIZE := 4096
+
+# Partitions - dynamic
+# The stock SYSTEM and HIDDEN partitions hold the super partition, with its metadata on SYSTEM
+# (androidboot.super_partition=SYSTEM in the kernel command line). Their sizes are those of the
+# block devices on the phone (/sys/class/block/sda15 and sda17).
+BOARD_SUPER_PARTITION_BLOCK_DEVICES := SYSTEM HIDDEN
+BOARD_SUPER_PARTITION_METADATA_DEVICE := SYSTEM
+BOARD_SUPER_PARTITION_SYSTEM_DEVICE_SIZE := 4729077760
+BOARD_SUPER_PARTITION_HIDDEN_DEVICE_SIZE := 10485760
+BOARD_SUPER_PARTITION_SIZE := $(shell expr $(BOARD_SUPER_PARTITION_SYSTEM_DEVICE_SIZE) + $(BOARD_SUPER_PARTITION_HIDDEN_DEVICE_SIZE))
+
+BOARD_SUPER_PARTITION_GROUPS := samsung_dynamic_partitions
+BOARD_SAMSUNG_DYNAMIC_PARTITIONS_PARTITION_LIST := $(DYNAMIC_PARTITIONS)
+BOARD_SAMSUNG_DYNAMIC_PARTITIONS_SIZE := $(shell expr $(BOARD_SUPER_PARTITION_SIZE) - 4194304)
+
+-include vendor/lineage/config/BoardConfigReservedSize.mk
 BOARD_ROOT_EXTRA_FOLDERS := cpefs efs
 
 # A17 keeps the aconfig flag storage, apex sessions and vold state in /metadata: the empty OMR
@@ -115,6 +132,9 @@ TARGET_SOC := exynos8895
 # Properties
 TARGET_SYSTEM_PROP += $(COMMON_PATH)/system.prop
 TARGET_VENDOR_PROP += $(COMMON_PATH)/vendor.prop
+
+# Releasetools
+TARGET_RELEASETOOLS_EXTENSIONS := $(COMMON_PATH)
 
 # Recovery
 BOARD_HAS_DOWNLOAD_MODE := true
