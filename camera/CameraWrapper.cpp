@@ -25,7 +25,6 @@
 #include <hardware/hardware.h>
 #include <log/log.h>
 #include <system/camera_metadata.h>
-#include <system/graphics.h>
 
 extern camera_module_t HAL_MODULE_INFO_SYM __attribute__((visibility("default")));
 
@@ -92,7 +91,7 @@ int32_t TorchMaxLevel() {
     return level;
 }
 
-int SetEntry(camera_metadata_t* metadata, uint32_t tag, const void* data, size_t count) {
+int SetEntry(camera_metadata_t* metadata, uint32_t tag, const int32_t* data, size_t count) {
     camera_metadata_entry_t entry;
     if (find_camera_metadata_entry(metadata, tag, &entry) == 0) {
         return update_camera_metadata_entry(metadata, entry.index, data, count, nullptr);
@@ -100,92 +99,38 @@ int SetEntry(camera_metadata_t* metadata, uint32_t tag, const void* data, size_t
     return add_camera_metadata_entry(metadata, tag, data, count);
 }
 
-template <typename T>
-std::vector<T> GetEntry(const camera_metadata_t* metadata, uint32_t tag) {
+camera_metadata_t* WithTorchStrength(const camera_metadata_t* src, int32_t maxLevel) {
     camera_metadata_ro_entry_t entry;
-    if (find_camera_metadata_ro_entry(metadata, tag, &entry) != 0) return {};
-    const T* data = reinterpret_cast<const T*>(entry.data.u8);
-    return std::vector<T>(data, data + entry.count);
-}
-
-// The back camera's video modes that libexynoscamera3 supports but leaves out of the static
-// metadata: its IMX333/2L2 sensor info carries them in the hidden video size list (3840x2160)
-// and the hidden fps range list (60,60), and stock One UI records both
-// (cameradata/camera-feature.xml: BACK_CAMCORDER_RESOLUTION_FEATURE_MAP_3840X2160 and
-// _1920X1080_60FPS).
-constexpr int kBackCameraId = 0;
-constexpr int32_t kUhdWidth = 3840, kUhdHeight = 2160;
-constexpr int32_t kFhdWidth = 1920, kFhdHeight = 1080;
-constexpr int64_t kFrameDuration30Fps = 1000000000LL / 30;
-constexpr int64_t kFrameDuration60Fps = 1000000000LL / 60;
-constexpr int32_t kVideoFormats[] = {HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED,
-                                     HAL_PIXEL_FORMAT_YCbCr_420_888};
-
-void AddBackVideoModes(std::vector<int32_t>* configs, std::vector<int64_t>* durations,
-                       std::vector<int32_t>* fpsRanges) {
-    for (int32_t format : kVideoFormats) {
-        configs->insert(configs->end(),
-                        {format, kUhdWidth, kUhdHeight,
-                         ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT});
-        durations->insert(durations->end(), {format, kUhdWidth, kUhdHeight, kFrameDuration30Fps});
+    if (find_camera_metadata_ro_entry(src, ANDROID_FLASH_INFO_AVAILABLE, &entry) != 0 ||
+        entry.count != 1 || entry.data.u8[0] != ANDROID_FLASH_INFO_AVAILABLE_TRUE) {
+        return nullptr;
     }
-    for (size_t i = 0; i + 3 < durations->size(); i += 4) {
-        const int64_t* d = durations->data() + i;
-        if (d[1] == kFhdWidth && d[2] == kFhdHeight &&
-            std::find(std::begin(kVideoFormats), std::end(kVideoFormats), d[0]) !=
-                    std::end(kVideoFormats)) {
-            (*durations)[i + 3] = kFrameDuration60Fps;
+
+    std::vector<int32_t> keys;
+    if (find_camera_metadata_ro_entry(src, ANDROID_REQUEST_AVAILABLE_CHARACTERISTICS_KEYS,
+                                      &entry) == 0) {
+        keys.assign(entry.data.i32, entry.data.i32 + entry.count);
+    }
+    for (int32_t tag :
+         {ANDROID_FLASH_INFO_STRENGTH_MAXIMUM_LEVEL, ANDROID_FLASH_INFO_STRENGTH_DEFAULT_LEVEL}) {
+        if (std::find(keys.begin(), keys.end(), tag) == keys.end()) {
+            keys.push_back(tag);
         }
     }
-    fpsRanges->insert(fpsRanges->end(), {60, 60});
-}
 
-// Returns a copy of src with the additions for this camera, or nullptr if there are none.
-camera_metadata_t* PatchStaticInfo(int cameraId, const camera_metadata_t* src, int32_t maxTorchLevel) {
-    camera_metadata_ro_entry_t entry;
-    bool torch = maxTorchLevel > 0 &&
-                 find_camera_metadata_ro_entry(src, ANDROID_FLASH_INFO_AVAILABLE, &entry) == 0 &&
-                 entry.count == 1 && entry.data.u8[0] == ANDROID_FLASH_INFO_AVAILABLE_TRUE;
-    bool video = cameraId == kBackCameraId;
-    if (!torch && !video) return nullptr;
-
-    auto keys = GetEntry<int32_t>(src, ANDROID_REQUEST_AVAILABLE_CHARACTERISTICS_KEYS);
-    auto configs = GetEntry<int32_t>(src, ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS);
-    auto durations = GetEntry<int64_t>(src, ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS);
-    auto fpsRanges = GetEntry<int32_t>(src, ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
-    const int32_t defaultLevel = std::min(kDefaultTorchLevel, maxTorchLevel);
-    if (torch) {
-        for (int32_t tag : {ANDROID_FLASH_INFO_STRENGTH_MAXIMUM_LEVEL,
-                            ANDROID_FLASH_INFO_STRENGTH_DEFAULT_LEVEL}) {
-            if (std::find(keys.begin(), keys.end(), tag) == keys.end()) keys.push_back(tag);
-        }
+    const int32_t defaultLevel = std::min(kDefaultTorchLevel, maxLevel);
+    camera_metadata_t* dst = allocate_camera_metadata(
+            get_camera_metadata_entry_count(src) + 3,
+            get_camera_metadata_data_count(src) +
+                    calculate_camera_metadata_entry_data_size(TYPE_INT32, keys.size()));
+    if (dst == nullptr) {
+        return nullptr;
     }
-    if (video) AddBackVideoModes(&configs, &durations, &fpsRanges);
-
-    size_t extraData = calculate_camera_metadata_entry_data_size(TYPE_INT32, keys.size()) +
-                       calculate_camera_metadata_entry_data_size(TYPE_INT32, configs.size()) +
-                       calculate_camera_metadata_entry_data_size(TYPE_INT64, durations.size()) +
-                       calculate_camera_metadata_entry_data_size(TYPE_INT32, fpsRanges.size());
-    camera_metadata_t* dst = allocate_camera_metadata(get_camera_metadata_entry_count(src) + 8,
-                                                      get_camera_metadata_data_count(src) + extraData);
-    if (dst == nullptr) return nullptr;
-    int ret = append_camera_metadata(dst, src);
-    if (!ret && torch) {
-        ret = SetEntry(dst, ANDROID_FLASH_INFO_STRENGTH_MAXIMUM_LEVEL, &maxTorchLevel, 1) ||
-              SetEntry(dst, ANDROID_FLASH_INFO_STRENGTH_DEFAULT_LEVEL, &defaultLevel, 1) ||
-              SetEntry(dst, ANDROID_REQUEST_AVAILABLE_CHARACTERISTICS_KEYS, keys.data(),
-                       keys.size());
-    }
-    if (!ret && video) {
-        ret = SetEntry(dst, ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS, configs.data(),
-                       configs.size()) ||
-              SetEntry(dst, ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS, durations.data(),
-                       durations.size()) ||
-              SetEntry(dst, ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES, fpsRanges.data(),
-                       fpsRanges.size());
-    }
-    if (ret) {
-        ALOGE("Failed to extend the static info of camera %d", cameraId);
+    if (append_camera_metadata(dst, src) != 0 ||
+        SetEntry(dst, ANDROID_FLASH_INFO_STRENGTH_MAXIMUM_LEVEL, &maxLevel, 1) != 0 ||
+        SetEntry(dst, ANDROID_FLASH_INFO_STRENGTH_DEFAULT_LEVEL, &defaultLevel, 1) != 0 ||
+        SetEntry(dst, ANDROID_REQUEST_AVAILABLE_CHARACTERISTICS_KEYS, keys.data(), keys.size()) !=
+                0) {
         free_camera_metadata(dst);
         return nullptr;
     }
@@ -242,7 +187,8 @@ int GetCameraInfo(int camera_id, struct camera_info* info) {
         return -ENODEV;
     }
     int ret = vendor->get_camera_info(camera_id, info);
-    if (ret != 0 || info->device_version < CAMERA_DEVICE_API_VERSION_3_0 ||
+    const int32_t maxLevel = TorchMaxLevel();
+    if (ret != 0 || maxLevel == 0 || info->device_version < CAMERA_DEVICE_API_VERSION_3_0 ||
         info->static_camera_characteristics == nullptr) {
         return ret;
     }
@@ -251,9 +197,8 @@ int GetCameraInfo(int camera_id, struct camera_info* info) {
     auto it = gStaticInfo.find(camera_id);
     if (it == gStaticInfo.end()) {
         it = gStaticInfo
-                     .emplace(camera_id, PatchStaticInfo(camera_id,
-                                                         info->static_camera_characteristics,
-                                                         TorchMaxLevel()))
+                     .emplace(camera_id,
+                              WithTorchStrength(info->static_camera_characteristics, maxLevel))
                      .first;
     }
     if (it->second != nullptr) {
