@@ -134,14 +134,24 @@ void AddBackVideoModes(std::vector<int64_t>* durations, std::vector<int32_t>* fp
     fpsRanges->insert(fpsRanges->end(), {60, 60});
 }
 
-// Returns a copy of src with the additions for this camera, or nullptr if there are none.
+// Returns a copy of src with the changes for this camera, or nullptr if there are none.
 camera_metadata_t* PatchStaticInfo(int cameraId, const camera_metadata_t* src, int32_t maxTorchLevel) {
     camera_metadata_ro_entry_t entry;
     bool torch = maxTorchLevel > 0 &&
                  find_camera_metadata_ro_entry(src, ANDROID_FLASH_INFO_AVAILABLE, &entry) == 0 &&
                  entry.count == 1 && entry.data.u8[0] == ANDROID_FLASH_INFO_AVAILABLE_TRUE;
     bool video = cameraId == kBackCameraId;
-    if (!torch && !video) return nullptr;
+    // libexynoscamera3 cannot flush a session with a ZSL (PRIVATE reprocessing) output: it never
+    // gives that stream a buffer manager (configureStreams), m_checkStreamBuffer rejects stream
+    // type 5, and its ZSL manager cannot hand back framework buffers of requests still in flight.
+    // Their buffers never return, cameraserver's drain times out and the provider crashes on
+    // close. Stock only ever used it through HAL1, so do not offer private reprocessing.
+    auto caps = GetEntry<uint8_t>(src, ANDROID_REQUEST_AVAILABLE_CAPABILITIES);
+    auto zsl = std::find(caps.begin(), caps.end(),
+                         ANDROID_REQUEST_AVAILABLE_CAPABILITIES_PRIVATE_REPROCESSING);
+    bool noZsl = zsl != caps.end();
+    if (noZsl) caps.erase(zsl);
+    if (!torch && !video && !noZsl) return nullptr;
 
     auto keys = GetEntry<int32_t>(src, ANDROID_REQUEST_AVAILABLE_CHARACTERISTICS_KEYS);
     auto durations = GetEntry<int64_t>(src, ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS);
@@ -157,7 +167,9 @@ camera_metadata_t* PatchStaticInfo(int cameraId, const camera_metadata_t* src, i
 
     size_t extraData = calculate_camera_metadata_entry_data_size(TYPE_INT32, keys.size()) +
                        calculate_camera_metadata_entry_data_size(TYPE_INT64, durations.size()) +
-                       calculate_camera_metadata_entry_data_size(TYPE_INT32, fpsRanges.size());
+                       calculate_camera_metadata_entry_data_size(TYPE_INT32, fpsRanges.size()) +
+                       calculate_camera_metadata_entry_data_size(TYPE_BYTE, caps.size()) +
+                       calculate_camera_metadata_entry_data_size(TYPE_INT32, 1);
     camera_metadata_t* dst = allocate_camera_metadata(get_camera_metadata_entry_count(src) + 8,
                                                       get_camera_metadata_data_count(src) + extraData);
     if (dst == nullptr) return nullptr;
@@ -173,6 +185,11 @@ camera_metadata_t* PatchStaticInfo(int cameraId, const camera_metadata_t* src, i
                        durations.size()) ||
               SetEntry(dst, ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES, fpsRanges.data(),
                        fpsRanges.size());
+    }
+    if (!ret && noZsl) {
+        const int32_t maxInputStreams = 0;
+        ret = SetEntry(dst, ANDROID_REQUEST_AVAILABLE_CAPABILITIES, caps.data(), caps.size()) ||
+              SetEntry(dst, ANDROID_REQUEST_MAX_NUM_INPUT_STREAMS, &maxInputStreams, 1);
     }
     if (ret) {
         ALOGE("Failed to extend the static info of camera %d", cameraId);
