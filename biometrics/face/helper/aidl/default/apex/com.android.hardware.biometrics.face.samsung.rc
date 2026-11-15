@@ -1,0 +1,9 @@
+# APEX rc files are read once the APEX is mounted, after post-fs-data has run
+on property:apex.all.ready=true
+    mkdir /data/vendor/biometrics/face 0770 system system
+
+service vendor.face-default /apex/com.android.hardware.biometrics.face.samsung/bin/hw/android.hardware.biometrics.face-service.samsung
+    class late_start
+    user system
+    group system
+    shutdown critical
