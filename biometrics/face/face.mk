@@ -25,3 +25,7 @@ PRODUCT_PACKAGES += \
 # Permissions
 PRODUCT_PACKAGES += \
     android.hardware.biometrics.face.prebuilt.xml
+
+# The face slot is taken: keep PixelOS from adding ParanoidSense as a second face sensor
+# (vendor/custom/config/common.mk)
+TARGET_PROVIDES_FACE_UNLOCK_HAL := true
