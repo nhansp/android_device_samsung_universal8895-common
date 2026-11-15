@@ -67,8 +67,13 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.biometrics.fingerprint-service.samsung
 
-# Iris
+# Face unlock: face (default) or iris; only one can serve the face sensor
+TARGET_FACE_UNLOCK ?= face
+ifeq ($(TARGET_FACE_UNLOCK),iris)
 $(call inherit-product, $(COMMON_PATH)/biometrics/iris/iris.mk)
+else ifneq ($(TARGET_FACE_UNLOCK),face)
+$(error TARGET_FACE_UNLOCK must be face or iris, not $(TARGET_FACE_UNLOCK))
+endif
 
 # Gatekeeper
 PRODUCT_PACKAGES += \
