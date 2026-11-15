@@ -19,7 +19,7 @@
 #include <android-base/strings.h>
 #include <cutils/sockets.h>
 
-#include <iris/CameraProtocol.h>
+#include <biometrics_camera/CameraProtocol.h>
 
 using namespace iris_camera;
 
@@ -32,7 +32,7 @@ constexpr int kStartTimeoutSec = 5;
 
 // Receives one message. Returns its type, or -1 on EOF or error.
 int Receive(int fd, std::vector<char>* buf, std::string* payload, int* passedFd) {
-    IrisCameraMsg hdr;
+    CameraMsg hdr;
     iovec iov[2] = {{&hdr, sizeof(hdr)}, {buf->data(), buf->size()}};
     char control[CMSG_SPACE(sizeof(int))];
     msghdr msg = {};
@@ -120,7 +120,7 @@ void IrisCapture::loop(Callbacks callbacks) {
 
 void IrisCapture::setParameters(const std::string& flattened) {
     if (mSocket < 0) return;
-    IrisCameraMsg hdr = {MSG_SET_PARAMS, static_cast<uint32_t>(flattened.size())};
+    CameraMsg hdr = {MSG_SET_PARAMS, static_cast<uint32_t>(flattened.size())};
     iovec iov[2] = {{&hdr, sizeof(hdr)}, {const_cast<char*>(flattened.data()), flattened.size()}};
     msghdr msg = {};
     msg.msg_iov = iov;

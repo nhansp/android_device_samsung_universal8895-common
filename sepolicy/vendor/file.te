@@ -21,8 +21,10 @@ type sysfs_v4l_mfc, sysfs_type, fs_type;
 # /proc/sys/vm/swappiness, set at boot by the vendor init
 type vendor_proc_swappiness, fs_type, proc_type;
 
-# /dev/socket/iris_camera: IR frames from the iris camera daemon to the face HAL
+# /dev/socket/iris_camera: IR frames from the biometrics camera daemon to the iris HAL
 type iris_camera_socket, file_type;
+# /dev/socket/face_camera: front camera frames from the biometrics camera daemon to the face HAL
+type face_camera_socket, file_type;
 
 # Memory bus (MIF) devfreq frequency floor (powerhint.json MIFMinFreq)
 type sysfs_devfreq_mif, sysfs_type, fs_type;

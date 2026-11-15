@@ -15,7 +15,7 @@
 
 namespace aidl::android::hardware::biometrics::face {
 
-// One capture from the iris camera daemon (camera/IrisCamera.cpp).
+// One capture from the biometrics camera daemon (biometrics/camera/Iris.cpp).
 class IrisCapture {
   public:
     using FrameCallback = std::function<void(int fd)>;

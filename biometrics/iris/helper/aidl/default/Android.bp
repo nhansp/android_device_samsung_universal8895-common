@@ -17,7 +17,7 @@ cc_binary {
         "service.cpp",
     ],
     header_libs: [
-        "vendor.lineage.biometrics.iris-camera.samsung-headers",
+        "vendor.lineage.biometrics.camera.samsung-headers",
         "libhardware_headers",
         "libnativebase_headers",
     ],
