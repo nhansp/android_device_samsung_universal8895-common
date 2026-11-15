@@ -1,5 +1,5 @@
 # Hosts the iris camera like vendor.camera.provider hosts the others
-service vendor.iris-camera /vendor/bin/com.samsung.android.biometrics.iris.camera
+service vendor.iris-camera /vendor/bin/vendor.lineage.biometrics.iris-camera.samsung
     class late_start
     user cameraserver
     group audio camera input drmrpc usb

@@ -2,7 +2,7 @@
 on property:apex.all.ready=true
     mkdir /data/vendor/biometrics/iris 0770 system system
 
-service vendor.face-iris /apex/com.samsung.android.biometrics.iris.helper/bin/hw/android.hardware.biometrics.face-service.samsung.iris
+service vendor.iris-default /apex/com.android.hardware.biometrics.iris.samsung/bin/hw/vendor.lineage.biometrics.iris-service.samsung
     class late_start
     user system
     group system
