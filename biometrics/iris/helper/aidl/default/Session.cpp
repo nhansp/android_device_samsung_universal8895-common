@@ -25,7 +25,7 @@
 
 #include <android/native_window_aidl.h>
 
-#include "CameraProtocol.h"
+#include <iris/CameraProtocol.h>
 
 namespace aidl::android::hardware::biometrics::face {
 
