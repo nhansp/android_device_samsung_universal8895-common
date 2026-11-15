@@ -4,15 +4,15 @@
 //
 
 prebuilt_etc {
-    name: "com.samsung.android.biometrics.iris.helper.rc",
-    src: "com.samsung.android.biometrics.iris.helper.rc",
+    name: "com.android.hardware.biometrics.iris.samsung.rc",
+    src: "com.android.hardware.biometrics.iris.samsung.rc",
     installable: false,
 }
 
-// The iris face HAL with everything it links against. The one library it takes from /vendor,
+// The iris HAL with everything it links against. The one library it takes from /vendor,
 // the stock libIrisService.so, is exported to it by ../../../linker.config.json.
 apex {
-    name: "com.samsung.android.biometrics.iris.helper",
+    name: "com.android.hardware.biometrics.iris.samsung",
     manifest: "apex_manifest.json",
     file_contexts: "file_contexts",
     key: "com.android.hardware.key",
@@ -21,10 +21,10 @@ apex {
     vendor: true,
 
     binaries: [
-        "android.hardware.biometrics.face-service.samsung.iris",
+        "vendor.lineage.biometrics.iris-service.samsung",
     ],
     prebuilts: [
-        "android.hardware.biometrics.face-service.samsung.iris.xml",
-        "com.samsung.android.biometrics.iris.helper.rc",
+        "vendor.lineage.biometrics.iris-service.samsung.xml",
+        "com.android.hardware.biometrics.iris.samsung.rc",
     ],
 }

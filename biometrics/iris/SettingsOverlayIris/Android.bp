@@ -4,6 +4,6 @@
 //
 
 runtime_resource_overlay {
-    name: "SystemUIOverlayVendorUniversal8895",
+    name: "SettingsOverlayIris",
     vendor: true,
 }

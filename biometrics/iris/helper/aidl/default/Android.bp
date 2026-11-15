@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-// Installed only through com.samsung.android.biometrics.iris.helper (apex/).
+// Installed only through com.android.hardware.biometrics.iris.samsung (apex/).
 cc_binary {
-    name: "android.hardware.biometrics.face-service.samsung.iris",
+    name: "vendor.lineage.biometrics.iris-service.samsung",
     relative_install_path: "hw",
     srcs: [
         "Face.cpp",
@@ -17,7 +17,7 @@ cc_binary {
         "service.cpp",
     ],
     header_libs: [
-        "com.samsung.android.biometrics.iris.camera-headers",
+        "vendor.lineage.biometrics.iris-camera.samsung-headers",
         "libhardware_headers",
         "libnativebase_headers",
     ],
@@ -40,8 +40,8 @@ cc_binary {
 }
 
 prebuilt_etc {
-    name: "android.hardware.biometrics.face-service.samsung.iris.xml",
-    src: "android.hardware.biometrics.face-service.samsung.iris.xml",
+    name: "vendor.lineage.biometrics.iris-service.samsung.xml",
+    src: "vendor.lineage.biometrics.iris-service.samsung.xml",
     sub_dir: "vintf",
     installable: false,
 }
