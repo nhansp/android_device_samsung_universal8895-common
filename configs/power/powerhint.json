@@ -356,6 +356,7 @@
             "Value": "1"
         }
     ],
+    "GpuSysfsPath": "/sys/devices/platform/soc@0/13900000.mali",
     "AdpfConfig": [
         {
             "Name": "REFRESH_60FPS",
@@ -395,7 +396,9 @@
             ],
             "JankCheckTimeFactor": 1.2,
             "LowFrameRateThreshold": 25,
-            "MaxRecordsNum": 300
+            "MaxRecordsNum": 300,
+            "GpuBoost": true,
+            "GpuCapacityBoostMax": 25000
         },
         {
             "Name": "REFRESH_120FPS",
@@ -435,7 +438,9 @@
             ],
             "JankCheckTimeFactor": 1.2,
             "LowFrameRateThreshold": 25,
-            "MaxRecordsNum": 300
+            "MaxRecordsNum": 300,
+            "GpuBoost": true,
+            "GpuCapacityBoostMax": 40000
         },
         {
             "Name": "REFRESH_90FPS",
@@ -475,7 +480,9 @@
             ],
             "JankCheckTimeFactor": 1.2,
             "LowFrameRateThreshold": 25,
-            "MaxRecordsNum": 300
+            "MaxRecordsNum": 300,
+            "GpuBoost": true,
+            "GpuCapacityBoostMax": 32500
         },
         {
             "Name": "UiHighBoostWithoutPid",
