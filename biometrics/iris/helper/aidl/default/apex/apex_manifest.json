@@ -1,0 +1,5 @@
+{
+  "name": "com.samsung.android.biometrics.iris.helper",
+  "version": 1,
+  "requireNativeLibs": ["libIrisService.so"]
+}

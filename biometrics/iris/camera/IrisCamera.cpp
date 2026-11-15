@@ -29,7 +29,7 @@
 #include <hardware/camera.h>
 #include <hardware/camera_common.h>
 
-#include "../CameraProtocol.h"
+#include <iris/CameraProtocol.h>
 
 using android::base::unique_fd;
 using namespace iris_camera;

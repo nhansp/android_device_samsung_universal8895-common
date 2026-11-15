@@ -1,0 +1,31 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+// The socket protocol between this binary and the iris face HAL
+cc_library_headers {
+    name: "com.samsung.android.biometrics.iris.camera-headers",
+    export_include_dirs: ["include"],
+    vendor: true,
+}
+
+// Not in the iris APEX: it hosts the stock camera HAL, which stays in /vendor.
+cc_binary {
+    name: "com.samsung.android.biometrics.iris.camera",
+    srcs: ["IrisCamera.cpp"],
+    init_rc: ["com.samsung.android.biometrics.iris.camera.rc"],
+    header_libs: [
+        "com.samsung.android.biometrics.iris.camera-headers",
+        "libhardware_headers",
+    ],
+    shared_libs: [
+        "libbase",
+        "libcamera_metadata",
+        "libcutils",
+        "liblog",
+    ],
+    // It hosts the camera HAL, which is 32-bit only.
+    compile_multilib: "32",
+    vendor: true,
+}

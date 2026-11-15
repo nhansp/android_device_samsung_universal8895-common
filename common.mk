@@ -68,9 +68,7 @@ PRODUCT_PACKAGES += \
     android.hardware.biometrics.fingerprint-service.samsung
 
 # Iris
-PRODUCT_PACKAGES += \
-    android.hardware.biometrics.face-service.samsung.iris \
-    IrisOverlay
+$(call inherit-product, $(COMMON_PATH)/biometrics/iris/iris.mk)
 
 # Gatekeeper
 PRODUCT_PACKAGES += \
@@ -166,7 +164,6 @@ PRODUCT_PACKAGES += \
     CarrierSettingsOverlayCommon \
     FrameworkResOverlayCommon \
     LineageSDKOverlayCommon \
-    SettingsOverlayCommon \
     SystemUIOverlayCommon \
     WifiOverlayCommon
 
@@ -177,7 +174,6 @@ PRODUCT_USE_DYNAMIC_PARTITIONS := true
 
 # Permissions
 PRODUCT_PACKAGES += \
-    android.hardware.biometrics.face.prebuilt.xml \
     android.hardware.bluetooth.prebuilt.xml \
     android.hardware.bluetooth_le.prebuilt.xml \
     android.hardware.camera.flash-autofocus.prebuilt.xml \

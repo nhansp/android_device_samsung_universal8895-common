@@ -1,0 +1,30 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+prebuilt_etc {
+    name: "com.samsung.android.biometrics.iris.helper.rc",
+    src: "com.samsung.android.biometrics.iris.helper.rc",
+    installable: false,
+}
+
+// The iris face HAL with everything it links against. The one library it takes from /vendor,
+// the stock libIrisService.so, is exported to it by ../../../linker.config.json.
+apex {
+    name: "com.samsung.android.biometrics.iris.helper",
+    manifest: "apex_manifest.json",
+    file_contexts: "file_contexts",
+    key: "com.android.hardware.key",
+    certificate: ":com.android.hardware.certificate",
+    updatable: false,
+    vendor: true,
+
+    binaries: [
+        "android.hardware.biometrics.face-service.samsung.iris",
+    ],
+    prebuilts: [
+        "android.hardware.biometrics.face-service.samsung.iris.xml",
+        "com.samsung.android.biometrics.iris.helper.rc",
+    ],
+}

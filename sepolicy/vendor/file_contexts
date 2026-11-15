@@ -21,8 +21,7 @@
 /data/vendor/camera(/.*)?                               u:object_r:vendor_camera_data_file:s0
 
 # Iris
-/(vendor|system/vendor)/bin/hw/android\.hardware\.biometrics\.face-service\.samsung\.iris    u:object_r:hal_face_default_exec:s0
-/(vendor|system/vendor)/bin/iris_camera\.samsung       u:object_r:hal_camera_default_exec:s0
+/(vendor|system/vendor)/bin/com\.samsung\.android\.biometrics\.iris\.camera    u:object_r:hal_camera_default_exec:s0
 /dev/s5p-smem                                           u:object_r:secmem_device:s0
 /dev/socket/iris_camera                                 u:object_r:iris_camera_socket:s0
 

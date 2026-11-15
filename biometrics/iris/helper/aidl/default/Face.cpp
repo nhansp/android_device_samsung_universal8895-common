@@ -9,7 +9,7 @@
 
 #include <android-base/logging.h>
 
-#include "CameraProtocol.h"
+#include <iris/CameraProtocol.h>
 
 namespace aidl::android::hardware::biometrics::face {
 

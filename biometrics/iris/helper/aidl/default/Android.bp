@@ -3,11 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
+// Installed only through com.samsung.android.biometrics.iris.helper (apex/).
 cc_binary {
     name: "android.hardware.biometrics.face-service.samsung.iris",
     relative_install_path: "hw",
-    init_rc: ["android.hardware.biometrics.face-service.samsung.iris.rc"],
-    vintf_fragments: ["android.hardware.biometrics.face-service.samsung.iris.xml"],
     srcs: [
         "Face.cpp",
         "IrisCapture.cpp",
@@ -18,6 +17,7 @@ cc_binary {
         "service.cpp",
     ],
     header_libs: [
+        "com.samsung.android.biometrics.iris.camera-headers",
         "libhardware_headers",
         "libnativebase_headers",
     ],
@@ -34,23 +34,14 @@ cc_binary {
         "pixel-power-ext-V1-ndk",
         "vendor.lineage.biometrics.iris-V2-ndk",
     ],
-    required: ["iris_camera.samsung"],
     // The stock iris libraries are 64-bit only.
     compile_multilib: "64",
     vendor: true,
 }
 
-cc_binary {
-    name: "iris_camera.samsung",
-    srcs: ["camera/IrisCamera.cpp"],
-    header_libs: ["libhardware_headers"],
-    shared_libs: [
-        "libbase",
-        "libcamera_metadata",
-        "libcutils",
-        "liblog",
-    ],
-    // It hosts the camera HAL, which is 32-bit only.
-    compile_multilib: "32",
-    vendor: true,
+prebuilt_etc {
+    name: "android.hardware.biometrics.face-service.samsung.iris.xml",
+    src: "android.hardware.biometrics.face-service.samsung.iris.xml",
+    sub_dir: "vintf",
+    installable: false,
 }

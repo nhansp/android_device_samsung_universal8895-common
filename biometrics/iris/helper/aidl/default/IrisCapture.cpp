@@ -19,7 +19,7 @@
 #include <android-base/strings.h>
 #include <cutils/sockets.h>
 
-#include "CameraProtocol.h"
+#include <iris/CameraProtocol.h>
 
 using namespace iris_camera;
 
