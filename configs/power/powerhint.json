@@ -25,6 +25,7 @@
             "Path": "/sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq",
             "Values": [
                 "2314000",
+                "2002000",
                 "1807000",
                 "1703000",
                 "1469000",
@@ -174,6 +175,12 @@
             "Node": "CPULittleClusterMinFreq",
             "Duration": 9000,
             "Value": "715000"
+        },
+        {
+            "PowerHint": "FACE_CAPTURE",
+            "Node": "CPUBigClusterMinFreq",
+            "Duration": 15000,
+            "Value": "2002000"
         },
         {
             "PowerHint": "AUDIO_LAUNCH",
