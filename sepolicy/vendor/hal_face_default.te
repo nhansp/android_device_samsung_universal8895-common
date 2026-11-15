@@ -1,16 +1,19 @@
-# /dev/mobicore-user and /vendor/app/mcRegistry: the iris trustlet sessions
+# Both face HALs: the iris HAL or the face HAL serves the face sensor (UNIVERSAL8895_FACE_UNLOCK).
+
+# /dev/mobicore-user and /vendor/app/mcRegistry: the iris and face trustlet sessions
 allow hal_face_default tee_device:chr_file rw_file_perms;
 r_dir_file(hal_face_default, mobicore_vendor_file)
 
 # /dev/s5p-smem: the physical address of each IR frame
 allow hal_face_default secmem_device:chr_file r_file_perms;
 
-# /data/vendor/biometrics/iris: templates and the secure id
+# /data/vendor/biometrics/{iris,face}: templates and the secure id
 allow hal_face_default biometrics_vendor_data_file:dir create_dir_perms;
 allow hal_face_default biometrics_vendor_data_file:file create_file_perms;
 
-# IR frames from the iris camera daemon
+# Camera frames from the biometrics camera daemon
 unix_socket_connect(hal_face_default, iris_camera, hal_camera_default)
+unix_socket_connect(hal_face_default, face_camera, hal_camera_default)
 allow hal_face_default hal_camera_default:fd use;
 
 # The iris card's preview service, and the IR preview it draws into the surfaces of the iris
@@ -19,5 +22,10 @@ hal_server_domain(hal_face_default, hal_lineage_iris_preview)
 hal_client_domain(hal_face_default, hal_graphics_allocator)
 allow hal_face_default platform_app:fd use;
 
-# IRIS_CAPTURE: the power HAL extension's boost while the IR camera runs
+# IRIS_CAPTURE and FACE_CAPTURE: the power HAL extension's boost while the camera runs
 hal_client_domain(hal_face_default, hal_power)
+
+# The face HAL draws Settings' enrollment preview into the surface Settings passes with the
+# enrollment (config_face_enroll_hal_owns_camera), as Pixel's face HAL does
+binder_call(hal_face_default, system_app)
+allow hal_face_default system_app:fd use;

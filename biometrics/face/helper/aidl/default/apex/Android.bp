@@ -1,0 +1,30 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+prebuilt_etc {
+    name: "com.android.hardware.biometrics.face.samsung.rc",
+    src: "com.android.hardware.biometrics.face.samsung.rc",
+    installable: false,
+}
+
+// The face HAL with everything it links against. The one library it takes from /vendor,
+// the stock libFaceService.so, is exported to it by ../../../linker.config.json.
+apex {
+    name: "com.android.hardware.biometrics.face.samsung",
+    manifest: "apex_manifest.json",
+    file_contexts: "file_contexts",
+    key: "com.android.hardware.key",
+    certificate: ":com.android.hardware.certificate",
+    updatable: false,
+    vendor: true,
+
+    binaries: [
+        "android.hardware.biometrics.face-service.samsung",
+    ],
+    prebuilts: [
+        "android.hardware.biometrics.face-service.samsung.xml",
+        "com.android.hardware.biometrics.face.samsung.rc",
+    ],
+}

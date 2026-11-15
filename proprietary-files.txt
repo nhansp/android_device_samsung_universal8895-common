@@ -100,6 +100,10 @@ vendor/lib64/libexynosv4l2.so
 vendor/lib64/libion_exynos.so
 vendor/lib64/libmpp.so
 
+# Face (the matching itself is in the face trustlet under TEE)
+system/lib64/libFaceService.so:vendor/lib64/libFaceService.so
+system/lib64/libsecfr_engine.so:vendor/lib64/libsecfr_engine.so
+
 # Iris (the matching itself is in the iris trustlets under TEE)
 system/lib64/libIrisLibrary_preview.so:vendor/lib64/libIrisLibrary_preview.so
 system/lib64/libIrisService.so:vendor/lib64/libIrisService.so

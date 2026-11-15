@@ -1,0 +1,5 @@
+{
+  "name": "com.android.hardware.biometrics.face.samsung",
+  "version": 1,
+  "requireNativeLibs": ["libFaceService.so"]
+}

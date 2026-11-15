@@ -1,0 +1,46 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+// Installed only through com.android.hardware.biometrics.face.samsung (apex/).
+cc_binary {
+    name: "android.hardware.biometrics.face-service.samsung",
+    relative_install_path: "hw",
+    srcs: [
+        "Face.cpp",
+        "FaceCapture.cpp",
+        "FaceLib.cpp",
+        "PowerBoost.cpp",
+        "Preview.cpp",
+        "Session.cpp",
+        "service.cpp",
+    ],
+    header_libs: [
+        "libhardware_headers",
+        "libnativebase_headers",
+        "vendor.lineage.biometrics.camera.samsung-headers",
+    ],
+    shared_libs: [
+        "android.hardware.biometrics.common-V4-ndk",
+        "android.hardware.biometrics.face-V4-ndk",
+        "android.hardware.common-V2-ndk",
+        "android.hardware.keymaster-V4-ndk",
+        "libbase",
+        "libbinder_ndk",
+        "libcutils",
+        "liblog",
+        "libnativewindow",
+        "pixel-power-ext-V1-ndk",
+    ],
+    // The stock face libraries are 64-bit only.
+    compile_multilib: "64",
+    vendor: true,
+}
+
+prebuilt_etc {
+    name: "android.hardware.biometrics.face-service.samsung.xml",
+    src: "android.hardware.biometrics.face-service.samsung.xml",
+    sub_dir: "vintf",
+    installable: false,
+}

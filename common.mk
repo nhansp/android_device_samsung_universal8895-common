@@ -71,7 +71,9 @@ PRODUCT_PACKAGES += \
 UNIVERSAL8895_FACE_UNLOCK ?= face
 ifeq ($(UNIVERSAL8895_FACE_UNLOCK),iris)
 $(call inherit-product, $(COMMON_PATH)/biometrics/iris/iris.mk)
-else ifneq ($(UNIVERSAL8895_FACE_UNLOCK),face)
+else ifeq ($(UNIVERSAL8895_FACE_UNLOCK),face)
+$(call inherit-product, $(COMMON_PATH)/biometrics/face/face.mk)
+else
 $(error UNIVERSAL8895_FACE_UNLOCK must be face or iris, not $(UNIVERSAL8895_FACE_UNLOCK))
 endif
 
