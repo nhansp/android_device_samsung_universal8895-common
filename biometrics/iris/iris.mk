@@ -8,10 +8,10 @@
 
 IRIS_PATH := device/samsung/universal8895-common/biometrics/iris
 
-# The iris HAL (APEX) and the iris camera host it talks to
+# The iris HAL (APEX) and the biometrics camera host it talks to
 PRODUCT_PACKAGES += \
     com.android.hardware.biometrics.iris.samsung \
-    vendor.lineage.biometrics.iris-camera.samsung
+    vendor.lineage.biometrics.camera.samsung
 
 # The APEX loads the stock libIrisService.so from /vendor
 PRODUCT_VENDOR_LINKER_CONFIG_FRAGMENTS += \

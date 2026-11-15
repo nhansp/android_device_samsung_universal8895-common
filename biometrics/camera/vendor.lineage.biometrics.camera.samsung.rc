@@ -1,0 +1,8 @@
+# Hosts the camera HAL for the iris and face HALs, like vendor.camera.provider hosts it for the
+# others
+service vendor.biometrics-camera /vendor/bin/vendor.lineage.biometrics.camera.samsung
+    class late_start
+    user cameraserver
+    group audio camera input drmrpc usb
+    socket iris_camera seqpacket 0660 system system
+    socket face_camera seqpacket 0660 system system

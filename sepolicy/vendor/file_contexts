@@ -21,9 +21,10 @@
 /data/vendor/camera(/.*)?                               u:object_r:vendor_camera_data_file:s0
 
 # Iris
-/(vendor|system/vendor)/bin/vendor\.lineage\.biometrics\.iris-camera\.samsung    u:object_r:hal_camera_default_exec:s0
+/(vendor|system/vendor)/bin/vendor\.lineage\.biometrics\.camera\.samsung    u:object_r:hal_camera_default_exec:s0
 /dev/s5p-smem                                           u:object_r:secmem_device:s0
 /dev/socket/iris_camera                                 u:object_r:iris_camera_socket:s0
+/dev/socket/face_camera                                 u:object_r:face_camera_socket:s0
 
 # Composer (stock HWC1 through the stock adapter)
 /(vendor|system/vendor)/bin/hw/android\.hardware\.graphics\.composer@2\.1-service\.exynos8895    u:object_r:hal_graphics_composer_default_exec:s0
