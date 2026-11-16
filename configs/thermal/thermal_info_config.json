@@ -65,9 +65,9 @@
             "Type": "SKIN",
             "HotThreshold": [
                 "NAN",
-                "NAN",
-                "NAN",
-                "NAN",
+                48.0,
+                52.0,
+                55.0,
                 "NAN",
                 "NAN",
                 "NAN"
