@@ -76,10 +76,12 @@ blob_fixups: blob_fixups_user_type = {
         .remove_needed('libutils.so'),
     'vendor/lib64/libIrisTlc.so': blob_fixup()
         .remove_needed('libutils.so'),
-    # Neither is used: no symbol of either is imported
+    # Neither is used: no symbol of either is imported. The stock soname is
+    # libsecfr_engine_tbase.so, which nothing needs; libFaceService needs it by file name.
     'vendor/lib64/libsecfr_engine.so': blob_fixup()
         .remove_needed('libcutils.so')
-        .remove_needed('libutils.so'),
+        .remove_needed('libutils.so')
+        .fix_soname(),
     'vendor/bin/hw/gpsd': blob_fixup()
         .binary_regex_replace(b'SSLv3_client_method', b'SSLv23_method\x00\x00\x00\x00\x00\x00'),
     (
