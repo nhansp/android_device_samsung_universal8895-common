@@ -13,14 +13,19 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
@@ -31,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,6 +58,11 @@ private const val EYE_DIAMETER = 121f / 202.5f
 // The hint sits 12 dp below the card's top edge (design decision, not in M3).
 private val HINT_TOP = 12.dp
 
+// Board 4's retry icon (design decision, not in M3: M3's large icon button icon size) and its gap
+// to the hint.
+private val RETRY_ICON_SIZE = 32.dp
+private val RETRY_GAP = 8.dp
+
 /** Stock IrisViewManager.processAcquiredInfo(): the hint of each acquired code. */
 @StringRes
 fun hintText(acquired: Int?): Int? =
@@ -67,7 +78,8 @@ fun hintText(acquired: Int?): Int? =
 /**
  * The preview field: the HAL's colour preview cropped to fill, the stock eye guides on top, a
  * light Monet border and shadow, and the guidance when [showMessage] is set. On failure the
- * preview blurs under the dynamic tint.
+ * preview blurs under the dynamic tint, and with [showRetry] board 4's retry icon and hint sit
+ * in its centre.
  */
 @Composable
 fun IrisPreviewCard(
@@ -75,6 +87,7 @@ fun IrisPreviewCard(
     acquired: Int?,
     failed: Boolean,
     showMessage: Boolean,
+    showRetry: Boolean = false,
     contentAlpha: Float = 1f,
     onSurface: (Surface?) -> Unit,
 ) {
@@ -95,6 +108,7 @@ fun IrisPreviewCard(
         )
         if (failed) {
             Box(Modifier.fillMaxSize().background(IrisColors.tint()))
+            if (showRetry) RetryPrompt(Modifier.align(Alignment.Center).alpha(contentAlpha))
         } else {
             EyeGuides(Modifier.fillMaxSize().alpha(contentAlpha), monet)
         }
@@ -128,6 +142,29 @@ private fun EyeGuides(modifier: Modifier, color: Color) {
                 style = Stroke(thickness.toPx()),
             )
         }
+    }
+}
+
+/** Board 4: the retry icon in the field's centre, the hint under it. */
+@Composable
+private fun RetryPrompt(modifier: Modifier) {
+    Column(
+        modifier.padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(RETRY_GAP),
+    ) {
+        Icon(
+            painterResource(R.drawable.ic_iris_retry),
+            contentDescription = null,
+            modifier = Modifier.size(RETRY_ICON_SIZE),
+            tint = Color.White,
+        )
+        Text(
+            text = stringResource(R.string.iris_tap_to_retry),
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }
 

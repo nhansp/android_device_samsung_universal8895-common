@@ -20,7 +20,7 @@ android_app {
         "androidx.lifecycle_lifecycle-runtime",
         "androidx.savedstate_savedstate",
         "kotlinx_coroutines_android",
-        "vendor.lineage.biometrics.iris-V2-java",
+        "vendor.lineage.biometrics.iris-V3-java",
     ],
     required: ["privapp-permissions_org.lineageos.iris"],
 }

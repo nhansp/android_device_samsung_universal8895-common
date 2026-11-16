@@ -5,11 +5,16 @@
 
 package org.lineageos.iris
 
+import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.graphics.PixelFormat
+import android.graphics.Point
+import android.hardware.display.DisplayManager
 import android.hardware.biometrics.AuthenticationStateListener
 import android.hardware.biometrics.BiometricManager
 import android.hardware.biometrics.BiometricRequestConstants
@@ -24,7 +29,9 @@ import android.hardware.biometrics.events.AuthenticationSucceededInfo
 import android.hardware.face.FaceManager
 import android.os.Handler
 import android.os.Looper
+import android.os.RemoteException
 import android.util.Log
+import android.view.Display
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -48,8 +55,14 @@ class IrisCardController(private val context: Context) {
     private var mode = IrisCardMode.NONE
     private var view: ComposeView? = null
     private var owner: WindowOwner? = null
-    private var failed by mutableStateOf(false)
     private var params: WindowManager.LayoutParams? = null
+    private var failed by mutableStateOf(false)
+    private var visible by mutableStateOf(false)
+    private var pendingShow: Runnable? = null
+
+    // SystemUI holds the bouncer back this long when face may pass first
+    // (PrimaryBouncerInteractor.show); the card shows with it.
+    private var bouncerDelayMs = DEFAULT_BOUNCER_DELAY_MS.toLong()
 
     fun start() {
         val faceManager = context.getSystemService(FaceManager::class.java)
@@ -57,23 +70,27 @@ class IrisCardController(private val context: Context) {
             Log.i(TAG, "No face sensor")
             return
         }
+        bouncerDelayMs =
+            systemUiResources()
+                ?.let { res ->
+                    val id = res.getIdentifier("primary_bouncer_passive_auth_delay", "integer", SYSTEMUI)
+                    if (id != 0) res.getInteger(id) else null
+                }
+                ?.toLong() ?: bouncerDelayMs
         context.getSystemService(BiometricManager::class.java)
             ?.registerAuthenticationStateListener(authListener)
-        // The HAL reports why keyguard started a capture; only a bouncer retry shows the card.
+        // The HAL reports why keyguard started a capture; only a bouncer attempt shows the card.
         IrisHal.onCaptureStarted = { reason ->
-            if (reason in BOUNCER_REASONS) {
-                handler.post {
-                    failed = false
-                    show(IrisCardMode.BOUNCER)
-                }
-            }
+            if (reason in BOUNCER_REASONS) handler.post { onBouncerCapture() }
         }
+        IrisHal.onCaptureHeld = { handler.post { if (mode == IrisCardMode.BOUNCER) failed = true } }
         IrisHal.listen()
-        // A no-match card stays up over the bouncer; it goes with the keyguard.
         context.registerReceiver(
             object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
-                    hide()
+                    if (intent.action == Intent.ACTION_SCREEN_OFF) IrisHal.endCapture()
+                    cancelPendingShow()
+                    remove()
                 }
             },
             IntentFilter().apply {
@@ -90,20 +107,18 @@ class IrisCardController(private val context: Context) {
                 if (info.biometricSourceType != BiometricSourceType.FACE) return
                 // Keyguard captures show the card from onCaptureStarted, by their reason.
                 if (info.requestReason != BiometricRequestConstants.REASON_AUTH_BP) return
-                handler.post {
-                    failed = false
-                    show(IrisCardMode.ISLAND)
-                }
+                handler.post { show(IrisCardMode.ISLAND) }
             }
 
             override fun onAuthenticationFailed(info: AuthenticationFailedInfo) {
-                if (info.biometricSourceType == BiometricSourceType.FACE) {
-                    handler.post { failed = true }
-                }
+                if (info.biometricSourceType != BiometricSourceType.FACE) return
+                // A bouncer attempt reports its no match only once it is over; the prompt owns
+                // its retry, so the island just shows the no match.
+                handler.post { if (mode == IrisCardMode.ISLAND) failed = true }
             }
 
             override fun onAuthenticationSucceeded(info: AuthenticationSucceededInfo) {
-                handler.post { hide() }
+                handler.post { dismiss() }
             }
 
             override fun onAuthenticationAcquired(info: AuthenticationAcquiredInfo) {}
@@ -114,25 +129,59 @@ class IrisCardController(private val context: Context) {
 
             override fun onAuthenticationStopped(info: AuthenticationStoppedInfo) {
                 if (info.biometricSourceType != BiometricSourceType.FACE) return
-                // After a failed match the bouncer keeps the no-match card until a tap.
-                handler.post { if (!(mode == IrisCardMode.BOUNCER && failed)) hide() }
+                handler.post {
+                    cancelPendingShow()
+                    dismiss()
+                }
             }
         }
 
+    /**
+     * Keyguard asks for the bouncer as soon as a swipe up starts, and starts iris with it, even
+     * when the swipe is let go and the bouncer never shows. The card waits as long as SystemUI
+     * holds the bouncer back for face; an attempt that ends meanwhile cancels it.
+     */
+    private fun onBouncerCapture() {
+        if (mode == IrisCardMode.BOUNCER) {
+            // The held attempt resumed.
+            failed = false
+            IrisHal.clearHint()
+            return
+        }
+        cancelPendingShow()
+        val show = Runnable {
+            pendingShow = null
+            show(IrisCardMode.BOUNCER)
+        }
+        pendingShow = show
+        handler.postDelayed(show, bouncerDelayMs)
+    }
+
+    private fun cancelPendingShow() {
+        pendingShow?.let { handler.removeCallbacks(it) }
+        pendingShow = null
+    }
+
     private fun show(newMode: IrisCardMode) {
-        if (mode == newMode && !failed) return
-        hide()
+        remove()
         mode = newMode
         failed = false
+        visible = true
         IrisHal.clearHint()
 
         val res = context.resources
         val lp =
             WindowManager.LayoutParams(
-                    // Above the notification shade (the bouncer) and the prompt's sub panel, and
-                    // unlike TYPE_SECURE_SYSTEM_OVERLAY it takes touches ("Use PIN"; DisplayPolicy
-                    // .adjustWindowParamsLw makes secure overlays untouchable).
-                    WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG,
+                    if (newMode == IrisCardMode.BOUNCER) {
+                        // Above the notification shade (the bouncer), and unlike secure overlays
+                        // it takes touches ("Use PIN"; DisplayPolicy.adjustWindowParamsLw makes
+                        // secure overlays untouchable).
+                        WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG
+                    } else {
+                        // Board 8: part of the prompt, so above its dim (the prompt is a status
+                        // bar sub panel). The island takes no touches anyway.
+                        WindowManager.LayoutParams.TYPE_SECURE_SYSTEM_OVERLAY
+                    },
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                         WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                         WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
@@ -157,6 +206,7 @@ class IrisCardController(private val context: Context) {
                     }
                 }
 
+        val originX = sensorX()
         val windowOwner = WindowOwner()
         val composeView =
             ComposeView(context).apply {
@@ -165,10 +215,14 @@ class IrisCardController(private val context: Context) {
                     IrisTheme(dark = true) {
                         IrisCard(
                             mode = newMode,
+                            visible = visible,
                             failed = failed,
+                            originX = originX,
                             onSurface = IrisHal::setPreviewSurface,
                             onBlur = { fraction -> setBlur(fraction, res.getDimensionPixelSize(R.dimen.iris_blur_radius)) },
-                            onDismiss = { hide() },
+                            onRetry = ::retry,
+                            onDismiss = ::usePin,
+                            onExited = ::remove,
                         )
                     }
                 }
@@ -178,6 +232,21 @@ class IrisCardController(private val context: Context) {
         view = composeView
         params = lp
         windowManager.addView(composeView, lp)
+        // Schedule the card's render thread like SystemUI's own windows while it animates
+        // and streams the preview.
+        setHasTopUi(true)
+    }
+
+    private fun retry() {
+        if (!failed) return
+        failed = false
+        IrisHal.clearHint()
+        IrisHal.resumeCapture()
+    }
+
+    private fun usePin() {
+        IrisHal.endCapture()
+        dismiss()
     }
 
     private fun setBlur(fraction: Float, radius: Int) {
@@ -189,20 +258,67 @@ class IrisCardController(private val context: Context) {
         windowManager.updateViewLayout(v, lp)
     }
 
-    private fun hide() {
+    /** Plays the card's exit; the window goes once it ends. */
+    private fun dismiss() {
+        if (mode == IrisCardMode.NONE) return
+        visible = false
+    }
+
+    private fun remove() {
         if (mode == IrisCardMode.NONE) return
         mode = IrisCardMode.NONE
         failed = false
+        visible = false
         IrisHal.setPreviewSurface(null)
         view?.let { windowManager.removeViewImmediate(it) }
         owner?.destroy()
         view = null
         owner = null
         params = null
+        setHasTopUi(false)
+    }
+
+    private fun setHasTopUi(hasTopUi: Boolean) {
+        try {
+            ActivityManager.getService().setHasTopUi(hasTopUi)
+        } catch (e: RemoteException) {
+            Log.w(TAG, "setHasTopUi failed", e)
+        }
+    }
+
+    private fun systemUiResources(): Resources? =
+        try {
+            context.packageManager.getResourcesForApplication(SYSTEMUI)
+        } catch (e: PackageManager.NameNotFoundException) {
+            null
+        }
+
+    /**
+     * The iris camera's x on the current display, in px: SystemUI's config_face_auth_props is in
+     * the display's largest mode, scaled to the current size like FacePropertyRepository does.
+     */
+    private fun sensorX(): Float? {
+        val res = systemUiResources() ?: return null
+        val id = res.getIdentifier("config_face_auth_props", "array", SYSTEMUI)
+        if (id == 0) return null
+        val props = res.getIntArray(id)
+        if (props.isEmpty()) return null
+        val display =
+            context.getSystemService(DisplayManager::class.java)?.getDisplay(Display.DEFAULT_DISPLAY)
+                ?: return null
+        val nativeWidth = display.supportedModes.maxOfOrNull { it.physicalWidth } ?: return null
+        if (nativeWidth <= 0) return null
+        val size = Point()
+        display.getRealSize(size)
+        return props[0] * size.x.toFloat() / nativeWidth
     }
 
     private companion object {
         const val TAG = "IrisCard"
+        const val SYSTEMUI = "com.android.systemui"
+
+        // SystemUI res/values/config.xml primary_bouncer_passive_auth_delay
+        const val DEFAULT_BOUNCER_DELAY_MS = 500
 
         // android.hardware.biometrics.common.AuthenticateReason.Face: the bouncer showing, and
         // the swipe up on it that retries face authentication.
