@@ -29,3 +29,8 @@ hal_client_domain(hal_face_default, hal_power)
 # enrollment (config_face_enroll_hal_owns_camera), as Pixel's face HAL does
 binder_call(hal_face_default, system_app)
 allow hal_face_default system_app:fd use;
+# The surface's buffer queue lives in Settings (BLAST): Settings calls back into the HAL, the
+# producer, and dequeued buffers come with SurfaceFlinger's release fences (as hal_camera,
+# system/sepolicy/private/hal_camera.te; the callback as Pixel's googlebattery system_app.te)
+binder_call(system_app, hal_face_default)
+allow hal_face_default surfaceflinger:fd use;
