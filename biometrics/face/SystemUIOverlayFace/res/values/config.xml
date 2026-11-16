@@ -4,6 +4,10 @@
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources>
+    <!-- The front camera: SystemUI places the face sensor (config_face_auth_props) only for it
+         (FacePropertyRepository.loadCameraInfo) -->
+    <string name="config_protectedCameraId" translatable="false">1</string>
+
     <!-- Where the unlock ripple starts: the front camera, in the top bezel above the display's
          top edge (Galaxy Note8 emulator skin: display at 194,312, lens centre 1200,247, radius 33) -->
     <integer-array name="config_face_auth_props">
