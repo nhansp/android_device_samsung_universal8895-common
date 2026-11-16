@@ -32,7 +32,7 @@ cc_binary {
         "liblog",
         "libnativewindow",
         "pixel-power-ext-V1-ndk",
-        "vendor.lineage.biometrics.iris-V2-ndk",
+        "vendor.lineage.biometrics.iris-V3-ndk",
     ],
     // The stock iris libraries are 64-bit only.
     compile_multilib: "64",

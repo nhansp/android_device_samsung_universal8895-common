@@ -28,6 +28,14 @@ std::mutex Face::sSessionLock;
 std::shared_ptr<Session> Face::sSession;
 
 Face::Face() {
+    mPreview->setControl([](bool resume) {
+        std::shared_ptr<Session> session;
+        {
+            std::lock_guard<std::mutex> lock(sSessionLock);
+            session = sSession;
+        }
+        if (session) session->onUserAction(resume);
+    });
     mLoaded = mLib.load();
     if (mLoaded) {
         mLib.ss_iris_open(nullptr);

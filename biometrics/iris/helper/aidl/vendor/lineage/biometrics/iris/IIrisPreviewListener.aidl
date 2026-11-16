@@ -16,4 +16,11 @@ oneway interface IIrisPreviewListener {
      * from a lockscreen attempt.
      */
     void onCaptureStarted(int faceReason);
+
+    /**
+     * A bouncer attempt found no match. The camera is off and the attempt stays open, without a
+     * result, until IIrisPreview.resumeCapture() or endCapture(), or HOLD_TIMEOUT_MS. timedOut is
+     * set when the capture ended on the eye safety timeout rather than on a rejected match.
+     */
+    void onCaptureHeld(boolean timedOut);
 }

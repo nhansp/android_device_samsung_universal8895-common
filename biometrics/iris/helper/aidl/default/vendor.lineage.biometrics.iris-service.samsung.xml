@@ -6,7 +6,7 @@
     </hal>
     <hal format="aidl">
         <name>vendor.lineage.biometrics.iris</name>
-        <version>2</version>
+        <version>3</version>
         <fqname>IIrisPreview/default</fqname>
     </hal>
 </manifest>

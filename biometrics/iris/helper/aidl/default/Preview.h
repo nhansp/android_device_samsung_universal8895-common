@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include <functional>
 #include <memory>
 #include <mutex>
 
@@ -28,6 +29,13 @@ class Preview : public BnIrisPreview {
     ndk::ScopedAStatus setPreviewSurface(const std::optional<::aidl::android::view::Surface>& surface)
             override;
     ndk::ScopedAStatus setListener(const std::shared_ptr<IIrisPreviewListener>& listener) override;
+    ndk::ScopedAStatus resumeCapture() override;
+    ndk::ScopedAStatus endCapture() override;
+
+    // Where resumeCapture() and endCapture() go: the current session.
+    void setControl(std::function<void(bool resume)> control);
+    // Whether the iris card listens, so a held attempt has someone to resume or end it.
+    bool hasListener();
 
     // The surface from FaceEnrollOptions for the current enrollment, or null when it ends.
     void setEnrollSurface(ANativeWindow* window);
@@ -35,6 +43,7 @@ class Preview : public BnIrisPreview {
     void render(const uint8_t* nv21, int32_t width, int32_t height);
     void notifyAcquired(int32_t code);
     void notifyCaptureStarted(int32_t faceReason);
+    void notifyCaptureHeld(bool timedOut);
 
   private:
     struct Window {
@@ -49,6 +58,7 @@ class Preview : public BnIrisPreview {
     Window mEnroll;
     Window mCard;
     std::shared_ptr<IIrisPreviewListener> mListener;
+    std::function<void(bool resume)> mControl;
 };
 
 }  // namespace aidl::android::hardware::biometrics::face

@@ -9,6 +9,7 @@
 
 #include <aidl/android/hardware/biometrics/common/AuthenticateReason.h>
 #include <aidl/android/hardware/biometrics/common/BnCancellationSignal.h>
+#include <aidl/vendor/lineage/biometrics/iris/IIrisPreview.h>
 #include <aidl/vendor/lineage/biometrics/iris/IrisAcquired.h>
 
 #include <endian.h>
@@ -31,6 +32,7 @@ namespace aidl::android::hardware::biometrics::face {
 
 using ::aidl::android::hardware::biometrics::common::AuthenticateReason;
 using ::aidl::android::hardware::biometrics::common::BnCancellationSignal;
+using ::aidl::vendor::lineage::biometrics::iris::IIrisPreview;
 using ::aidl::vendor::lineage::biometrics::iris::IrisAcquired;
 using ::aidl::android::hardware::keymaster::HardwareAuthenticatorType;
 using namespace std::chrono_literals;
@@ -41,6 +43,7 @@ namespace {
 constexpr int kIrRotation = 270;
 // Stock IrisService eye safety timeout: the IR LED never runs longer than this per capture.
 constexpr auto kEyeSafetyTimeout = 9000ms;
+constexpr std::chrono::milliseconds kHoldTimeout{IIrisPreview::HOLD_TIMEOUT_MS};
 // /data/vendor/biometrics is created by init; the library creates the per-user directory.
 constexpr char kStoreDir[] = "/data/vendor/biometrics/iris/User_%d";
 // The library keeps one template per user (<gid>tmpl.dat) and no enrollment ids; the id it
@@ -112,6 +115,13 @@ Error toError(int32_t error, int32_t* vendorCode) {
             *vendorCode = error;
             return Error::VENDOR;
     }
+}
+
+// The keyguard attempts the iris card shows on: the bouncer coming up and the swipe up on it.
+bool isBouncerReason(int32_t faceReason) {
+    auto reason = static_cast<AuthenticateReason::Face>(faceReason);
+    return reason == AuthenticateReason::Face::PRIMARY_BOUNCER_SHOWN ||
+           reason == AuthenticateReason::Face::SWIPE_UP_ON_BOUNCER;
 }
 
 void onClientDeath(void* cookie) {
@@ -189,7 +199,7 @@ ndk::ScopedAStatus Session::getEnrollmentConfig(EnrollmentType /*type*/,
 bool Session::startCapture(State state) {
     std::map<std::string, std::string> params;
     std::weak_ptr<Session> weak = ref<Session>();
-    uint64_t op = mOp.load();
+    uint64_t gen = ++mGen;
     IrisCapture::Callbacks callbacks = {
             .onIrFrame =
                     [this](int fd) {
@@ -203,9 +213,9 @@ bool Session::startCapture(State state) {
                                                         iris_camera::kFrontHeight, kIrRotation);
                     },
             .onEnd =
-                    [this, weak, op](int error) {
-                        mWorker->post([weak, op, error] {
-                            if (auto self = weak.lock()) self->onError(op, -error);
+                    [this, weak, gen](int error) {
+                        mWorker->post([weak, gen, error] {
+                            if (auto self = weak.lock()) self->onError(gen, -error);
                         });
                     },
     };
@@ -224,14 +234,15 @@ bool Session::startCapture(State state) {
     mLib->ss_iris_request(IRIS_REQUEST_SECURE_ENABLE, nullptr, 0, nullptr, 0, 0);
     mState = state;
 
-    mWorker->postDelayed(kEyeSafetyTimeout, [weak, op] {
-        if (auto self = weak.lock()) self->onTimeout(op);
+    mWorker->postDelayed(kEyeSafetyTimeout, [weak, gen] {
+        if (auto self = weak.lock()) self->onTimeout(gen);
     });
     return true;
 }
 
 void Session::endCapture(bool cancelLibrary) {
     mOp++;
+    mGen++;
     mState = State::IDLE;
     mCapture.stop();
     if (cancelLibrary) mLib->ss_iris_cancel();
@@ -293,6 +304,8 @@ void Session::authenticate(int64_t operationId, int32_t faceReason) {
             return;
         }
         if (self->checkLockout()) return;
+        self->mOperationId = operationId;
+        self->mFaceReason = faceReason;
         self->mLib->ss_iris_set_active_group(self->mUserId, self->storePath().c_str());
         if (!self->startCapture(State::AUTHENTICATING)) {
             self->mCb->onError(Error::HW_UNAVAILABLE, 0);
@@ -317,16 +330,21 @@ ndk::ScopedAStatus Session::detectInteraction(std::shared_ptr<ICancellationSigna
 
 void Session::cancel(uint64_t op) {
     mWorker->post([self = ref<Session>(), op] {
-        if (self->mState != State::IDLE && self->mOp.load() == op) {
-            LOG(INFO) << "cancel";
-            self->endCapture(true);
+        if (self->mOp.load() == op) {
+            if (self->mState == State::HELD) {
+                LOG(INFO) << "cancel held";
+                self->releaseHeld();
+            } else if (self->mState != State::IDLE) {
+                LOG(INFO) << "cancel";
+                self->endCapture(true);
+            }
         }
         self->mCb->onError(Error::CANCELED, 0);
     });
 }
 
 void Session::notify(const IrisMsg* msg) {
-    uint64_t op = mOp.load();
+    uint64_t gen = mGen.load();
     std::weak_ptr<Session> weak = ref<Session>();
     switch (msg->type) {
         case IRIS_MSG_IR_PROPERTY_CHANGED:
@@ -347,27 +365,27 @@ void Session::notify(const IrisMsg* msg) {
             int32_t code;
             memcpy(&code, reinterpret_cast<const uint8_t*>(msg) + kAcquiredCodeOffset,
                    sizeof(code));
-            mWorker->post([weak, op, code] {
-                if (auto self = weak.lock()) self->onAcquired(op, code);
+            mWorker->post([weak, gen, code] {
+                if (auto self = weak.lock()) self->onAcquired(gen, code);
             });
         } break;
         case IRIS_MSG_TEMPLATE_ENROLLING: {
             uint32_t fid = msg->data.enroll.fid, progress = msg->data.enroll.progress;
-            mWorker->post([weak, op, fid, progress] {
-                if (auto self = weak.lock()) self->onTemplateEnrolling(op, fid, progress);
+            mWorker->post([weak, gen, fid, progress] {
+                if (auto self = weak.lock()) self->onTemplateEnrolling(gen, fid, progress);
             });
         } break;
         case IRIS_MSG_AUTHENTICATED: {
             uint32_t fid = msg->data.authenticated.fid;
             hw_auth_token_t hat = msg->data.authenticated.hat;
-            mWorker->post([weak, op, fid, hat] {
-                if (auto self = weak.lock()) self->onAuthenticated(op, fid, hat);
+            mWorker->post([weak, gen, fid, hat] {
+                if (auto self = weak.lock()) self->onAuthenticated(gen, fid, hat);
             });
         } break;
         case IRIS_MSG_ERROR: {
             int32_t error = msg->data.error;
-            mWorker->post([weak, op, error] {
-                if (auto self = weak.lock()) self->onError(op, error);
+            mWorker->post([weak, gen, error] {
+                if (auto self = weak.lock()) self->onError(gen, error);
             });
         } break;
         default:
@@ -375,8 +393,10 @@ void Session::notify(const IrisMsg* msg) {
     }
 }
 
-void Session::onAcquired(uint64_t op, int32_t code) {
-    if (mOp.load() != op || mState == State::IDLE) return;
+void Session::onAcquired(uint64_t gen, int32_t code) {
+    if (mGen.load() != gen || (mState != State::ENROLLING && mState != State::AUTHENTICATING)) {
+        return;
+    }
     switch (static_cast<IrisAcquired>(code)) {
         case IrisAcquired::MOVE_CLOSER:
         case IrisAcquired::MOVE_FARTHER:
@@ -403,8 +423,8 @@ void Session::onAcquired(uint64_t op, int32_t code) {
     }
 }
 
-void Session::onTemplateEnrolling(uint64_t op, uint32_t fid, uint32_t progress) {
-    if (mOp.load() != op || mState != State::ENROLLING) return;
+void Session::onTemplateEnrolling(uint64_t gen, uint32_t fid, uint32_t progress) {
+    if (mGen.load() != gen || mState != State::ENROLLING) return;
     int32_t remaining = 100 - static_cast<int32_t>(std::min(progress, 100u));
     LOG(INFO) << "onEnrollmentProgress fid " << fid << " progress " << progress;
     if (remaining == 0) {
@@ -417,41 +437,136 @@ void Session::onTemplateEnrolling(uint64_t op, uint32_t fid, uint32_t progress) 
     mCb->onEnrollmentProgress(fid, remaining);
 }
 
-void Session::onAuthenticated(uint64_t op, uint32_t fid, const hw_auth_token_t& hat) {
-    if (mOp.load() != op || mState != State::AUTHENTICATING) return;
-    endCapture(false);
+void Session::onAuthenticated(uint64_t gen, uint32_t fid, const hw_auth_token_t& hat) {
+    if (mGen.load() != gen || mState != State::AUTHENTICATING) return;
     if (fid != 0) {
         LOG(INFO) << "onAuthenticationSucceeded";
+        endCapture(false);
         mLockout->reset(true);
         mCb->onAuthenticationSucceeded(fid, fromLegacy(hat));
-    } else {
-        LOG(INFO) << "onAuthenticationFailed";
-        mLockout->addFailedAttempt();
-        mCb->onAuthenticationFailed();
-        checkLockout();
+        return;
     }
+    // Every no match counts at once, so retrying a held attempt never gets around lockout.
+    mLockout->addFailedAttempt();
+    if (mLockout->mode() == LockoutTracker::Mode::NONE && canHold()) {
+        hold(false);
+        return;
+    }
+    LOG(INFO) << "onAuthenticationFailed";
+    endCapture(false);
+    mCb->onAuthenticationFailed();
+    checkLockout();
 }
 
-void Session::onError(uint64_t op, int32_t error) {
-    if (mOp.load() != op || mState == State::IDLE) return;
+void Session::onError(uint64_t gen, int32_t error) {
+    if (mGen.load() != gen || (mState != State::ENROLLING && mState != State::AUTHENTICATING)) {
+        return;
+    }
     LOG(ERROR) << "Iris error " << error;
-    endCapture(true);
     int32_t vendorCode;
+    if (toError(error, &vendorCode) == Error::TIMEOUT && canHold()) {
+        hold(true);
+        return;
+    }
+    endCapture(true);
     Error result = toError(error, &vendorCode);
     mCb->onError(result, vendorCode);
 }
 
-void Session::onTimeout(uint64_t op) {
-    if (mOp.load() != op || mState == State::IDLE) return;
+void Session::onTimeout(uint64_t gen) {
+    if (mGen.load() != gen || (mState != State::ENROLLING && mState != State::AUTHENTICATING)) {
+        return;
+    }
     LOG(INFO) << "Eye safety timeout";
     // The IR LED goes off now. A frame the library is still processing may complete the
     // enrollment or match; its result is queued behind this task, so decide after it.
     mCapture.stop();
-    mWorker->post([weak = std::weak_ptr<Session>(ref<Session>()), op] {
+    mWorker->post([weak = std::weak_ptr<Session>(ref<Session>()), gen] {
         auto self = weak.lock();
-        if (!self || self->mOp.load() != op || self->mState == State::IDLE) return;
+        if (!self || self->mGen.load() != gen ||
+            (self->mState != State::ENROLLING && self->mState != State::AUTHENTICATING)) {
+            return;
+        }
+        if (self->canHold()) {
+            self->hold(true);
+            return;
+        }
         self->endCapture(true);
         self->mCb->onError(Error::TIMEOUT, 0);
+    });
+}
+
+bool Session::canHold() const {
+    return mState == State::AUTHENTICATING && isBouncerReason(mFaceReason) &&
+           mPreview->hasListener();
+}
+
+void Session::hold(bool timedOut) {
+    LOG(INFO) << "Holding the attempt, timedOut " << timedOut;
+    mGen++;
+    mState = State::HELD;
+    mHeldTimedOut = timedOut;
+    mCapture.stop();
+    if (timedOut) mLib->ss_iris_cancel();
+    mLib->ss_iris_request(IRIS_REQUEST_SECURE_DISABLE, nullptr, 0, nullptr, 0, 0);
+    mBoost->end();
+    mWorker->postDelayed(kHoldTimeout,
+                         [weak = std::weak_ptr<Session>(ref<Session>()), gen = mGen.load()] {
+                             auto self = weak.lock();
+                             if (self && self->mState == State::HELD && self->mGen.load() == gen) {
+                                 self->finishHeld();
+                             }
+                         });
+    mPreview->notifyCaptureHeld(timedOut);
+}
+
+void Session::releaseHeld() {
+    mOp++;
+    mGen++;
+    mState = State::IDLE;
+}
+
+void Session::finishHeld() {
+    LOG(INFO) << "Ending the held attempt";
+    releaseHeld();
+    if (mHeldTimedOut) {
+        mCb->onError(Error::TIMEOUT, 0);
+    } else {
+        mCb->onAuthenticationFailed();
+    }
+}
+
+void Session::onUserAction(bool resume) {
+    mWorker->post([self = ref<Session>(), resume] {
+        if (!resume) {
+            if (self->mState == State::HELD) {
+                self->finishHeld();
+            } else if (self->mState == State::AUTHENTICATING && isBouncerReason(self->mFaceReason)) {
+                LOG(INFO) << "Attempt ended from the iris card";
+                self->endCapture(true);
+                self->mCb->onError(Error::CANCELED, 0);
+            }
+            return;
+        }
+        if (self->mState != State::HELD) return;
+        LOG(INFO) << "Resuming the held attempt";
+        self->mLib->ss_iris_set_active_group(self->mUserId, self->storePath().c_str());
+        if (!self->startCapture(State::AUTHENTICATING)) {
+            self->finishHeld();
+            return;
+        }
+        int ret = self->mLib->ss_iris_authenticate(self->mOperationId, self->mUserId, nullptr, 0);
+        if (ret) {
+            LOG(ERROR) << "ss_iris_authenticate: " << ret;
+            self->endCapture(true);
+            if (self->mHeldTimedOut) {
+                self->mCb->onError(Error::TIMEOUT, 0);
+            } else {
+                self->mCb->onAuthenticationFailed();
+            }
+            return;
+        }
+        self->mPreview->notifyCaptureStarted(self->mFaceReason);
     });
 }
 
@@ -533,7 +648,11 @@ ndk::ScopedAStatus Session::resetLockout(const HardwareAuthToken& /*hat*/) {
 
 ndk::ScopedAStatus Session::close() {
     mWorker->post([self = ref<Session>()] {
-        if (self->mState != State::IDLE) self->endCapture(true);
+        if (self->mState == State::HELD) {
+            self->releaseHeld();
+        } else if (self->mState != State::IDLE) {
+            self->endCapture(true);
+        }
         self->mCb->onSessionClosed();
     });
     mClosed = true;

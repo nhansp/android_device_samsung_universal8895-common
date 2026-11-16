@@ -69,20 +69,27 @@ class Session : public BnSession {
     void linkToDeath(AIBinder* binder);
     // From the iris library, on whatever thread called into it.
     void notify(const IrisMsg* msg);
+    // From the iris card (IIrisPreview): retry a held attempt, or end the attempt.
+    void onUserAction(bool resume);
 
   private:
-    enum class State { IDLE, ENROLLING, AUTHENTICATING };
+    // HELD: a bouncer attempt with no match, camera off, waiting for the card's retry.
+    enum class State { IDLE, ENROLLING, AUTHENTICATING, HELD };
 
     std::shared_ptr<ICancellationSignal> cancellationSignal();
     void enroll(const HardwareAuthToken& hat, ANativeWindow* previewWindow);
     void authenticate(int64_t operationId, int32_t faceReason);
     bool startCapture(State state);
     void endCapture(bool cancelLibrary);
-    void onAcquired(uint64_t op, int32_t code);
-    void onTemplateEnrolling(uint64_t op, uint32_t fid, uint32_t progress);
-    void onAuthenticated(uint64_t op, uint32_t fid, const hw_auth_token_t& hat);
-    void onError(uint64_t op, int32_t error);
-    void onTimeout(uint64_t op);
+    bool canHold() const;
+    void hold(bool timedOut);
+    void releaseHeld();
+    void finishHeld();
+    void onAcquired(uint64_t gen, int32_t code);
+    void onTemplateEnrolling(uint64_t gen, uint32_t fid, uint32_t progress);
+    void onAuthenticated(uint64_t gen, uint32_t fid, const hw_auth_token_t& hat);
+    void onError(uint64_t gen, int32_t error);
+    void onTimeout(uint64_t gen);
     bool checkLockout();
     std::string storePath() const;
     std::vector<int32_t> enrollments() const;
@@ -97,9 +104,15 @@ class Session : public BnSession {
     AIBinder_DeathRecipient* mDeathRecipient;
     bool mClosed = false;
 
-    // Worker thread only, except mOp, which the cancellation signal reads.
+    // Worker thread only, except mOp, which the cancellation signal reads, and mGen, which the
+    // library callbacks read. mOp names the framework's operation, mGen the camera capture: a held
+    // attempt keeps its operation across captures.
     State mState = State::IDLE;
     std::atomic<uint64_t> mOp = 0;
+    std::atomic<uint64_t> mGen = 0;
+    int64_t mOperationId = 0;
+    int32_t mFaceReason = 0;
+    bool mHeldTimedOut = false;
     IrisCapture mCapture;
 };
 

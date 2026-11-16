@@ -25,4 +25,5 @@ package vendor.lineage.biometrics.iris;
 interface IIrisPreviewListener {
   oneway void onAcquired(int acquired);
   oneway void onCaptureStarted(int faceReason);
+  oneway void onCaptureHeld(boolean timedOut);
 }
