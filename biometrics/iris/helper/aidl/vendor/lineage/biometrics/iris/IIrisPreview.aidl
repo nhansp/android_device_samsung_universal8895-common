@@ -22,4 +22,16 @@ interface IIrisPreview {
 
     /** Receives the guidance of every capture until it is replaced or cleared with null. */
     void setListener(in @nullable IIrisPreviewListener listener);
+
+    /** How long a held keyguard attempt waits for resumeCapture() before it reports no match. */
+    const int HOLD_TIMEOUT_MS = 5000;
+
+    /** Captures again in the attempt that IIrisPreviewListener.onCaptureHeld() reported. */
+    void resumeCapture();
+
+    /**
+     * Ends the current keyguard attempt for the user: a held attempt reports its no match, a
+     * running capture stops and reports CANCELED.
+     */
+    void endCapture();
 }

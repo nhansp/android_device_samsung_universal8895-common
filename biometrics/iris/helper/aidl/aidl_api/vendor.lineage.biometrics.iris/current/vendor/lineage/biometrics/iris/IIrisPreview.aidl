@@ -25,4 +25,7 @@ package vendor.lineage.biometrics.iris;
 interface IIrisPreview {
   void setPreviewSurface(in @nullable android.view.Surface surface);
   void setListener(in @nullable vendor.lineage.biometrics.iris.IIrisPreviewListener listener);
+  void resumeCapture();
+  void endCapture();
+  const int HOLD_TIMEOUT_MS = 5000;
 }

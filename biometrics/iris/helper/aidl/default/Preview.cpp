@@ -61,6 +61,36 @@ ndk::ScopedAStatus Preview::setListener(const std::shared_ptr<IIrisPreviewListen
     return ndk::ScopedAStatus::ok();
 }
 
+ndk::ScopedAStatus Preview::resumeCapture() {
+    std::function<void(bool)> control;
+    {
+        std::lock_guard<std::mutex> lock(mLock);
+        control = mControl;
+    }
+    if (control) control(true);
+    return ndk::ScopedAStatus::ok();
+}
+
+ndk::ScopedAStatus Preview::endCapture() {
+    std::function<void(bool)> control;
+    {
+        std::lock_guard<std::mutex> lock(mLock);
+        control = mControl;
+    }
+    if (control) control(false);
+    return ndk::ScopedAStatus::ok();
+}
+
+void Preview::setControl(std::function<void(bool resume)> control) {
+    std::lock_guard<std::mutex> lock(mLock);
+    mControl = std::move(control);
+}
+
+bool Preview::hasListener() {
+    std::lock_guard<std::mutex> lock(mLock);
+    return mListener != nullptr;
+}
+
 void Preview::setEnrollSurface(ANativeWindow* window) {
     std::lock_guard<std::mutex> lock(mLock);
     mEnroll.reset(window);
@@ -105,6 +135,15 @@ void Preview::notifyCaptureStarted(int32_t faceReason) {
         listener = mListener;
     }
     if (listener) listener->onCaptureStarted(faceReason);
+}
+
+void Preview::notifyCaptureHeld(bool timedOut) {
+    std::shared_ptr<IIrisPreviewListener> listener;
+    {
+        std::lock_guard<std::mutex> lock(mLock);
+        listener = mListener;
+    }
+    if (listener) listener->onCaptureHeld(timedOut);
 }
 
 void Preview::notifyAcquired(int32_t code) {
