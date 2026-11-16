@@ -30,6 +30,9 @@ object IrisHal {
     /** Called on a binder thread when an authentication capture starts, with its face reason. */
     @Volatile var onCaptureStarted: ((faceReason: Int) -> Unit)? = null
 
+    /** Called on a binder thread when the HAL holds a bouncer attempt after a no match. */
+    @Volatile var onCaptureHeld: ((timedOut: Boolean) -> Unit)? = null
+
     @Volatile private var service: IIrisPreview? = null
     private var surface: Surface? = null
 
@@ -41,6 +44,10 @@ object IrisHal {
 
             override fun onCaptureStarted(faceReason: Int) {
                 onCaptureStarted?.invoke(faceReason)
+            }
+
+            override fun onCaptureHeld(timedOut: Boolean) {
+                onCaptureHeld?.invoke(timedOut)
             }
 
             override fun getInterfaceVersion(): Int = IIrisPreviewListener.VERSION
@@ -74,6 +81,25 @@ object IrisHal {
             this.surface = surface
             connect()?.let { apply(it) }
             if (old !== surface) old?.release()
+        }
+    }
+
+    /** Captures again in the held attempt (board 4: tap to retry). */
+    fun resumeCapture() {
+        executor.execute { call { it.resumeCapture() } }
+    }
+
+    /** Ends the current keyguard attempt: "Use PIN", a tap outside the card, the screen going off. */
+    fun endCapture() {
+        executor.execute { call { it.endCapture() } }
+    }
+
+    private fun call(action: (IIrisPreview) -> Unit) {
+        val hal = connect() ?: return
+        try {
+            action(hal)
+        } catch (e: RemoteException) {
+            Log.w(TAG, "IIrisPreview failed", e)
         }
     }
 

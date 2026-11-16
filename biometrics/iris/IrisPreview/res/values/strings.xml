@@ -11,6 +11,8 @@
     <string name="iris_use_pin">Use PIN</string>
     <!-- Stock SystemUI kg_iris_no_match -->
     <string name="iris_no_match">No match</string>
+    <!-- Board 4: the hint under the retry icon after a no match -->
+    <string name="iris_tap_to_retry">Tap the icon to try iris recognition again</string>
     <!-- Stock SecIrisService iris_acquired_*, the hints of IrisViewManager.processAcquiredInfo() -->
     <string name="iris_acquired_move_closer">Hold phone closer</string>
     <string name="iris_acquired_move_farther">Hold phone farther away</string>
