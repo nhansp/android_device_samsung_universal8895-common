@@ -177,8 +177,9 @@ struct FaceLib {
     // 0x6010; same shape as ss_iris_request
     int (*ss_face_request)(uint32_t cmd, const uint8_t* in, uint32_t inLen, uint8_t* out,
                            uint32_t outLen, uint32_t param);
-    // 0x60d0; returns 1 when the session is over (or none exists), 0 to keep feeding frames
-    // (Java also treats 2 as "drop queued frames"; the engine can return it, UNCONFIRMED).
+    // 0x60d0; returns the engine's keepProcessing (FaceService::processFrontImage 0x5a54):
+    // 1 when the session is over, any other value (0, 2) to keep feeding frames; -2 when no
+    // FaceService exists (0x6198).
     int (*ss_face_processFrontImage)(const uint8_t* data, int dataLen, int width, int height,
                                      int rotation, int format);
 
