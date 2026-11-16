@@ -66,6 +66,9 @@ bool FaceCapture::start(Callbacks callbacks) {
     setsockopt(mSocket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
     mStopping = false;
+    mHaveFrame = false;
+    mLatest.resize(kFrameBytes);
+    mEngineThread = std::thread(&FaceCapture::engineLoop, this, callbacks.onFrame);
     mThread = std::thread(&FaceCapture::loop, this, std::move(callbacks));
     return true;
 }
@@ -74,7 +77,6 @@ void FaceCapture::loop(Callbacks callbacks) {
     std::vector<uint8_t> buf(kMaxMsgSize);
     std::vector<uint8_t> frame(kFrameBytes);
     size_t filled = 0;
-    bool taking = true;
     int error = -EPIPE;
     for (;;) {
         size_t len;
@@ -92,10 +94,16 @@ void FaceCapture::loop(Callbacks callbacks) {
             filled += bytes;
             if (filled < kFrameBytes) continue;
             filled = 0;
-            if (taking) taking = callbacks.onFrame(frame.data());
-            // The next frame may come; after the last one this only drops frames in the daemon.
+            // The frame is copied out; the daemon may send the next one.
             CameraMsg release = {MSG_RELEASE, 0};
             TEMP_FAILURE_RETRY(send(mSocket, &release, sizeof(release), MSG_NOSIGNAL));
+            callbacks.onPreview(frame.data());
+            {
+                std::lock_guard<std::mutex> lock(mFrameLock);
+                mLatest.swap(frame);
+                mHaveFrame = true;
+            }
+            mFrameCv.notify_one();
             continue;
         }
         if (type == MSG_ERROR && len >= sizeof(int32_t)) {
@@ -109,11 +117,30 @@ void FaceCapture::loop(Callbacks callbacks) {
     }
 }
 
+void FaceCapture::engineLoop(FrameCallback onFrame) {
+    std::vector<uint8_t> frame(kFrameBytes);
+    for (;;) {
+        {
+            std::unique_lock<std::mutex> lock(mFrameLock);
+            mFrameCv.wait(lock, [this] { return mHaveFrame || mStopping; });
+            if (mStopping) return;
+            frame.swap(mLatest);
+            mHaveFrame = false;
+        }
+        if (!onFrame(frame.data())) return;
+    }
+}
+
 void FaceCapture::stop() {
     if (mSocket < 0) return;
-    mStopping = true;
+    {
+        std::lock_guard<std::mutex> lock(mFrameLock);
+        mStopping = true;
+    }
+    mFrameCv.notify_all();
     shutdown(mSocket, SHUT_RDWR);
     if (mThread.joinable()) mThread.join();
+    if (mEngineThread.joinable()) mEngineThread.join();
     mSocket.reset();
 }
 
