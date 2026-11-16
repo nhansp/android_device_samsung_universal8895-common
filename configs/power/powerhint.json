@@ -174,7 +174,19 @@
             "PowerHint": "IRIS_CAPTURE",
             "Node": "CPULittleClusterMinFreq",
             "Duration": 9000,
-            "Value": "715000"
+            "Value": "1248000"
+        },
+        {
+            "PowerHint": "IRIS_CAPTURE",
+            "Node": "TAUClampBoost",
+            "Duration": 9000,
+            "Value": "30"
+        },
+        {
+            "PowerHint": "IRIS_CAPTURE",
+            "Node": "GPUMinFreq",
+            "Duration": 9000,
+            "Value": "385000000"
         },
         {
             "PowerHint": "FACE_CAPTURE",
