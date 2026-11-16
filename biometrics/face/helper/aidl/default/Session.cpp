@@ -155,7 +155,6 @@ ndk::ScopedAStatus Session::getEnrollmentConfig(EnrollmentType /*type*/,
 }
 
 bool Session::onFrame(const uint8_t* nv21) {
-    mPreview->render(nv21);
     std::lock_guard<std::mutex> lock(*mEngine.lock);
     // Returns the engine's keepProcessing: 1 once the enrollment or match is over (the library
     // closes its session itself; its result was sent to notify() before), any other value to
@@ -170,6 +169,7 @@ bool Session::startCapture(State state, std::chrono::milliseconds timeout) {
     std::weak_ptr<Session> weak = ref<Session>();
     uint64_t op = mOp.load();
     FaceCapture::Callbacks callbacks = {
+            .onPreview = [this](const uint8_t* nv21) { mPreview->render(nv21); },
             .onFrame = [this](const uint8_t* nv21) { return onFrame(nv21); },
             .onEnd =
                     [this, weak, op](int error) {

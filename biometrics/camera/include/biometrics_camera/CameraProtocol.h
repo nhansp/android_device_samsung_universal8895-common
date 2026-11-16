@@ -56,12 +56,12 @@ enum MsgType : uint32_t {
     MSG_STARTED = 1,   // daemon -> HAL: the camera streams, once per connection
     MSG_CHUNK = 2,     // daemon -> HAL: uint32_t offset, then bytes of the current frame
     MSG_ERROR = 3,     // daemon -> HAL: int32_t error, the capture is over
-    MSG_RELEASE = 4,   // HAL -> daemon: the frame is consumed, the next one may come
+    MSG_RELEASE = 4,   // HAL -> daemon: the frame is received, the next one may come
 };
 
 // A frame goes out in chunks that fit kMaxMsgSize; the chunk that reaches kFrameBytes completes
-// it. Only one frame is in flight: the daemon drops preview frames until MSG_RELEASE, like stock
-// FrCamCtrl, which hands the camera only buffers its consumer has returned.
+// it. Only one frame is in flight: the daemon drops preview frames until MSG_RELEASE, so a HAL
+// that falls behind loses frames instead of queueing them.
 constexpr size_t kChunkBytes = 60 * 1024;
 
 }  // namespace face_camera
