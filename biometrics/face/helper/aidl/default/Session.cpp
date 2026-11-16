@@ -157,12 +157,13 @@ ndk::ScopedAStatus Session::getEnrollmentConfig(EnrollmentType /*type*/,
 bool Session::onFrame(const uint8_t* nv21) {
     mPreview->render(nv21);
     std::lock_guard<std::mutex> lock(*mEngine.lock);
-    // Returns 1 once the enrollment or match is over (the library closes its session itself);
-    // its result was sent to notify() before.
+    // Returns the engine's keepProcessing: 1 once the enrollment or match is over (the library
+    // closes its session itself; its result was sent to notify() before), any other value to
+    // keep feeding frames; -2 without a FaceService. Stock processFrontImage 0x5a24-0x5a54.
     int ret = mEngine.lib->ss_face_processFrontImage(nv21, face_camera::kFrameBytes,
                                                       face_camera::kWidth, face_camera::kHeight,
                                                       kRotation, FACE_IMAGE_FORMAT_NV21);
-    return ret == 0;
+    return ret != 1 && ret >= 0;
 }
 
 bool Session::startCapture(State state, std::chrono::milliseconds timeout) {
