@@ -7,12 +7,11 @@ package org.lineageos.iris
 
 import android.view.Surface
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -36,7 +35,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.lerp
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
 enum class IrisCardMode {
@@ -45,22 +44,31 @@ enum class IrisCardMode {
     ISLAND,
 }
 
-// SystemUI's shade reveal (frameworks/libs/systemui mechanics VerticalExpandContainerSpec
-// .Defaults): the container detaches on DetachSpring and fades on OpacitySpring.
-private const val REVEAL_STIFFNESS = 380f
-private const val REVEAL_DAMPING = 0.9f
-private const val OPACITY_STIFFNESS = 1200f
-private const val OPACITY_DAMPING = 0.99f
-
-/** The preview field's top: right under the status bar, as the user specified. */
 @Composable
-fun irisFieldTop(): Dp = with(LocalDensity.current) { WindowInsets.statusBars.getTop(this).toDp() }
+fun statusBarHeight(): Dp =
+    with(LocalDensity.current) { WindowInsets.statusBars.getTop(this).toDp() }
+
+/** The preview field's top: a status bar's height of space under the status bar. */
+@Composable
+fun irisFieldTop(): Dp = statusBarHeight() * 2
 
 /**
- * The preview field at its fixed place, growing out of a pill at [originX] (the iris camera,
- * in px; the screen's centre when null) on the shade reveal spring; the preview and its message
- * fade in on the shade's opacity spring. The same in every mode: bouncer, BiometricPrompt and
- * enrollment. [onRetry] makes the failed field the board 4 retry target.
+ * How far the field has slid down into place: 0 above the screen, 1 in place. It slides like
+ * SystemUI's screen record menu (SmallScreenCaptureRecordContent: slideInVertically on the
+ * motion scheme's fast spatial spring).
+ */
+@Composable
+fun rememberFieldReveal(): Animatable<Float, AnimationVector1D> {
+    val reveal = remember { Animatable(0f) }
+    val spatial = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+    LaunchedEffect(Unit) { reveal.animateTo(1f, spatial) }
+    return reveal
+}
+
+/**
+ * The preview field at its fixed place, slid down from above the screen by [reveal]. The same in
+ * every mode: bouncer, BiometricPrompt and enrollment. [onRetry] makes the failed field the
+ * board 4 retry target.
  */
 @Composable
 fun IrisField(
@@ -69,34 +77,17 @@ fun IrisField(
     failed: Boolean,
     showMessage: Boolean,
     onSurface: (Surface?) -> Unit,
-    originX: Float? = null,
+    reveal: Animatable<Float, AnimationVector1D> = rememberFieldReveal(),
     onRetry: (() -> Unit)? = null,
 ) {
-    val expand = remember { Animatable(0f) }
-    val content = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        launch {
-            expand.animateTo(1f, spring(dampingRatio = REVEAL_DAMPING, stiffness = REVEAL_STIFFNESS))
-        }
-        launch {
-            content.animateTo(1f, spring(dampingRatio = OPACITY_DAMPING, stiffness = OPACITY_STIFFNESS))
-        }
-    }
-    val e = expand.value
     val top = irisFieldTop()
-    val width = dimensionResource(R.dimen.iris_card_width)
     val height = dimensionResource(R.dimen.iris_field_bottom) - top
-    BoxWithConstraints(modifier.fillMaxSize()) {
-        val density = LocalDensity.current
-        val startOffset =
-            originX?.let { with(density) { it.toDp() } - maxWidth / 2 } ?: Dp(0f)
+    Box(modifier.fillMaxSize()) {
         IrisPreviewCard(
             Modifier.align(Alignment.TopCenter)
-                .offset(x = lerp(startOffset, Dp(0f), e.coerceIn(0f, 1f)), y = top)
-                .size(
-                    lerp(dimensionResource(R.dimen.iris_island_pill_width), width, e),
-                    lerp(dimensionResource(R.dimen.iris_island_pill_height), height, e),
-                )
+                .offset(y = top)
+                .size(dimensionResource(R.dimen.iris_card_width), height)
+                .graphicsLayer { translationY = (reveal.value - 1f) * (top + height).toPx() }
                 .then(
                     if (failed && onRetry != null) {
                         Modifier.clickable(
@@ -112,7 +103,6 @@ fun IrisField(
             failed = failed,
             showMessage = showMessage,
             showRetry = onRetry != null,
-            contentAlpha = content.value,
             onSurface = onSurface,
         )
     }
@@ -122,8 +112,8 @@ fun IrisField(
  * The iris card window. On the bouncer (board 7) it fades a blur and the dynamic tint over the
  * PIN pad, like keyguard's own blur, with "Use PIN" under the field; a tap outside the field goes
  * back to the PIN pad, and after a no match a tap on the field retries (board 4). In a
- * BiometricPrompt (board 8) it is the field alone. When [visible] turns false the whole card
- * fades out on the effects springs, then [onExited] runs.
+ * BiometricPrompt (board 8) it is the field alone. When [visible] turns false the field slides
+ * back up and the rest fades out on the effects spring, then [onExited] runs.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -131,7 +121,6 @@ fun IrisCard(
     mode: IrisCardMode,
     visible: Boolean,
     failed: Boolean,
-    originX: Float?,
     onSurface: (Surface?) -> Unit,
     onBlur: (Float) -> Unit,
     onRetry: () -> Unit,
@@ -141,6 +130,8 @@ fun IrisCard(
     val acquired by IrisHal.hint.collectAsState()
     val exited by rememberUpdatedState(onExited)
     val alpha = remember { Animatable(1f) }
+    val reveal = rememberFieldReveal()
+    val fastSpatial = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
     // Full-screen effect: the slow effects spring (M3 motion: damping 1.0, stiffness 800).
     val blur = remember { Animatable(0f) }
     val slowEffects = MaterialTheme.motionScheme.slowEffectsSpec<Float>()
@@ -150,19 +141,22 @@ fun IrisCard(
             if (mode == IrisCardMode.BOUNCER) blur.animateTo(1f, slowEffects) { onBlur(value) }
             return@LaunchedEffect
         }
-        launch { if (mode == IrisCardMode.BOUNCER) blur.animateTo(0f, effects) { onBlur(value) } }
-        alpha.animateTo(0f, effects)
+        joinAll(
+            launch { if (mode == IrisCardMode.BOUNCER) blur.animateTo(0f, effects) { onBlur(value) } },
+            launch { alpha.animateTo(0f, effects) },
+            launch { reveal.animateTo(0f, fastSpatial) },
+        )
         exited()
     }
 
-    Box(Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha.value }) {
+    Box(Modifier.fillMaxSize()) {
         if (mode != IrisCardMode.BOUNCER) {
             IrisField(
                 acquired = acquired,
                 failed = failed,
                 showMessage = true,
                 onSurface = onSurface,
-                originX = originX,
+                reveal = reveal,
             )
             return@Box
         }
@@ -178,7 +172,7 @@ fun IrisCard(
 
         Box(
             Modifier.fillMaxSize()
-                .graphicsLayer { this.alpha = blur.value }
+                .graphicsLayer { this.alpha = blur.value * alpha.value }
                 .background(IrisColors.tint())
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
                     onDismiss()
@@ -189,7 +183,7 @@ fun IrisCard(
             failed = failed,
             showMessage = true,
             onSurface = onSurface,
-            originX = originX,
+            reveal = reveal,
             onRetry = onRetry,
         )
         Box(Modifier.fillMaxSize()) {
@@ -205,7 +199,7 @@ fun IrisCard(
                         .graphicsLayer {
                             scaleX = 0.6f + 0.4f * button.value
                             scaleY = 0.6f + 0.4f * button.value
-                            this.alpha = buttonAlpha.value
+                            this.alpha = buttonAlpha.value * alpha.value
                         },
                 // M3 Expressive buttons morph their shape on press
                 shapes = ButtonDefaults.shapes(),

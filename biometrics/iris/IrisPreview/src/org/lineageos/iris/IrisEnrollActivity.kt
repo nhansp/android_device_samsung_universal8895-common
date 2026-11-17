@@ -154,7 +154,7 @@ class IrisEnrollActivity : ComponentActivity() {
             Column(
                 Modifier.fillMaxSize()
                     .safeDrawingPadding()
-                    .padding(top = dimensionResource(R.dimen.iris_field_bottom) - irisFieldTop())
+                    .padding(top = dimensionResource(R.dimen.iris_field_bottom) - statusBarHeight())
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
