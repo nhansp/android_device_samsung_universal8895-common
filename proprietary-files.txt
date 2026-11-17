@@ -81,7 +81,7 @@ system/lib64/libGrallocWrapper.so:vendor/lib64/libGrallocWrapper.so
 system/lib64/libacryl.so:vendor/lib64/libacryl.so
 system/lib64/libexynosgscaler.so:vendor/lib64/libexynosgscaler.so
 system/lib64/libexynosscaler.so:vendor/lib64/libexynosscaler.so
-vendor/lib/egl/libGLES_mali.so
+vendor/lib/egl/libGLES_mali.so;SYMLINK=vendor/lib/hw/vulkan.exynos5.so
 vendor/lib/hw/hwcomposer.exynos5.so
 vendor/lib/libExynosHWCService.so
 vendor/lib/libexynosdisplay.so
@@ -90,7 +90,7 @@ vendor/lib/libexynosutils.so
 vendor/lib/libexynosv4l2.so
 vendor/lib/libion_exynos.so
 vendor/lib/libmpp.so
-vendor/lib64/egl/libGLES_mali.so
+vendor/lib64/egl/libGLES_mali.so;SYMLINK=vendor/lib64/hw/vulkan.exynos5.so
 vendor/lib64/hw/hwcomposer.exynos5.so
 vendor/lib64/libExynosHWCService.so
 vendor/lib64/libexynosdisplay.so

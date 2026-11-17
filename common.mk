@@ -204,6 +204,9 @@ PRODUCT_PACKAGES += \
     android.hardware.telephony.gsm.prebuilt.xml \
     android.hardware.usb.accessory.prebuilt.xml \
     android.hardware.usb.host.prebuilt.xml \
+    android.hardware.vulkan.compute-0.prebuilt.xml \
+    android.hardware.vulkan.level-0.prebuilt.xml \
+    android.hardware.vulkan.version-1_0_3.prebuilt.xml \
     android.hardware.wifi.prebuilt.xml \
     android.hardware.wifi.direct.prebuilt.xml \
     android.software.ipsec_tunnels.prebuilt.xml \
