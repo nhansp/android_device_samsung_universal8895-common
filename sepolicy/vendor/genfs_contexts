@@ -2,9 +2,11 @@
 genfscon sysfs /devices/platform/12860000.decon_f                                       u:object_r:sysfs_display:s0
 genfscon sysfs /devices/system/chip-id                                                  u:object_r:sysfs_chipid:s0
 
-# Battery: MAX77865 charger (32-0069) and fuel gauge (32-0036) on USI 10960000 (6.18 sysfs paths)
+# Battery: MAX77865 charger (32-0069) and fuel gauge (32-0036) on USI 10960000, IDT wireless
+# receiver (29-003b) on USI 10940000 (6.18 sysfs paths)
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0069/power_supply u:object_r:sysfs_battery:s0
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0036/power_supply u:object_r:sysfs_battery:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10940000/10940000.i2c/i2c-29/29-003b/power_supply u:object_r:sysfs_battery:s0
 
 # IIO: the SSP sensor hub on spi10.0 and the other IIO devices the sensors HAL scans by name
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device u:object_r:sysfs_sensors_writable:s0
