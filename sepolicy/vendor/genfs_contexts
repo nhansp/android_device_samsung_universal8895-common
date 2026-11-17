@@ -84,6 +84,8 @@ genfscon sysfs /devices/platform/soc@0/soc@0:usi@10480000/10490000.i2c/i2c-10/10
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@108e0000/108e0000.i2c/i2c-23/23-0048/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10900000/10900000.i2c/i2c-25/25-0059/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10900000/10910000.i2c/i2c-26/26-0027/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10940000/10940000.i2c/i2c-29/29-003b/power_supply/wireless/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc@0/soc@0:usi@10940000/10940000.i2c/i2c-29/29-003b/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10940000/10950000.i2c/i2c-30/30-0033/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0025/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0036/power_supply/battery/wakeup u:object_r:sysfs_wakeup:s0
