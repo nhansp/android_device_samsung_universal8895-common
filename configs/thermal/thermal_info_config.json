@@ -72,6 +72,15 @@
                 "NAN",
                 "NAN"
             ],
+            "HotHysteresis": [
+                0.0,
+                1.9,
+                1.9,
+                1.9,
+                0.0,
+                0.0,
+                0.0
+            ],
             "VrThreshold": "NAN",
             "Multiplier": 0.001,
             "Monitor": true
