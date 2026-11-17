@@ -13,8 +13,6 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.graphics.PixelFormat
-import android.graphics.Point
-import android.hardware.display.DisplayManager
 import android.hardware.biometrics.AuthenticationStateListener
 import android.hardware.biometrics.BiometricManager
 import android.hardware.biometrics.BiometricRequestConstants
@@ -31,7 +29,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.RemoteException
 import android.util.Log
-import android.view.Display
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -43,7 +40,7 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 
 /**
  * Shows the iris card while the face sensor (the iris HAL) authenticates: on the bouncer over a
- * second blur of the PIN pad, in a BiometricPrompt as an island growing out of a pill at the top.
+ * second blur of the PIN pad, in a BiometricPrompt as an island at the top.
  * On the lockscreen itself iris still authenticates, but without the card: it would cover the
  * lockscreen. Enrollment has its own activity (IrisEnrollActivity). Face authentication reaches
  * AuthenticationStateListener only: FaceProvider gives BiometricStateCallback to enrollment.
@@ -83,7 +80,7 @@ class IrisCardController(private val context: Context) {
         IrisHal.onCaptureStarted = { reason ->
             if (reason in BOUNCER_REASONS) handler.post { onBouncerCapture() }
         }
-        IrisHal.onCaptureHeld = { handler.post { if (mode == IrisCardMode.BOUNCER) failed = true } }
+        IrisHal.onCaptureHeld = { handler.post { if (mode == IrisCardMode.BOUNCER) onFailed() } }
         IrisHal.listen()
         context.registerReceiver(
             object : BroadcastReceiver() {
@@ -114,7 +111,7 @@ class IrisCardController(private val context: Context) {
                 if (info.biometricSourceType != BiometricSourceType.FACE) return
                 // A bouncer attempt reports its no match only once it is over; the prompt owns
                 // its retry, so the island just shows the no match.
-                handler.post { if (mode == IrisCardMode.ISLAND) failed = true }
+                handler.post { if (mode == IrisCardMode.ISLAND) onFailed() }
             }
 
             override fun onAuthenticationSucceeded(info: AuthenticationSucceededInfo) {
@@ -146,6 +143,7 @@ class IrisCardController(private val context: Context) {
             // The held attempt resumed.
             failed = false
             IrisHal.clearHint()
+            setKeepScreenOn(true)
             return
         }
         cancelPendingShow()
@@ -183,6 +181,8 @@ class IrisCardController(private val context: Context) {
                         WindowManager.LayoutParams.TYPE_SECURE_SYSTEM_OVERLAY
                     },
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                        // The scan holds the screen on; a no match hands it back to the timeout.
+                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
                         WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                         WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
                     PixelFormat.TRANSLUCENT,
@@ -206,7 +206,6 @@ class IrisCardController(private val context: Context) {
                     }
                 }
 
-        val originX = sensorX()
         val windowOwner = WindowOwner()
         val composeView =
             ComposeView(context).apply {
@@ -217,7 +216,6 @@ class IrisCardController(private val context: Context) {
                             mode = newMode,
                             visible = visible,
                             failed = failed,
-                            originX = originX,
                             onSurface = IrisHal::setPreviewSurface,
                             onBlur = { fraction -> setBlur(fraction, res.getDimensionPixelSize(R.dimen.iris_blur_radius)) },
                             onRetry = ::retry,
@@ -241,7 +239,24 @@ class IrisCardController(private val context: Context) {
         if (!failed) return
         failed = false
         IrisHal.clearHint()
+        setKeepScreenOn(true)
         IrisHal.resumeCapture()
+    }
+
+    private fun onFailed() {
+        failed = true
+        setKeepScreenOn(false)
+    }
+
+    private fun setKeepScreenOn(on: Boolean) {
+        val v = view ?: return
+        val lp = params ?: return
+        val flags =
+            if (on) lp.flags or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            else lp.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON.inv()
+        if (flags == lp.flags) return
+        lp.flags = flags
+        windowManager.updateViewLayout(v, lp)
     }
 
     private fun usePin() {
@@ -292,26 +307,6 @@ class IrisCardController(private val context: Context) {
         } catch (e: PackageManager.NameNotFoundException) {
             null
         }
-
-    /**
-     * The iris camera's x on the current display, in px: SystemUI's config_face_auth_props is in
-     * the display's largest mode, scaled to the current size like FacePropertyRepository does.
-     */
-    private fun sensorX(): Float? {
-        val res = systemUiResources() ?: return null
-        val id = res.getIdentifier("config_face_auth_props", "array", SYSTEMUI)
-        if (id == 0) return null
-        val props = res.getIntArray(id)
-        if (props.isEmpty()) return null
-        val display =
-            context.getSystemService(DisplayManager::class.java)?.getDisplay(Display.DEFAULT_DISPLAY)
-                ?: return null
-        val nativeWidth = display.supportedModes.maxOfOrNull { it.physicalWidth } ?: return null
-        if (nativeWidth <= 0) return null
-        val size = Point()
-        display.getRealSize(size)
-        return props[0] * size.x.toFloat() / nativeWidth
-    }
 
     private companion object {
         const val TAG = "IrisCard"

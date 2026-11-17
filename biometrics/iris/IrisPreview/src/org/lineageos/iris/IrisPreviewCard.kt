@@ -27,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -88,7 +87,6 @@ fun IrisPreviewCard(
     failed: Boolean,
     showMessage: Boolean,
     showRetry: Boolean = false,
-    contentAlpha: Float = 1f,
     onSurface: (Surface?) -> Unit,
 ) {
     val shape = RoundedCornerShape(dimensionResource(R.dimen.iris_card_radius))
@@ -102,15 +100,14 @@ fun IrisPreviewCard(
     ) {
         PreviewTexture(
             Modifier.fillMaxSize()
-                .alpha(contentAlpha)
                 .then(if (failed) Modifier.blur(dimensionResource(R.dimen.iris_blur_radius)) else Modifier),
             onSurface,
         )
         if (failed) {
             Box(Modifier.fillMaxSize().background(IrisColors.tint()))
-            if (showRetry) RetryPrompt(Modifier.align(Alignment.Center).alpha(contentAlpha))
+            if (showRetry) RetryPrompt(Modifier.align(Alignment.Center))
         } else {
-            EyeGuides(Modifier.fillMaxSize().alpha(contentAlpha), monet)
+            EyeGuides(Modifier.fillMaxSize(), monet)
         }
         if (showMessage) {
             val message =
@@ -118,7 +115,7 @@ fun IrisPreviewCard(
                     failed -> R.string.iris_no_match
                     else -> hintText(acquired) ?: R.string.iris_guide
                 }
-            CardMessage(stringResource(message), contentAlpha)
+            CardMessage(stringResource(message))
         }
     }
 }
@@ -169,10 +166,10 @@ private fun RetryPrompt(modifier: Modifier) {
 }
 
 @Composable
-private fun CardMessage(text: String, alpha: Float) {
+private fun CardMessage(text: String) {
     Text(
         text = text,
-        modifier = Modifier.fillMaxWidth().padding(top = HINT_TOP, start = 16.dp, end = 16.dp).alpha(alpha),
+        modifier = Modifier.fillMaxWidth().padding(top = HINT_TOP, start = 16.dp, end = 16.dp),
         color = Color.White,
         textAlign = TextAlign.Center,
         style =
