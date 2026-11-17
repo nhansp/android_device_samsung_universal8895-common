@@ -80,6 +80,7 @@
             "Path": "/sys/class/devfreq/13900000.mali/min_freq",
             "Values": [
                 "546000000",
+                "455000000",
                 "385000000",
                 "260000000"
             ],
@@ -168,13 +169,13 @@
             "PowerHint": "IRIS_CAPTURE",
             "Node": "CPUBigClusterMinFreq",
             "Duration": 9000,
-            "Value": "1703000"
+            "Value": "2002000"
         },
         {
             "PowerHint": "IRIS_CAPTURE",
             "Node": "CPULittleClusterMinFreq",
             "Duration": 9000,
-            "Value": "1248000"
+            "Value": "1690000"
         },
         {
             "PowerHint": "IRIS_CAPTURE",
@@ -186,7 +187,13 @@
             "PowerHint": "IRIS_CAPTURE",
             "Node": "GPUMinFreq",
             "Duration": 9000,
-            "Value": "385000000"
+            "Value": "455000000"
+        },
+        {
+            "PowerHint": "IRIS_CAPTURE",
+            "Node": "MIFMinFreq",
+            "Duration": 9000,
+            "Value": "1352000000"
         },
         {
             "PowerHint": "FACE_CAPTURE",
