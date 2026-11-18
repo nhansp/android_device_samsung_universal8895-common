@@ -288,7 +288,7 @@ $(call soong_config_set,samsungUsbGadgetVars,gadget_name,10c00000.usb)
 
 # Vibrator
 PRODUCT_PACKAGES += \
-    android.hardware.vibrator-service.samsung
+    android.hardware.vibrator-service.universal8895
 
 # Wi-Fi
 PRODUCT_PACKAGES += \

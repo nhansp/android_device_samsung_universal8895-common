@@ -1,0 +1,21 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+cc_binary {
+    name: "android.hardware.vibrator-service.universal8895",
+    init_rc: ["android.hardware.vibrator-service.universal8895.rc"],
+    vintf_fragments: ["android.hardware.vibrator-service.universal8895.xml"],
+    relative_install_path: "hw",
+    vendor: true,
+    srcs: [
+        "Vibrator.cpp",
+        "service.cpp",
+    ],
+    shared_libs: [
+        "android.hardware.vibrator-V2-ndk",
+        "libbase",
+        "libbinder_ndk",
+    ],
+}

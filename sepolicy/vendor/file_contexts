@@ -32,6 +32,9 @@
 # GPU (Mali)
 /dev/mali0                                              u:object_r:gpu_device:s0
 
+# Vibrator
+/(vendor|system/vendor)/bin/hw/android\.hardware\.vibrator-service\.universal8895    u:object_r:hal_vibrator_default_exec:s0
+
 # SELinux contexts of odm, which lives inside the vendor directory of the system partition
 /(vendor|system/vendor)/odm/etc/selinux(/.*)?           u:object_r:vendor_configs_file:s0
 
