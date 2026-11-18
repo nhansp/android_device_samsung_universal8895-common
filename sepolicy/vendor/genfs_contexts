@@ -98,3 +98,4 @@ genfscon sysfs /devices/platform/sound/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/ufs-srpmb/wakeup u:object_r:sysfs_wakeup:s0
 
 genfscon sysfs /devices/virtual/timed_output/vibrator/force_touch_intensity u:object_r:sysfs_vibrator:s0
+genfscon sysfs /devices/virtual/timed_output/vibrator/haptic_engine u:object_r:sysfs_vibrator:s0
