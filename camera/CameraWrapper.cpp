@@ -12,6 +12,9 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <cstddef>
 #include <iterator>
 #include <map>
 #include <mutex>
@@ -21,6 +24,7 @@
 #include <android-base/file.h>
 #include <android-base/parseint.h>
 #include <android-base/strings.h>
+#include <hardware/camera3.h>
 #include <hardware/camera_common.h>
 #include <hardware/hardware.h>
 #include <log/log.h>
@@ -141,17 +145,7 @@ camera_metadata_t* PatchStaticInfo(int cameraId, const camera_metadata_t* src, i
                  find_camera_metadata_ro_entry(src, ANDROID_FLASH_INFO_AVAILABLE, &entry) == 0 &&
                  entry.count == 1 && entry.data.u8[0] == ANDROID_FLASH_INFO_AVAILABLE_TRUE;
     bool video = cameraId == kBackCameraId;
-    // libexynoscamera3 cannot flush a session with a ZSL (PRIVATE reprocessing) output: it never
-    // gives that stream a buffer manager (configureStreams), m_checkStreamBuffer rejects stream
-    // type 5, and its ZSL manager cannot hand back framework buffers of requests still in flight.
-    // Their buffers never return, cameraserver's drain times out and the provider crashes on
-    // close. Stock only ever used it through HAL1, so do not offer private reprocessing.
-    auto caps = GetEntry<uint8_t>(src, ANDROID_REQUEST_AVAILABLE_CAPABILITIES);
-    auto zsl = std::find(caps.begin(), caps.end(),
-                         ANDROID_REQUEST_AVAILABLE_CAPABILITIES_PRIVATE_REPROCESSING);
-    bool noZsl = zsl != caps.end();
-    if (noZsl) caps.erase(zsl);
-    if (!torch && !video && !noZsl) return nullptr;
+    if (!torch && !video) return nullptr;
 
     auto keys = GetEntry<int32_t>(src, ANDROID_REQUEST_AVAILABLE_CHARACTERISTICS_KEYS);
     auto durations = GetEntry<int64_t>(src, ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS);
@@ -167,9 +161,7 @@ camera_metadata_t* PatchStaticInfo(int cameraId, const camera_metadata_t* src, i
 
     size_t extraData = calculate_camera_metadata_entry_data_size(TYPE_INT32, keys.size()) +
                        calculate_camera_metadata_entry_data_size(TYPE_INT64, durations.size()) +
-                       calculate_camera_metadata_entry_data_size(TYPE_INT32, fpsRanges.size()) +
-                       calculate_camera_metadata_entry_data_size(TYPE_BYTE, caps.size()) +
-                       calculate_camera_metadata_entry_data_size(TYPE_INT32, 1);
+                       calculate_camera_metadata_entry_data_size(TYPE_INT32, fpsRanges.size());
     camera_metadata_t* dst = allocate_camera_metadata(get_camera_metadata_entry_count(src) + 8,
                                                       get_camera_metadata_data_count(src) + extraData);
     if (dst == nullptr) return nullptr;
@@ -185,11 +177,6 @@ camera_metadata_t* PatchStaticInfo(int cameraId, const camera_metadata_t* src, i
                        durations.size()) ||
               SetEntry(dst, ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES, fpsRanges.data(),
                        fpsRanges.size());
-    }
-    if (!ret && noZsl) {
-        const int32_t maxInputStreams = 0;
-        ret = SetEntry(dst, ANDROID_REQUEST_AVAILABLE_CAPABILITIES, caps.data(), caps.size()) ||
-              SetEntry(dst, ANDROID_REQUEST_MAX_NUM_INPUT_STREAMS, &maxInputStreams, 1);
     }
     if (ret) {
         ALOGE("Failed to extend the static info of camera %d", cameraId);
@@ -230,12 +217,212 @@ const camera_module_callbacks_t kCallbacks = {
         .torch_mode_status_change = TorchModeStatusChange,
 };
 
+// libexynoscamera3 cannot flush a session with a ZSL (PRIVATE reprocessing) stream while ZSL
+// requests are in flight: configureStreams never gives that stream a buffer manager,
+// m_checkStreamBuffer rejects stream type 5, and its ZSL manager cannot hand back framework
+// buffers of requests it still holds. Those buffers never return, cameraserver's drain times out
+// and the provider aborts on close. Requests it completes normally return everything, and a flush
+// with nothing in flight is clean. So in a session with an input stream, flush() first waits for
+// the requests in flight to complete (the framework sends no new ones during a flush), then flushes.
+constexpr auto kZslDrainTimeout = std::chrono::milliseconds(1500);
+
+struct Pending {
+    uint32_t buffers = 0;
+    bool metadata = false;
+};
+
+struct WrappedDevice {
+    camera3_device_t base;
+    camera3_device_ops_t ops;
+    camera3_callback_ops_t callbacks;
+    camera3_device_t* vendor = nullptr;
+    const camera3_callback_ops_t* framework = nullptr;
+    uint32_t partialResultCount = 1;
+
+    std::mutex lock;
+    std::condition_variable drained;
+    bool hasInputStream = false;
+    std::map<uint32_t, Pending> inFlight;
+};
+
+WrappedDevice* FromDevice(const camera3_device_t* dev) {
+    return reinterpret_cast<WrappedDevice*>(const_cast<camera3_device_t*>(dev));
+}
+
+WrappedDevice* FromCallbacks(const camera3_callback_ops_t* ops) {
+    return reinterpret_cast<WrappedDevice*>(reinterpret_cast<uintptr_t>(ops) -
+                                            offsetof(WrappedDevice, callbacks));
+}
+
+// Called with w->lock held.
+void Settle(WrappedDevice* w, std::map<uint32_t, Pending>::iterator it) {
+    if (it->second.buffers == 0 && it->second.metadata) {
+        w->inFlight.erase(it);
+        if (w->inFlight.empty()) w->drained.notify_all();
+    }
+}
+
+void ProcessCaptureResult(const camera3_callback_ops_t* ops, const camera3_capture_result_t* r) {
+    WrappedDevice* w = FromCallbacks(ops);
+    {
+        std::lock_guard<std::mutex> lock(w->lock);
+        auto it = w->inFlight.find(r->frame_number);
+        if (it != w->inFlight.end()) {
+            uint32_t returned = r->num_output_buffers + (r->input_buffer != nullptr ? 1 : 0);
+            it->second.buffers -= std::min(returned, it->second.buffers);
+            if (r->result != nullptr && r->partial_result >= w->partialResultCount) {
+                it->second.metadata = true;
+            }
+            Settle(w, it);
+        }
+    }
+    w->framework->process_capture_result(w->framework, r);
+}
+
+void Notify(const camera3_callback_ops_t* ops, const camera3_notify_msg_t* msg) {
+    WrappedDevice* w = FromCallbacks(ops);
+    if (msg->type == CAMERA3_MSG_ERROR) {
+        std::lock_guard<std::mutex> lock(w->lock);
+        const camera3_error_msg_t& e = msg->message.error;
+        if (e.error_code == CAMERA3_MSG_ERROR_DEVICE) {
+            w->inFlight.clear();
+            w->drained.notify_all();
+        } else if (e.error_code == CAMERA3_MSG_ERROR_REQUEST ||
+                   e.error_code == CAMERA3_MSG_ERROR_RESULT) {
+            auto it = w->inFlight.find(e.frame_number);
+            if (it != w->inFlight.end()) {
+                it->second.metadata = true;
+                Settle(w, it);
+            }
+        }
+    }
+    w->framework->notify(w->framework, msg);
+}
+
+int Initialize(const camera3_device_t* dev, const camera3_callback_ops_t* callbacks) {
+    WrappedDevice* w = FromDevice(dev);
+    w->framework = callbacks;
+    return w->vendor->ops->initialize(w->vendor, &w->callbacks);
+}
+
+int ConfigureStreams(const camera3_device_t* dev, camera3_stream_configuration_t* list) {
+    WrappedDevice* w = FromDevice(dev);
+    bool input = std::any_of(list->streams, list->streams + list->num_streams,
+                             [](const camera3_stream_t* s) {
+                                 return s->stream_type == CAMERA3_STREAM_INPUT ||
+                                        s->stream_type == CAMERA3_STREAM_BIDIRECTIONAL;
+                             });
+    {
+        std::lock_guard<std::mutex> lock(w->lock);
+        w->hasInputStream = input;
+    }
+    return w->vendor->ops->configure_streams(w->vendor, list);
+}
+
+int ProcessCaptureRequest(const camera3_device_t* dev, camera3_capture_request_t* request) {
+    WrappedDevice* w = FromDevice(dev);
+    {
+        std::lock_guard<std::mutex> lock(w->lock);
+        w->inFlight[request->frame_number] = {
+                request->num_output_buffers + (request->input_buffer != nullptr ? 1 : 0), false};
+    }
+    int ret = w->vendor->ops->process_capture_request(w->vendor, request);
+    if (ret != 0) {
+        std::lock_guard<std::mutex> lock(w->lock);
+        w->inFlight.erase(request->frame_number);
+        if (w->inFlight.empty()) w->drained.notify_all();
+    }
+    return ret;
+}
+
+int RegisterStreamBuffers(const camera3_device_t* dev, const camera3_stream_buffer_set_t* set) {
+    WrappedDevice* w = FromDevice(dev);
+    return w->vendor->ops->register_stream_buffers(w->vendor, set);
+}
+
+const camera_metadata_t* ConstructDefaultRequestSettings(const camera3_device_t* dev, int type) {
+    WrappedDevice* w = FromDevice(dev);
+    return w->vendor->ops->construct_default_request_settings(w->vendor, type);
+}
+
+void GetMetadataVendorTagOps(const camera3_device_t* dev, vendor_tag_query_ops_t* ops) {
+    WrappedDevice* w = FromDevice(dev);
+    w->vendor->ops->get_metadata_vendor_tag_ops(w->vendor, ops);
+}
+
+void Dump(const camera3_device_t* dev, int fd) {
+    WrappedDevice* w = FromDevice(dev);
+    w->vendor->ops->dump(w->vendor, fd);
+}
+
+int Flush(const camera3_device_t* dev) {
+    WrappedDevice* w = FromDevice(dev);
+    {
+        std::unique_lock<std::mutex> lock(w->lock);
+        if (w->hasInputStream &&
+            !w->drained.wait_for(lock, kZslDrainTimeout, [w] { return w->inFlight.empty(); })) {
+            ALOGW("%zu requests still in flight after %lld ms, flushing anyway", w->inFlight.size(),
+                  static_cast<long long>(kZslDrainTimeout.count()));
+        }
+    }
+    return w->vendor->ops->flush(w->vendor);
+}
+
+int CloseDevice(hw_device_t* device) {
+    WrappedDevice* w = reinterpret_cast<WrappedDevice*>(device);
+    int ret = w->vendor->common.close(&w->vendor->common);
+    delete w;
+    return ret;
+}
+
+uint32_t PartialResultCount(camera_module_t* vendor, int cameraId) {
+    camera_info info = {};
+    if (vendor->get_camera_info(cameraId, &info) != 0 ||
+        info.static_camera_characteristics == nullptr) {
+        return 1;
+    }
+    auto count = GetEntry<int32_t>(info.static_camera_characteristics,
+                                   ANDROID_REQUEST_PARTIAL_RESULT_COUNT);
+    return count.empty() || count[0] < 1 ? 1 : count[0];
+}
+
 int Open(const hw_module_t*, const char* id, hw_device_t** device) {
     camera_module_t* vendor = VendorModule();
     if (vendor == nullptr) {
         return -ENODEV;
     }
-    return vendor->common.methods->open(&vendor->common, id, device);
+    int ret = vendor->common.methods->open(&vendor->common, id, device);
+    if (ret != 0 || *device == nullptr || (*device)->version < CAMERA_DEVICE_API_VERSION_3_0) {
+        return ret;
+    }
+
+    int cameraId = 0;
+    auto* w = new WrappedDevice();
+    w->vendor = reinterpret_cast<camera3_device_t*>(*device);
+    if (android::base::ParseInt(id, &cameraId, 0)) {
+        w->partialResultCount = PartialResultCount(vendor, cameraId);
+    }
+    // Only the device 3.3 operations: the blob's ops table predates the later members. Each one
+    // forwards with the vendor device, whose priv holds the HAL's camera object.
+    const camera3_device_ops_t* v = w->vendor->ops;
+    w->ops.initialize = Initialize;
+    w->ops.configure_streams = ConfigureStreams;
+    w->ops.register_stream_buffers = v->register_stream_buffers ? RegisterStreamBuffers : nullptr;
+    w->ops.construct_default_request_settings = ConstructDefaultRequestSettings;
+    w->ops.process_capture_request = ProcessCaptureRequest;
+    w->ops.get_metadata_vendor_tag_ops =
+            v->get_metadata_vendor_tag_ops ? GetMetadataVendorTagOps : nullptr;
+    w->ops.dump = v->dump ? Dump : nullptr;
+    w->ops.flush = Flush;
+    w->callbacks.process_capture_result = ProcessCaptureResult;
+    w->callbacks.notify = Notify;
+    w->base.common = w->vendor->common;
+    w->base.common.module = &HAL_MODULE_INFO_SYM.common;
+    w->base.common.close = CloseDevice;
+    w->base.ops = &w->ops;
+    w->base.priv = w->vendor->priv;
+    *device = &w->base.common;
+    return 0;
 }
 
 int GetNumberOfCameras() {
