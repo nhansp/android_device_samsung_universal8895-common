@@ -393,8 +393,7 @@ void Session::onAuthenticated(uint64_t op, uint32_t fid) {
         LOG(INFO) << "onAuthenticationSucceeded";
         mLockout->reset(true);
         // The library gives no signed token (libFaceService processFrontImage 0x58a8 passes
-        // none), so this sensor is CONVENIENCE: the framework only hands STRONG tokens to
-        // keystore.
+        // none), so the token carries only the challenge.
         HardwareAuthToken token;
         token.challenge = mOperationId;
         mCb->onAuthenticationSucceeded(static_cast<int32_t>(fid), token);

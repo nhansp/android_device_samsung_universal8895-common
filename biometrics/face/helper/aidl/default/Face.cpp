@@ -17,10 +17,10 @@ namespace {
 constexpr int kSensorId = 1;
 // Stock FaceService DEFAULT_MAX_TEMPLATES_PER_USER
 constexpr int kMaxEnrollmentsPerUser = 1;
-// Matching runs in the face trustlet, but the camera frames are in normal memory and the library
-// returns no signed token, and stock kept face unlock to the lock screen (not Samsung Pass):
-// convenience, which unlocks the lock screen and nothing else.
-constexpr common::SensorStrength kSensorStrength = common::SensorStrength::CONVENIENCE;
+// Matching runs in the face trustlet. The library returns no signed token, so keystore-bound
+// operations (BiometricPrompt with a CryptoObject) cannot use this sensor; unlock and plain
+// BiometricPrompt work.
+constexpr common::SensorStrength kSensorStrength = common::SensorStrength::STRONG;
 
 }  // namespace
 
