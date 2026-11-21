@@ -166,6 +166,10 @@ PRODUCT_PACKAGES += \
     nfc_nci_sec \
     Tag
 
+# OpenCL
+PRODUCT_COPY_FILES += \
+    $(COMMON_PATH)/configs/public.libraries.txt:$(TARGET_COPY_OUT_VENDOR)/etc/public.libraries.txt
+
 # Overlays
 PRODUCT_PACKAGES += \
     CarrierSettingsOverlayCommon \
