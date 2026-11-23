@@ -119,21 +119,11 @@ PRODUCT_SHIPPING_API_LEVEL := 25
 PRODUCT_SET_DEBUGFS_RESTRICTIONS := true
 
 # Keymaster
-# TEE-backed by default. TARGET_KEYMASTER_TEE := false falls back to the AOSP software keymaster;
-# switching either way invalidates every key keystore holds.
-TARGET_KEYMASTER_TEE ?= true
-ifeq ($(TARGET_KEYMASTER_TEE),true)
 PRODUCT_PACKAGES += \
     android.hardware.keymaster@3.0-impl.exynos8895 \
-    keymaster@3.0-override.rc
+    android.hardware.keymaster@3.0-service
 PRODUCT_VENDOR_PROPERTIES += \
     ro.hardware.keystore=mdfpp
-else
-PRODUCT_PACKAGES += \
-    android.hardware.keymaster@3.0-impl
-endif
-PRODUCT_PACKAGES += \
-    android.hardware.keymaster@3.0-service
 
 # Lights
 PRODUCT_PACKAGES += \

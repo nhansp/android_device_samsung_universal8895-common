@@ -331,6 +331,15 @@ service mobicore /vendor/bin/mcDriverDaemon -r /vendor/app/mcRegistry/FFFFFFFF00
     group system
     disabled
 
+# TEE keymaster with stock's user and groups (stock vendor/etc/init/android.hardware.keymaster@3.0-service.rc):
+# its library keeps files under /efs. Init parses this file before /vendor/etc/init, so this definition
+# replaces the AOSP one of the same name.
+service vendor.keymaster-3-0 /vendor/bin/hw/android.hardware.keymaster@3.0-service
+    interface android.hardware.keymaster@3.0::IKeymasterDevice default
+    class early_hal
+    user system
+    group system drmrpc
+
 # Wi-Fi MAC address from /efs (stock wifi.rc)
 service macloader /vendor/bin/hw/macloader
     class main
