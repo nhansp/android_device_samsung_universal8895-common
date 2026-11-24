@@ -11,8 +11,8 @@
 namespace android::frameworks::schedulerservice::V1_0 {
 
 struct ISchedulingPolicyService : public virtual RefBase {
-    static sp<ISchedulingPolicyService> getService(const std::string& serviceName = "default",
-                                                   bool getStub = false);
+    static sp<ISchedulingPolicyService> getService(const std::string& service_name = "default",
+                                                   bool get_stub = false);
 };
 
 // the schedulerservice HAL is gone, so there is no instance to hand out
