@@ -77,8 +77,8 @@ ndk::ScopedAStatus Face::getSensorProps(std::vector<SensorProps>* out) {
 ndk::ScopedAStatus Face::createSession(int32_t /*sensorId*/, int32_t userId,
                                        const std::shared_ptr<ISessionCallback>& cb,
                                        std::shared_ptr<ISession>* out) {
-    auto session = SharedRefBase::make<Session>(&mLib, &mWorker, &mLockout, mPreview.get(),
-                                                &mBoost, userId, cb);
+    auto session = SharedRefBase::make<Session>(&mLib, &mWorker, &mLockout, mPreview.get(), &mBoost,
+                                                userId, cb);
     session->linkToDeath(cb->asBinder().get());
     {
         std::lock_guard<std::mutex> lock(sSessionLock);

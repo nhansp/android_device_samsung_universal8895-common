@@ -122,7 +122,8 @@ void Preview::render(const uint8_t* nv21, int32_t width, int32_t height) {
     for (int32_t row = 0; row < height; row++) {
         const uint8_t* y = nv21 + static_cast<size_t>(row) * width;
         const uint8_t* c = vu + static_cast<size_t>(row / 2) * width;
-        uint32_t* out = static_cast<uint32_t*>(buffer.bits) + static_cast<size_t>(row) * buffer.stride;
+        uint32_t* out =
+                static_cast<uint32_t*>(buffer.bits) + static_cast<size_t>(row) * buffer.stride;
         for (int32_t x = 0; x < width; x++) out[x] = Rgba(y[x], c[x & ~1], c[x | 1]);
     }
     ANativeWindow_unlockAndPost(target.window);

@@ -26,8 +26,8 @@ class Preview : public BnIrisPreview {
   public:
     ~Preview();
 
-    ndk::ScopedAStatus setPreviewSurface(const std::optional<::aidl::android::view::Surface>& surface)
-            override;
+    ndk::ScopedAStatus setPreviewSurface(
+            const std::optional<::aidl::android::view::Surface>& surface) override;
     ndk::ScopedAStatus setListener(const std::shared_ptr<IIrisPreviewListener>& listener) override;
     ndk::ScopedAStatus resumeCapture() override;
     ndk::ScopedAStatus endCapture() override;

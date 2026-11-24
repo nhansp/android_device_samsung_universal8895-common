@@ -61,8 +61,8 @@ IrisCapture::~IrisCapture() {
 }
 
 bool IrisCapture::start(std::map<std::string, std::string>* params, Callbacks callbacks) {
-    mSocket.reset(socket_local_client(kSocketName, ANDROID_SOCKET_NAMESPACE_RESERVED,
-                                      SOCK_SEQPACKET));
+    mSocket.reset(
+            socket_local_client(kSocketName, ANDROID_SOCKET_NAMESPACE_RESERVED, SOCK_SEQPACKET));
     if (mSocket < 0) {
         PLOG(ERROR) << "Failed to connect to the iris camera";
         return false;

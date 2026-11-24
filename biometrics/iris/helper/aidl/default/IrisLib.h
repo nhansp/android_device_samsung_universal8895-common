@@ -78,7 +78,7 @@ constexpr size_t kAcquiredCodeOffset = 8 + 0x808;
 enum IrisRequest : uint32_t {
     // param 0: RGB preview from the front camera; 1: IR preview
     IRIS_REQUEST_IR_PREVIEW_ENABLE = 2005,
-    IRIS_REQUEST_SECURE_ENABLE = 20000,     // opens the trustlet session for a capture
+    IRIS_REQUEST_SECURE_ENABLE = 20000,  // opens the trustlet session for a capture
     IRIS_REQUEST_SECURE_DISABLE = 20001,
 };
 

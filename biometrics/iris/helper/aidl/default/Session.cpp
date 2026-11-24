@@ -32,9 +32,9 @@ namespace aidl::android::hardware::biometrics::face {
 
 using ::aidl::android::hardware::biometrics::common::AuthenticateReason;
 using ::aidl::android::hardware::biometrics::common::BnCancellationSignal;
+using ::aidl::android::hardware::keymaster::HardwareAuthenticatorType;
 using ::aidl::vendor::lineage::biometrics::iris::IIrisPreview;
 using ::aidl::vendor::lineage::biometrics::iris::IrisAcquired;
-using ::aidl::android::hardware::keymaster::HardwareAuthenticatorType;
 using namespace std::chrono_literals;
 
 namespace {
@@ -90,7 +90,8 @@ HardwareAuthToken fromLegacy(const hw_auth_token_t& hat) {
     token.challenge = hat.challenge;
     token.userId = hat.user_id;
     token.authenticatorId = hat.authenticator_id;
-    token.authenticatorType = static_cast<HardwareAuthenticatorType>(be32toh(hat.authenticator_type));
+    token.authenticatorType =
+            static_cast<HardwareAuthenticatorType>(be32toh(hat.authenticator_type));
     token.timestamp.milliSeconds = be64toh(hat.timestamp);
     token.mac.assign(std::begin(hat.hmac), std::end(hat.hmac));
     return token;
@@ -203,8 +204,8 @@ bool Session::startCapture(State state) {
     IrisCapture::Callbacks callbacks = {
             .onIrFrame =
                     [this](int fd) {
-                        mLib->ss_iris_processIRImage(fd, iris_camera::kWidth,
-                                                     iris_camera::kHeight, kIrRotation);
+                        mLib->ss_iris_processIRImage(fd, iris_camera::kWidth, iris_camera::kHeight,
+                                                     kIrRotation);
                     },
             // The front data takes the IR rotation too
             .onFrontFrame =
@@ -540,7 +541,8 @@ void Session::onUserAction(bool resume) {
         if (!resume) {
             if (self->mState == State::HELD) {
                 self->finishHeld();
-            } else if (self->mState == State::AUTHENTICATING && isBouncerReason(self->mFaceReason)) {
+            } else if (self->mState == State::AUTHENTICATING &&
+                       isBouncerReason(self->mFaceReason)) {
                 LOG(INFO) << "Attempt ended from the iris card";
                 self->endCapture(true);
                 self->mCb->onError(Error::CANCELED, 0);
@@ -592,9 +594,8 @@ bool Session::checkLockout() {
 }
 
 ndk::ScopedAStatus Session::enumerateEnrollments() {
-    mWorker->post([self = ref<Session>()] {
-        self->mCb->onEnrollmentsEnumerated(self->enrollments());
-    });
+    mWorker->post(
+            [self = ref<Session>()] { self->mCb->onEnrollmentsEnumerated(self->enrollments()); });
     return ndk::ScopedAStatus::ok();
 }
 
