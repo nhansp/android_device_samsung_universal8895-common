@@ -21,25 +21,25 @@ constexpr char kRealRil[] = "/vendor/lib64/libsec-ril-impl.so";
 
 using RilInit = const RIL_RadioFunctions* (*)(const RIL_Env*, int, char**);
 
-void* sRealHandle;
-const RIL_Env* sEnv;
-RIL_Env sShimEnv;
-RIL_RadioFunctions sShimFunctions;
-RIL_RequestFunc sRealOnRequest;
+void* real_handle;
+const RIL_Env* ril_env;
+RIL_Env shim_ril_env;
+RIL_RadioFunctions shim_functions;
+RIL_RequestFunc real_on_request;
 
-std::mutex sLock;
-std::unordered_set<RIL_Token> sSmscRequests;
+std::mutex smsc_mutex;
+std::unordered_set<RIL_Token> smsc_requests;
 
-RilInit realInit(const char* name) {
-    if (sRealHandle == nullptr) {
-        sRealHandle = dlopen(kRealRil, RTLD_NOW);
-        if (sRealHandle == nullptr) {
+RilInit RealInit(const char* name) {
+    if (real_handle == nullptr) {
+        real_handle = dlopen(kRealRil, RTLD_NOW);
+        if (real_handle == nullptr) {
             RLOGE("dlopen %s: %s", kRealRil, dlerror());
             return nullptr;
         }
     }
 
-    auto init = reinterpret_cast<RilInit>(dlsym(sRealHandle, name));
+    auto init = reinterpret_cast<RilInit>(dlsym(real_handle, name));
     if (init == nullptr) {
         RLOGE("dlsym %s: %s", name, dlerror());
     }
@@ -49,7 +49,7 @@ RilInit realInit(const char* name) {
 // Samsung's RIL answers GET_SMSC_ADDRESS in the 3GPP TS 27.007 +CSCA form "<digits>",<tosca>,
 // while ril.h expects the address itself, with a '+' for an international number. Telephony hands
 // the reply back as the SMSC of SEND_SMS and to the IMS service, so it has to be an address.
-bool toRilAddress(const std::string& reply, std::string* address) {
+bool ToRilAddress(const std::string& reply, std::string* address) {
     if (reply.size() < 4 || reply[0] != '"') return false;
 
     const size_t quote = reply.find('"', 1);
@@ -77,61 +77,61 @@ bool toRilAddress(const std::string& reply, std::string* address) {
     return true;
 }
 
-void onRequestComplete(RIL_Token t, RIL_Errno e, void* response, size_t responselen) {
+void OnRequestComplete(RIL_Token t, RIL_Errno e, void* response, size_t response_len) {
     bool smsc;
     {
-        std::lock_guard<std::mutex> lock(sLock);
-        smsc = sSmscRequests.erase(t) != 0;
+        std::lock_guard<std::mutex> lock(smsc_mutex);
+        smsc = smsc_requests.erase(t) != 0;
     }
 
     if (smsc && e == RIL_E_SUCCESS && response != nullptr) {
         const auto reply = static_cast<const char*>(response);
-        const std::string original(reply, strnlen(reply, responselen));
+        const std::string original(reply, strnlen(reply, response_len));
         std::string address;
-        if (toRilAddress(original, &address)) {
+        if (ToRilAddress(original, &address)) {
             RLOGI("GET_SMSC_ADDRESS %s -> %s", original.c_str(), address.c_str());
-            sEnv->OnRequestComplete(t, e, address.data(), address.size() + 1);
+            ril_env->OnRequestComplete(t, e, address.data(), address.size() + 1);
             return;
         }
         RLOGW("GET_SMSC_ADDRESS reply %s left as is", original.c_str());
     }
 
-    sEnv->OnRequestComplete(t, e, response, responselen);
+    ril_env->OnRequestComplete(t, e, response, response_len);
 }
 
-void onRequest(int request, void* data, size_t datalen, RIL_Token t) {
+void OnRequest(int request, void* data, size_t data_len, RIL_Token t) {
     {
-        std::lock_guard<std::mutex> lock(sLock);
+        std::lock_guard<std::mutex> lock(smsc_mutex);
         if (request == RIL_REQUEST_GET_SMSC_ADDRESS) {
-            sSmscRequests.insert(t);
+            smsc_requests.insert(t);
         } else {
-            sSmscRequests.erase(t);
+            smsc_requests.erase(t);
         }
     }
 
-    sRealOnRequest(request, data, datalen, t);
+    real_on_request(request, data, data_len, t);
 }
 
 }  // namespace
 
 extern "C" const RIL_RadioFunctions* RIL_Init(const RIL_Env* env, int argc, char** argv) {
-    const RilInit init = realInit("RIL_Init");
+    const RilInit init = RealInit("RIL_Init");
     if (init == nullptr) return nullptr;
 
-    sEnv = env;
-    sShimEnv = *env;
-    sShimEnv.OnRequestComplete = onRequestComplete;
+    ril_env = env;
+    shim_ril_env = *env;
+    shim_ril_env.OnRequestComplete = OnRequestComplete;
 
-    const RIL_RadioFunctions* functions = init(&sShimEnv, argc, argv);
+    const RIL_RadioFunctions* functions = init(&shim_ril_env, argc, argv);
     if (functions == nullptr || functions->onRequest == nullptr) return functions;
 
-    sShimFunctions = *functions;
-    sRealOnRequest = functions->onRequest;
-    sShimFunctions.onRequest = onRequest;
-    return &sShimFunctions;
+    shim_functions = *functions;
+    real_on_request = functions->onRequest;
+    shim_functions.onRequest = OnRequest;
+    return &shim_functions;
 }
 
 extern "C" const RIL_RadioFunctions* RIL_SAP_Init(const RIL_Env* env, int argc, char** argv) {
-    const RilInit init = realInit("RIL_SAP_Init");
+    const RilInit init = RealInit("RIL_SAP_Init");
     return init != nullptr ? init(env, argc, argv) : nullptr;
 }
