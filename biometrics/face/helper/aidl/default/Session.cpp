@@ -10,14 +10,13 @@
 #include <aidl/android/hardware/biometrics/common/BnCancellationSignal.h>
 
 #include <endian.h>
-#include <stdio.h>
-#include <unistd.h>
 
 #include <algorithm>
 
 #include <android-base/file.h>
 #include <android-base/logging.h>
 #include <android-base/parseint.h>
+#include <android-base/stringprintf.h>
 #include <android-base/strings.h>
 
 #include <android/native_window_aidl.h>
@@ -103,9 +102,7 @@ void Session::LinkToDeath(AIBinder* binder) {
 }
 
 std::string Session::StorePath() const {
-    char path[64];
-    snprintf(path, sizeof(path), kStoreDir, user_id_);
-    return path;
+    return ::android::base::StringPrintf(kStoreDir, user_id_);
 }
 
 std::vector<int32_t> Session::Enrollments() const {
@@ -466,7 +463,7 @@ ndk::ScopedAStatus Session::removeEnrollments(const std::vector<int32_t>& enroll
                 if (ret) LOG(ERROR) << "ss_face_remove " << fid << ": " << ret;
             }
         }
-        unlink((self->StorePath() + "/" + kEnrollmentFile).c_str());
+        ::android::base::RemoveFileIfExists(self->StorePath() + "/" + kEnrollmentFile);
         self->cb_->onEnrollmentsRemoved(enrollment_ids);
     });
     return ndk::ScopedAStatus::ok();
