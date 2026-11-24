@@ -133,7 +133,8 @@ void AddBackVideoModes(std::vector<int64_t>* durations, std::vector<int32_t>* fp
 }
 
 // Returns a copy of src with the changes for this camera, or nullptr if there are none.
-camera_metadata_t* PatchStaticInfo(int cameraId, const camera_metadata_t* src, int32_t maxTorchLevel) {
+camera_metadata_t* PatchStaticInfo(int cameraId, const camera_metadata_t* src,
+                                   int32_t maxTorchLevel) {
     camera_metadata_ro_entry_t entry;
     bool torch = maxTorchLevel > 0 &&
                  find_camera_metadata_ro_entry(src, ANDROID_FLASH_INFO_AVAILABLE, &entry) == 0 &&
@@ -156,8 +157,9 @@ camera_metadata_t* PatchStaticInfo(int cameraId, const camera_metadata_t* src, i
     size_t extraData = calculate_camera_metadata_entry_data_size(TYPE_INT32, keys.size()) +
                        calculate_camera_metadata_entry_data_size(TYPE_INT64, durations.size()) +
                        calculate_camera_metadata_entry_data_size(TYPE_INT32, fpsRanges.size());
-    camera_metadata_t* dst = allocate_camera_metadata(get_camera_metadata_entry_count(src) + 8,
-                                                      get_camera_metadata_data_count(src) + extraData);
+    camera_metadata_t* dst =
+            allocate_camera_metadata(get_camera_metadata_entry_count(src) + 8,
+                                     get_camera_metadata_data_count(src) + extraData);
     if (dst == nullptr) return nullptr;
     int ret = append_camera_metadata(dst, src);
     if (!ret && torch) {
@@ -434,9 +436,9 @@ int GetCameraInfo(int camera_id, struct camera_info* info) {
     auto it = gStaticInfo.find(camera_id);
     if (it == gStaticInfo.end()) {
         it = gStaticInfo
-                     .emplace(camera_id, PatchStaticInfo(camera_id,
-                                                         info->static_camera_characteristics,
-                                                         TorchMaxLevel()))
+                     .emplace(camera_id,
+                              PatchStaticInfo(camera_id, info->static_camera_characteristics,
+                                              TorchMaxLevel()))
                      .first;
     }
     if (it->second != nullptr) {
