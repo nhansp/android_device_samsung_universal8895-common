@@ -13,7 +13,6 @@
 #include <aidl/vendor/lineage/biometrics/iris/IrisAcquired.h>
 
 #include <endian.h>
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -22,6 +21,7 @@
 #include <android-base/file.h>
 #include <android-base/logging.h>
 #include <android-base/parseint.h>
+#include <android-base/stringprintf.h>
 #include <android-base/strings.h>
 
 #include <android/native_window_aidl.h>
@@ -155,9 +155,7 @@ void Session::LinkToDeath(AIBinder* binder) {
 }
 
 std::string Session::StorePath() const {
-    char path[64];
-    snprintf(path, sizeof(path), kStoreDir, user_id_);
-    return path;
+    return ::android::base::StringPrintf(kStoreDir, user_id_);
 }
 
 std::vector<int32_t> Session::Enrollments() const {
