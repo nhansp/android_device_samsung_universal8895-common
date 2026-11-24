@@ -15,7 +15,6 @@
 
 #include <hardware/camera.h>
 
-// The stock camera module's HAL1 path, which the stock biometric services used.
 using CameraParams = std::map<std::string, std::string>;
 
 // One opened camera. The camera HAL calls back on its own threads.
@@ -31,7 +30,6 @@ struct Hal1Camera {
     ErrorCallback onError;
     camera_device_t* device = nullptr;
 
-    // Logs the first message of each type, for bring-up.
     void logFirst(int32_t msgType, const uint8_t* data, size_t size);
 
   private:

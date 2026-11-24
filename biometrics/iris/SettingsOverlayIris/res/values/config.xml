@@ -4,7 +4,6 @@
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources>
-    <!-- The face sensor is the iris scanner: enrollment runs in the iris app, which shows the
-         iris camera's preview (FaceEnrollEducation launches this after the education page) -->
+    <!-- The face sensor is the iris scanner, so enrollment runs in the iris app -->
     <string name="config_face_enroll" translatable="false">org.lineageos.iris/org.lineageos.iris.IrisEnrollActivity</string>
 </resources>

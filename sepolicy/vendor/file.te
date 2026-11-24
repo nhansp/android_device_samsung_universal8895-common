@@ -26,5 +26,5 @@ type iris_camera_socket, file_type;
 # /dev/socket/face_camera: front camera frames from the biometrics camera daemon to the face HAL
 type face_camera_socket, file_type;
 
-# Memory bus (MIF) devfreq frequency floor (powerhint.json MIFMinFreq)
+# Memory bus (MIF) devfreq frequency floor
 type sysfs_devfreq_mif, sysfs_type, fs_type;

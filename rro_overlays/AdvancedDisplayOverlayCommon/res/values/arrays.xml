@@ -4,8 +4,7 @@
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources>
-    <!-- The scenarios of the s6e3ha6 mDNIe driver (enum SCENARIO, mdnie.h); it rejects 2 and 3
-         (IS_SCENARIO), so video warm and cold are left out. -->
+    <!-- The s6e3ha6 mDNIe driver rejects scenarios 2 and 3, so video warm and cold are left out -->
     <string-array name="mdnie_scenario_entries" translatable="false">
         <item>@*org.lineageos.settings.device:string/mdnie_scenario_ui</item>
         <item>@*org.lineageos.settings.device:string/mdnie_scenario_video</item>

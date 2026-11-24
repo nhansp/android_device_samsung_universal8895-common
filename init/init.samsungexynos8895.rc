@@ -10,7 +10,7 @@ on early-init
     exec u:r:vendor_modprobe:s0 -- /vendor/bin/modprobe -a -d /vendor/lib/modules --all=/vendor/lib/modules/modules.load
 
 on init
-    # Reactivation Lock and Google FRP (stock init.samsungexynos8895.rc)
+    # Reactivation Lock and Google FRP
     symlink /dev/block/by-name/STEADY /dev/block/steady
     symlink /dev/block/by-name/PERSISTENT /dev/block/persistent
 
@@ -19,7 +19,7 @@ on fs
     chown radio system /efs
     restorecon_recursive /efs
 
-    # Modem (stock init.baseband.rc)
+    # Modem
     symlink /dev/block/by-name/RADIO /dev/mbin0
     restorecon /dev/mbin0
     chown radio system /cpefs
@@ -28,9 +28,8 @@ on fs
     chmod 0600 /efs/factory.prop
 
 on post-fs
-    # Trustonic Kinibi. mcDriverDaemon sets the property to true once its
-    # trustlets are loaded, and the keymaster waits for that. The keymaster
-    # and keystore2 start at late-fs, so the daemon has to start before them.
+    # Trustonic Kinibi: mcDriverDaemon sets the property once its trustlets are loaded; the keymaster
+    # waits for it, so the daemon has to start before late-fs
     setprop sys.mobicoredaemon.enable stopped
     export MC_AUTH_TOKEN_PATH /efs
     mkdir /efs/TEE 0770 radio system
@@ -40,7 +39,7 @@ on late-fs
     mount_all /vendor/etc/fstab.${ro.hardware} --late
 
 on post-fs-data
-    # GNSS standby line, switched by lhd (stock vendor/etc/init/init.gps.rc:3-4)
+    # GNSS standby line, switched by lhd
     chown root system /sys/class/sec/gps/GPS_PWR_EN/value
     chmod 0664 /sys/class/sec/gps/GPS_PWR_EN/value
 
@@ -50,10 +49,10 @@ on post-fs-data
     # RIL
     mkdir /data/vendor/secradio 0770 radio radio
 
-    # Trustonic Kinibi (stock init.rc:1632)
+    # Trustonic Kinibi
     mkdir /data/vendor/mcRegistry 0775 system system
 
-    # GNSS (stock init.gps.rc)
+    # GNSS
     mkdir /data/vendor/gps 0771 system system
     rm /data/vendor/gps/gps_started
     rm /data/vendor/gps/glonass_started
@@ -64,7 +63,7 @@ on post-fs-data
     # NFC
     mkdir /data/vendor/nfc 0770 nfc nfc
 
-    # Fingerprint (stock init.rc:865)
+    # Fingerprint
     mkdir /data/vendor/biometrics 0770 system system
 
     # Bluetooth
@@ -77,7 +76,7 @@ on post-fs-data
     mkdir /efs/maxim 0770 audioserver audio
     mkdir /data/vendor/log/abox 0771 audioserver system
 
-    # Camera (stock init.samsungexynos8895.rc:80-135)
+    # Camera
     mkdir /data/vendor/camera 0770 cameraserver system
     chown system radio /sys/class/camera/rear/rear_camfw
     chown system radio /sys/class/camera/rear/rear_camfw_full
@@ -137,27 +136,27 @@ on post-fs-data
     # Torch strength levels, set by camera.universal8895_wrapper
     chown cameraserver system /sys/class/leds/torch-sec1/brightness
 
-    # Wi-Fi (stock wifi.rc)
+    # Wi-Fi
     mkdir /data/vendor/conn 0771 wifi root
     mkdir /data/vendor/wifi 0771 wifi wifi
     mkdir /data/vendor/wifi/wpa 0770 wifi wifi
     mkdir /data/vendor/wifi/wpa/sockets 0770 wifi wifi
 
 on boot
-    # stock init.samsungexynos8895.rc "SSWAP"
+    # Swap
     write /proc/sys/vm/swappiness 130
 
-    # cpusets (stock init.samsungexynos8895.rc "CPUSET(8895)", on boot)
+    # cpusets
     write /dev/cpuset/top-app/cpus 0-7
     write /dev/cpuset/foreground/cpus 0-2,4-7
     write /dev/cpuset/background/cpus 0-1
     write /dev/cpuset/system-background/cpus 0-2
 
-    # top-app utilization clamp, written by the power HAL (powerhint.json TAUClampBoost)
+    # top-app utilization clamp, written by the power HAL
     chown system system /dev/cpuctl/top-app/cpu.uclamp.min
     chmod 0664 /dev/cpuctl/top-app/cpu.uclamp.min
 
-    # mDNIe (stock init.samsungexynos8895.rc, "Permissions for MDNIE"): LiveDisplay runs as system
+    # mDNIe: LiveDisplay runs as system
     chown system media_rw /sys/class/mdnie/mdnie/bypass
     chown system media_rw /sys/class/mdnie/mdnie/mode
     chown system media_rw /sys/class/mdnie/mdnie/scenario
@@ -169,8 +168,8 @@ on boot
     chown system system /sys/class/mdnie/mdnie/color_lens
     chown system system /sys/class/mdnie/mdnie/whiteRGB
 
-    # Wi-Fi: firmware and NVRAM paths are module parameters of dhd (0660). macloader (root, no
-    # dac_override) writes them as owner, the Wi-Fi HAL through the wifi group.
+    # Wi-Fi: firmware and NVRAM paths are dhd module parameters; macloader (root, no dac_override)
+    # writes them as owner, the Wi-Fi HAL through the wifi group
     chown root wifi /sys/module/dhd/parameters/firmware_path
     chown root wifi /sys/module/dhd/parameters/nvram_path
 
@@ -181,17 +180,14 @@ on boot
     # the whole panel as the double-tap-to-wake area (aod_enable from the power HAL)
     write /sys/class/sec/tsp/cmd "set_aod_rect,1440,2960,0,0"
 
-    # Pressure home key tick strength, the stock default (Hard press vibration feedback at its
-    # top level, 10000)
+    # Pressure home key tick strength
     chown system system /sys/class/timed_output/vibrator/force_touch_intensity
     write /sys/class/timed_output/vibrator/force_touch_intensity 10000
 
-    # the power HAL applies hints once this is set (power-libperfmgr aidl/service.cpp:80-81)
+    # the power HAL applies hints once this is set
     setprop vendor.powerhal.init 1
 
-    # Sensors: the sysfs nodes the stock sensors HAL writes as system (stock
-    # init.samsungexynos8895.rc:711-870, 880; fingerprint, EFS FactoryApp and MOBEAM left
-    # out)
+    # Sensors: the sysfs nodes the sensors HAL writes as system
     chown system radio /sys/class/sensors/accelerometer_sensor/raw_data
     chown system radio /sys/class/sensors/accelerometer_sensor/calibration
     chown system radio /sys/class/sensors/accelerometer_sensor/reactive_alert
@@ -324,42 +320,40 @@ on boot
     chmod 0660 /sys/class/rfkill/rfkill0/state
     chown bluetooth bluetooth /sys/class/rfkill/rfkill0/type
 
-# Trustonic Kinibi daemon (stock init.rc; its fourth -r image, ...d0000000000000000000001c.tlbin, is not
-# part of the stock firmware)
+# Trustonic Kinibi daemon
 service mobicore /vendor/bin/mcDriverDaemon -r /vendor/app/mcRegistry/FFFFFFFF000000000000000000000001.drbin -r /vendor/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin -r /vendor/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
     class core
     user system
     group system
     disabled
 
-# TEE keymaster with stock's user and groups (stock vendor/etc/init/android.hardware.keymaster@3.0-service.rc):
-# its library keeps files under /efs. Init parses this file before /vendor/etc/init, so this definition
-# replaces the AOSP one of the same name.
+# TEE keymaster: its library keeps files under /efs. Init parses this file before /vendor/etc/init,
+# so this definition replaces the AOSP one of the same name
 service vendor.keymaster-3-0 /vendor/bin/hw/android.hardware.keymaster@3.0-service
     interface android.hardware.keymaster@3.0::IKeymasterDevice default
     class early_hal
     user system
     group system drmrpc
 
-# Wi-Fi MAC address from /efs (stock wifi.rc)
+# Wi-Fi MAC address from /efs
 service macloader /vendor/bin/hw/macloader
     class main
     oneshot
 
-# Wi-Fi test mode loader (stock wifi.rc)
+# Wi-Fi test mode loader
 service mfgloader /vendor/bin/hw/mfgloader
     class main
     disabled
     oneshot
 
-# Modem boot daemon (stock init.baseband.rc; the RADIO partition by name instead of the 4.4 platform path)
+# Modem boot daemon, finding the RADIO partition by name
 service cpboot-daemon /vendor/bin/cbd -d -tss310 -bm -mm -P by-name/RADIO -n /efs
     class main
     user root
     group radio cache inet misc audio sdcard_rw log sdcard_r shell system
     seclabel u:r:cbd:s0
 
-# RIL daemon (stock vendor/etc/init/init.vendor.rilchip.rc, single SIM)
+# RIL daemon, single SIM
 service ril-daemon /vendor/bin/hw/rild -l ${vendor.sec.rild.libpath}
     class main
     user radio
@@ -371,14 +365,14 @@ service ril-daemon /vendor/bin/hw/rild -l ${vendor.sec.rild.libpath}
 on property:ro.vendor.multisim.simslotcount=*
     write /sys/module/modem_ctrl_ss310ap/parameters/ds_detect ${ro.vendor.multisim.simslotcount}
 
-# SIM configuration for libsec-ril (stock init.baseband.rc:50-54)
+# SIM configuration for libsec-ril
 on property:ro.vendor.multisim.simslotcount=1
     setprop persist.radio.multisim.config ss
 
 on property:ro.vendor.multisim.simslotcount=2
     setprop persist.radio.multisim.config dsds
 
-# GNSS (stock init.gps.rc)
+# GNSS
 service lhd /vendor/bin/hw/lhd /vendor/etc/sensor/lhd.conf
     class main
     user gps

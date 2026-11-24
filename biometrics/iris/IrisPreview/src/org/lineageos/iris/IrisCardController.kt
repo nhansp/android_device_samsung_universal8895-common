@@ -39,11 +39,10 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 
 /**
- * Shows the iris card while the face sensor (the iris HAL) authenticates: on the bouncer over a
- * second blur of the PIN pad, in a BiometricPrompt as an island at the top.
- * On the lockscreen itself iris still authenticates, but without the card: it would cover the
- * lockscreen. Enrollment has its own activity (IrisEnrollActivity). Face authentication reaches
- * AuthenticationStateListener only: FaceProvider gives BiometricStateCallback to enrollment.
+ * Shows the iris card while the iris HAL authenticates: on the bouncer over a second blur of the
+ * PIN pad, in a BiometricPrompt as an island at the top. The lockscreen gets no card, it would
+ * cover it. Face authentication reaches AuthenticationStateListener only: FaceProvider gives
+ * BiometricStateCallback to enrollment.
  */
 class IrisCardController(private val context: Context) {
     private val handler = Handler(Looper.getMainLooper())
@@ -57,8 +56,7 @@ class IrisCardController(private val context: Context) {
     private var visible by mutableStateOf(false)
     private var pendingShow: Runnable? = null
 
-    // SystemUI holds the bouncer back this long when face may pass first
-    // (PrimaryBouncerInteractor.show); the card shows with it.
+    // SystemUI holds the bouncer back this long when face may pass first; the card shows with it
     private var bouncerDelayMs = DEFAULT_BOUNCER_DELAY_MS.toLong()
 
     fun start() {
@@ -171,13 +169,10 @@ class IrisCardController(private val context: Context) {
         val lp =
             WindowManager.LayoutParams(
                     if (newMode == IrisCardMode.BOUNCER) {
-                        // Above the notification shade (the bouncer), and unlike secure overlays
-                        // it takes touches ("Use PIN"; DisplayPolicy.adjustWindowParamsLw makes
-                        // secure overlays untouchable).
+                        // Above the notification shade; unlike secure overlays it takes touches
                         WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG
                     } else {
-                        // Board 8: part of the prompt, so above its dim (the prompt is a status
-                        // bar sub panel). The island takes no touches anyway.
+                        // Part of the prompt, so above its dim
                         WindowManager.LayoutParams.TYPE_SECURE_SYSTEM_OVERLAY
                     },
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -194,12 +189,12 @@ class IrisCardController(private val context: Context) {
                         WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
                     width = ViewGroup.LayoutParams.MATCH_PARENT
                     if (newMode == IrisCardMode.BOUNCER) {
-                        // Board 7: a second blur over the PIN pad, faded in by the card
+                        // A second blur over the PIN pad, faded in by the card
                         height = ViewGroup.LayoutParams.MATCH_PARENT
                         flags = flags or WindowManager.LayoutParams.FLAG_BLUR_BEHIND
                         blurBehindRadius = 0
                     } else {
-                        // Board 8: over the prompt, untouchable, down to the field's bottom
+                        // Over the prompt, untouchable, down to the field's bottom
                         height = res.getDimensionPixelSize(R.dimen.iris_field_bottom)
                         gravity = Gravity.TOP
                         flags = flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
@@ -230,8 +225,7 @@ class IrisCardController(private val context: Context) {
         view = composeView
         params = lp
         windowManager.addView(composeView, lp)
-        // Schedule the card's render thread like SystemUI's own windows while it animates
-        // and streams the preview.
+        // Schedules the card's render thread like SystemUI's own windows
         setHasTopUi(true)
     }
 
@@ -312,11 +306,10 @@ class IrisCardController(private val context: Context) {
         const val TAG = "IrisCard"
         const val SYSTEMUI = "com.android.systemui"
 
-        // SystemUI res/values/config.xml primary_bouncer_passive_auth_delay
+        // SystemUI's primary_bouncer_passive_auth_delay
         const val DEFAULT_BOUNCER_DELAY_MS = 500
 
-        // android.hardware.biometrics.common.AuthenticateReason.Face: the bouncer showing, and
-        // the swipe up on it that retries face authentication.
+        // AuthenticateReason.Face: the bouncer showing, and the swipe up on it that retries
         const val PRIMARY_BOUNCER_SHOWN = 2
         const val SWIPE_UP_ON_BOUNCER = 9
         val BOUNCER_REASONS = setOf(PRIMARY_BOUNCER_SHOWN, SWIPE_UP_ON_BOUNCER)

@@ -44,10 +44,8 @@ constexpr char kVendorModulePath[] = "/vendor/lib/hw/camera.universal8895.so";
 constexpr char kTorchBrightnessPath[] = "/sys/class/leds/torch-sec1/brightness";
 constexpr char kTorchMaxBrightnessPath[] = "/sys/class/leds/torch-sec1/max_brightness";
 
-// torch-sec1 counts 20 mA steps. The Samsung camera provider offers five strength
-// levels. Level 1 is the 60 mA (step 3) that Samsung's HAL lights through
-// rear_torch_flash; the others are 80, 120, 160 and 200 mA from the greatlte
-// torch_table, about 1.35x apart so the steps look even.
+// torch-sec1 counts 20 mA steps; level 1 is the 60 mA of Samsung's HAL, the others 80 to 200 mA,
+// about 1.35x apart so the steps look even
 constexpr int32_t kTorchSteps[] = {3, 4, 6, 8, 10};
 constexpr int32_t kDefaultTorchLevel = 1;
 
@@ -112,13 +110,9 @@ std::vector<T> GetEntry(const camera_metadata_t* metadata, uint32_t tag) {
     return std::vector<T>(data, data + entry.count);
 }
 
-// 1080p and 720p at 60 fps on the back camera, as stock One UI records them
-// (cameradata/camera-feature.xml BACK_CAMCORDER_RESOLUTION_FEATURE_MAP_1920X1080_60FPS).
-// libexynoscamera3 caps every YUV/PRIVATE output at 33.3 ms and its visible fps ranges at 30
-// (the (60,60) range is only in the IMX333/2L2 hidden list). With the 16:9 row of its preview
-// size table on the sensor's 16:9 size (extract-files.py), a 16:9 session runs the sensor's
-// 4032x2268 60 fps mode (fimc-is-device-module-2l2.c mode 3), so 16:9 outputs up to 1080p can
-// take 1/60 s.
+// libexynoscamera3 caps every YUV/PRIVATE output at 33.3 ms and its visible fps ranges at 30. With
+// the 16:9 row of its preview size table on the sensor's 16:9 size (extract-files.py), a 16:9
+// session runs the sensor's 4032x2268 60 fps mode, so 1080p and 720p can take 1/60 s
 constexpr int kBackCameraId = 0;
 constexpr int64_t kFrameDuration60Fps = 1000000000LL / 60;
 constexpr int32_t kVideoFormats[] = {HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED,
@@ -218,12 +212,8 @@ const camera_module_callbacks_t kCallbacks = {
 };
 
 // libexynoscamera3 cannot flush a session with a ZSL (PRIVATE reprocessing) stream while ZSL
-// requests are in flight: configureStreams never gives that stream a buffer manager,
-// m_checkStreamBuffer rejects stream type 5, and its ZSL manager cannot hand back framework
-// buffers of requests it still holds. Those buffers never return, cameraserver's drain times out
-// and the provider aborts on close. Requests it completes normally return everything, and a flush
-// with nothing in flight is clean. So in a session with an input stream, flush() first waits for
-// the requests in flight to complete (the framework sends no new ones during a flush), then flushes.
+// requests are in flight: their buffers never return and the provider aborts on close. So with an
+// input stream, flush() first waits for the requests in flight to complete, then flushes
 constexpr auto kZslDrainTimeout = std::chrono::milliseconds(1500);
 
 struct Pending {
@@ -402,8 +392,7 @@ int Open(const hw_module_t*, const char* id, hw_device_t** device) {
     if (android::base::ParseInt(id, &cameraId, 0)) {
         w->partialResultCount = PartialResultCount(vendor, cameraId);
     }
-    // Only the device 3.3 operations: the blob's ops table predates the later members. Each one
-    // forwards with the vendor device, whose priv holds the HAL's camera object.
+    // Only the device 3.3 operations, the blob's ops table predates the later members
     const camera3_device_ops_t* v = w->vendor->ops;
     w->ops.initialize = Initialize;
     w->ops.configure_streams = ConfigureStreams;

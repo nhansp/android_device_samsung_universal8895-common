@@ -39,9 +39,9 @@ using namespace std::chrono_literals;
 
 namespace {
 
-// Stock IRV1Controller.getIRRotationPhone() for the natural (portrait) display rotation.
+// IR camera rotation for the natural (portrait) display rotation
 constexpr int kIrRotation = 270;
-// Stock IrisService eye safety timeout: the IR LED never runs longer than this per capture.
+// Eye safety: the IR LED never runs longer than this per capture
 constexpr auto kEyeSafetyTimeout = 9000ms;
 constexpr std::chrono::milliseconds kHoldTimeout{IIrisPreview::HOLD_TIMEOUT_MS};
 // /data/vendor/biometrics is created by init; the library creates the per-user directory.
@@ -49,7 +49,7 @@ constexpr char kStoreDir[] = "/data/vendor/biometrics/iris/User_%d";
 // The library keeps one template per user (<gid>tmpl.dat) and no enrollment ids; the id it
 // reported at enrollment is kept here.
 constexpr char kEnrollmentFile[] = "enrollment";
-// Stock IRController: the IR camera parameters the iris library steers, with their limits.
+// The IR camera parameters the iris library steers, with their limits
 constexpr const char* kIrProperties[][3] = {
         {"gain", "min-gain", "max-gain"},
         {"shutterspeed", "min-shutterspeed", "max-shutterspeed"},
@@ -206,7 +206,7 @@ bool Session::startCapture(State state) {
                         mLib->ss_iris_processIRImage(fd, iris_camera::kWidth,
                                                      iris_camera::kHeight, kIrRotation);
                     },
-            // Stock IrisPreviewDataCallback() passes the IR rotation for the front data too.
+            // The front data takes the IR rotation too
             .onFrontFrame =
                     [this](int fd) {
                         mLib->ss_iris_processFrontImage(fd, iris_camera::kFrontWidth,
@@ -225,7 +225,7 @@ bool Session::startCapture(State state) {
         return false;
     }
 
-    // Stock IRV1Controller.startIRCamera(): seed the library with the camera's IR settings.
+    // Seed the library with the camera's IR settings
     for (const auto& prop : kIrProperties) {
         mLib->ss_iris_sendIRProperty(prop[0], params[prop[0]].c_str(), params[prop[1]].c_str(),
                                      params[prop[2]].c_str());
@@ -348,13 +348,12 @@ void Session::notify(const IrisMsg* msg) {
     std::weak_ptr<Session> weak = ref<Session>();
     switch (msg->type) {
         case IRIS_MSG_IR_PROPERTY_CHANGED:
-            // Stock IRV1Controller.onIRPropertyChanged(): the library's exposure and IR LED
-            // settings for the next frames.
+            // The library's exposure and IR LED settings for the next frames
             if (msg->data.property.value) mCapture.setParameters(msg->data.property.value);
             break;
         case IRIS_MSG_IMAGE_PROCESSED:
-            // Sent from ss_iris_processIRImage() on the capture thread; the image is the
-            // library's and only valid until we return.
+            // Sent on the capture thread; the image is the library's and only valid until we
+            // return
             if (msg->data.image.id == kRgbPreviewImageId && msg->data.image.data &&
                 msg->data.image.width > 0 && msg->data.image.height > 0) {
                 mPreview->render(msg->data.image.data, msg->data.image.width,
@@ -663,7 +662,6 @@ ndk::ScopedAStatus Session::authenticateWithContext(int64_t operationId,
                                                     const OperationContext& context,
                                                     std::shared_ptr<ICancellationSignal>* out) {
     *out = cancellationSignal();
-    // Keyguard tells a bouncer retry from a lockscreen attempt by this (OperationContextExt).
     AuthenticateReason::Face reason = AuthenticateReason::Face::UNKNOWN;
     if (context.authenticateReason &&
         context.authenticateReason->getTag() == AuthenticateReason::faceAuthenticateReason) {

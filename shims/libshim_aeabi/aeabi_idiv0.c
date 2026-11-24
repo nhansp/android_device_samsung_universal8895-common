@@ -5,7 +5,7 @@
 
 #include <signal.h>
 
-/* Stock bionic/libc++ __aeabi_idiv0: raise SIGFPE on division by zero. */
+/* Stock libc exported __aeabi_idiv0, libcompiler_rt does not; it raises SIGFPE */
 int __aeabi_idiv0(int return_value) {
     raise(SIGFPE);
     return return_value;

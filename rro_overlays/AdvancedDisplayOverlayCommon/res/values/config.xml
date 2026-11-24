@@ -4,6 +4,6 @@
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources>
-    <!-- The s6e3ha6 mDNIe driver has no "negative" node; accessibility takes NEGATIVE = 1 -->
+    <!-- The mDNIe driver has no "negative" node; accessibility takes NEGATIVE = 1 -->
     <string name="mdnie_accessibility_sysfs_file" translatable="false">"/sys/class/mdnie/mdnie/accessibility"</string>
 </resources>

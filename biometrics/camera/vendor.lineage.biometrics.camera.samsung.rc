@@ -1,5 +1,4 @@
-# Hosts the camera HAL for the iris and face HALs, like vendor.camera.provider hosts it for the
-# others
+# Hosts the camera HAL for the iris and face HALs
 service vendor.biometrics-camera /vendor/bin/vendor.lineage.biometrics.camera.samsung
     class late_start
     user cameraserver

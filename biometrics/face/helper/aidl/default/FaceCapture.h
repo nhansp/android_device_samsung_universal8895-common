@@ -35,9 +35,8 @@ class FaceCapture {
     ~FaceCapture();
 
     // Opens the camera. Every frame goes to onPreview on the capture thread; the engine thread
-    // takes the newest one to onFrame whenever the last call returned, as stock FrCamCtrl draws
-    // the camera's preview at its own rate and feeds the engine one callback buffer. onEnd runs
-    // on the capture thread if the camera fails or goes away.
+    // takes the newest one to onFrame whenever the last call returned. onEnd runs on the
+    // capture thread if the camera fails or goes away.
     bool start(Callbacks callbacks);
     // Closes the camera; returns once no callback runs any more. Not from a callback.
     void stop();

@@ -27,7 +27,7 @@ namespace aidl::android::hardware::biometrics::face {
 
 namespace {
 
-// Opening the camera and starting the secure stream takes about 100 ms (camera daemon log).
+// Opening the camera and starting the secure stream takes about 100 ms.
 constexpr int kStartTimeoutSec = 5;
 
 // Receives one message. Returns its type, or -1 on EOF or error.

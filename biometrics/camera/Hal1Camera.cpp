@@ -53,7 +53,7 @@ camera_module_t* Module() {
 }
 
 // camera_memory_t of get_memory(fd, size, count): `count` buffers of `size` bytes; a data
-// callback's index selects one (stock libcameraservice CameraHardwareInterface keeps the same).
+// callback's index selects one
 struct Memory {
     camera_memory_t mem;
     size_t bufSize;

@@ -2,7 +2,7 @@
 /*
  * lz4dec.c - bounds-checked LZ4 block decoder, legacy-frame walker, CRC-32. Freestanding C.
  *
- * Safety rules (tests/stub-lz4/test.c checks them with guard pages and a fuzz loop):
+ * Safety rules:
  *  - every read of the input is preceded by a check against the end of the input;
  *  - every write is preceded by a check against the end of the output window;
  *  - the 8-byte "wild" copies are used only when 8 spare bytes exist on both sides of the copy, so

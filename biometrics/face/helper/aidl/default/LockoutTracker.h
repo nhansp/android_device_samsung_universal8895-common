@@ -9,8 +9,6 @@
 
 namespace aidl::android::hardware::biometrics::face {
 
-// Stock BioFaceService FaceService: LOCKOUT_MAX_FAILED_ATTEMPTS 5, LOCKOUT_TIMEOUT_MS 30000,
-// LOCKOUT_MAX_BLOCKED_ATTEMPTS 20.
 class LockoutTracker {
   public:
     enum class Mode { NONE, TIMED, PERMANENT };

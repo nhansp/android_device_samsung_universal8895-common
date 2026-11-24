@@ -4,7 +4,7 @@
     SPDX-License-Identifier: Apache-2.0
 -->
 <carrier_config>
-    <!-- The radio HAL in use (1.4) does not report dedicated-bearer QoS. -->
+    <!-- Radio HAL 1.4 does not report dedicated-bearer QoS -->
     <boolean name="ims.support_sdp_precondition_bool" value="false" />
     <boolean name="imsvoice.release_call_on_qos_lost_during_setup_bool" value="false" />
     <boolean name="imsvoice.voice_on_default_bearer_supported_bool" value="true" />

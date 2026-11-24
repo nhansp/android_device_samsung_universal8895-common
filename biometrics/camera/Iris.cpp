@@ -22,23 +22,17 @@ using namespace iris_camera;
 
 namespace {
 
-// The camera module opens the secure iris sensor for id "90" through its HAL1 path
-// (HAL_open_legacy maps 90 to its internal secure camera).
+// Id 90 is the secure iris sensor, opened through the module's HAL1 path
 constexpr char kIrisCameraId[] = "90";
 constexpr char kFrontCameraId[] = "1";
-// libexynoscamera's secure vision thread delivers each IR frame as this message: an 8-byte
-// buffer holding kFrameMagic and the frame's dma-buf fd, valid in this process.
+// Each IR frame arrives as an 8-byte buffer holding kFrameMagic and the frame's dma-buf fd
 constexpr int32_t kMsgIrisFrame = 0x10000;
 constexpr uint32_t kFrameMagic = 0x00fd42fd;
-// Stock SemCamera.setIrisPreviewDataCallbackEnabled() -> sendCommand(1832), which the stock
-// 32-bit cameraserver turns into this HAL message type on the front camera.
 constexpr int32_t kMsgIrisPreviewData = 0x8000;
+// Vendor send_command code that enables the iris data callback
 constexpr int32_t kCmdIrisPreviewData = 1832;
-// Stock libcameraservice sets system.camera.CC.disable for com.samsung.android.server.iris
-// ("setCompanionDisableSysFs", "is Need DisableCC") before the camera HAL opens camera 1, so
-// libexynoscamera reports use_companion(0) and opens the direct 3H1 (sensor mode 8,
-// 752x1328@15); the C3 companion has no mode for that size. The blob reads it under the vendor
-// name (extract-files.py).
+// Makes the HAL open the 3H1 directly: the C3 companion has no 752x1328 mode. The blob reads
+// this name after extract-files.py renames it.
 constexpr char kCompanionDisableProp[] = "vendor.camera.CC.disable";
 
 std::atomic<int> gClient{-1};
@@ -54,8 +48,6 @@ int IrisDataFd(const char* id, const uint8_t* data, size_t size) {
     return static_cast<int>(payload[1]);
 }
 
-// Stock IRV1Controller.startFrontCamera(): the front camera runs before the IR camera, in
-// the iris shot mode, without a display, and hands the iris library its own data callback.
 void StartFront(Hal1Camera* front) {
     CameraParams params;
     android::base::SetProperty(kCompanionDisableProp, "1");
@@ -75,7 +67,7 @@ void StartFront(Hal1Camera* front) {
         Hal1Close(front, kMsgIrisPreviewData);
         return;
     }
-    // Stock IRV1Controller sets the iris data callback after startPreview().
+    // The iris data callback is enabled only after start_preview
     ret = front->device->ops->send_command(front->device, kCmdIrisPreviewData, 1, 0);
     if (ret) LOG(WARNING) << "Front camera command " << kCmdIrisPreviewData << ": " << ret;
 }
@@ -108,7 +100,6 @@ void ServeIris(int client) {
     gClient.store(client);
     StartFront(&front);
 
-    // Stock IRV1Controller.startIRCamera()
     CameraParams params;
     if (!Hal1Open(&iris,
                   {{"preview-size", std::to_string(kWidth) + "x" + std::to_string(kHeight)},
@@ -136,7 +127,6 @@ void ServeIris(int client) {
                     hdr->len > n - sizeof(*hdr)) {
                     continue;
                 }
-                // Stock IRV1Controller.onIRPropertyChanged(): merge and set the parameters
                 for (const auto& [key, value] :
                      Unflatten(std::string(buf.data() + sizeof(*hdr), hdr->len))) {
                     params[key] = value;

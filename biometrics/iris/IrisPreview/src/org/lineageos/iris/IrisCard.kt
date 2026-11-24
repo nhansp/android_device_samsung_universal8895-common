@@ -52,11 +52,7 @@ fun statusBarHeight(): Dp =
 @Composable
 fun irisFieldTop(): Dp = statusBarHeight() * 2
 
-/**
- * How far the field has slid down into place: 0 above the screen, 1 in place. It slides like
- * SystemUI's screen record menu (SmallScreenCaptureRecordContent: slideInVertically on the
- * motion scheme's fast spatial spring).
- */
+/** How far the field has slid down into place: 0 above the screen, 1 in place. */
 @Composable
 fun rememberFieldReveal(): Animatable<Float, AnimationVector1D> {
     val reveal = remember { Animatable(0f) }
@@ -68,7 +64,7 @@ fun rememberFieldReveal(): Animatable<Float, AnimationVector1D> {
 /**
  * The preview field at its fixed place, slid down from above the screen by [reveal]. The same in
  * every mode: bouncer, BiometricPrompt and enrollment. [onRetry] makes the failed field the
- * board 4 retry target.
+ * retry target.
  */
 @Composable
 fun IrisField(
@@ -109,11 +105,10 @@ fun IrisField(
 }
 
 /**
- * The iris card window. On the bouncer (board 7) it fades a blur and the dynamic tint over the
- * PIN pad, like keyguard's own blur, with "Use PIN" under the field; a tap outside the field goes
- * back to the PIN pad, and after a no match a tap on the field retries (board 4). In a
- * BiometricPrompt (board 8) it is the field alone. When [visible] turns false the field slides
- * back up and the rest fades out on the effects spring, then [onExited] runs.
+ * The iris card window. On the bouncer it fades a blur and the dynamic tint over the PIN pad,
+ * with "Use PIN" under the field; a tap outside the field goes back to the PIN pad, and after a
+ * no match a tap on the field retries. In a BiometricPrompt it is the field alone. When [visible]
+ * turns false the field slides back up and the rest fades out, then [onExited] runs.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -132,7 +127,6 @@ fun IrisCard(
     val alpha = remember { Animatable(1f) }
     val reveal = rememberFieldReveal()
     val fastSpatial = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
-    // Full-screen effect: the slow effects spring (M3 motion: damping 1.0, stiffness 800).
     val blur = remember { Animatable(0f) }
     val slowEffects = MaterialTheme.motionScheme.slowEffectsSpec<Float>()
     val effects = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
@@ -161,7 +155,6 @@ fun IrisCard(
             return@Box
         }
 
-        // "Use PIN" springs in on the spatial spring, fading on the effects spring.
         val button = remember { Animatable(0f) }
         val buttonAlpha = remember { Animatable(0f) }
         val spatial = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
@@ -201,7 +194,6 @@ fun IrisCard(
                             scaleY = 0.6f + 0.4f * button.value
                             this.alpha = buttonAlpha.value * alpha.value
                         },
-                // M3 Expressive buttons morph their shape on press
                 shapes = ButtonDefaults.shapes(),
                 colors =
                     ButtonDefaults.buttonColors(

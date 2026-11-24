@@ -14,7 +14,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-/** M3 Expressive with the phone's dynamic colours, like android/androidify. */
+/** M3 Expressive with the phone's dynamic colours. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun IrisTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {

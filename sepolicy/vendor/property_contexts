@@ -1,6 +1,6 @@
-# Trustonic Kinibi (stock mcDriverDaemon, read by libkeymaster_helper)
+# Trustonic Kinibi: set by mcDriverDaemon, read by libkeymaster_helper
 sys.mobicoredaemon.enable    u:object_r:tee_prop:s0
 vendor.gsm.                  u:object_r:vendor_radio_prop:s0
-# Camera HAL: set by the iris camera service while it opens the front camera, so the HAL
-# bypasses the C3 companion (stock libcameraservice system.camera.CC.disable, renamed in the blobs)
+# Set by the iris camera service while it opens the front camera, so the HAL bypasses the C3
+# companion
 vendor.camera.CC.disable     u:object_r:vendor_camera_companion_prop:s0 exact string

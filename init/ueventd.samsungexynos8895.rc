@@ -1,5 +1,4 @@
-# Device node permissions of universal8895, from the stock /ueventd.samsungexynos8895.rc
-# (N950NKSU5DZE2), less nodes owned by Samsung-private AIDs.
+# Device node permissions of universal8895, less nodes owned by Samsung-private AIDs
 
 # Graphics
 /dev/mali0                0666   system     system
@@ -21,7 +20,7 @@
 /dev/video31              0660   media      graphics
 
 # MScaler
-# Stock owner is media; the camera provider runs as cameraserver without graphics.
+# Owned by media on stock; the camera provider runs as cameraserver without graphics
 /dev/video50              0660   cameraserver graphics
 /dev/m2m1shot_scaler0     0660   cameraserver camera
 
@@ -130,20 +129,18 @@
 /dev/bbd_sio              0660   system     system
 /dev/ttyBCM*              0660   system     system
 
-# Heart rate sensor (stock init.samsungexynos8895.rc:810-811)
+# Heart rate sensor
 /dev/max_hrm              0600   system     system
 
 # Fingerprint (vfs8xxx)
 /dev/vfsspi               0660   system     system
 
-# Trustonic Kinibi (mcDriverDaemon). Modes and owners are the stock ones from
-# factory/dump/boot_extracted/rootfs/ueventd.rc:141-142. Setting them here
-# rather than with a chown in an init .rc keeps vendor_init away from
-# tee_device entirely.
+# Trustonic Kinibi (mcDriverDaemon); set here rather than with a chown in an init .rc to keep
+# vendor_init away from tee_device
 /dev/mobicore             0700   system     system
 /dev/mobicore-user        0666   radio      system
 
-# Iris: the physical address of each IR frame for the iris trustlet (stock ueventd.rc:145)
+# Iris: the physical address of each IR frame for the iris trustlet
 /dev/s5p-smem             0660   system     system
 /dev/t-base-tui           0660   system     system
 /dev/tzic                 0660   system     net_bt_admin
@@ -157,29 +154,29 @@
 # Reactivation lock
 /dev/block/by-name/STEADY        0660    system    system
 
-# Modem (stock ueventd.samsungexynos8895.rc:136-137)
+# Modem
 /dev/block/by-name/RADIO         0660    system    radio
 /dev/block/by-name/CP_DEBUG      0660    radio     system
 
-# Bluetooth UART (stock init.samsungexynos8895.rc:452-453)
+# Bluetooth UART
 /dev/ttySAC1                     0660    bluetooth bluetooth
 
-# Sensors (stock ueventd.samsungexynos8895.rc:166-177)
+# Sensors
 /sys/devices/virtual/input/input*    poll_delay    0660    system    radio
 /sys/devices/virtual/input/input*    enable        0660    system    radio
 /sys/devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device*    buffer/enable    0660    system    system
 /sys/devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device*    buffer/length    0660    system    system
 /sys/devices/platform/soc@0/soc@0:usi@108c0000/108c0000.spi/spi_master/spi10/spi10.0/iio:device*    poll_delay       0660    system    system
 
-# Modem interface (stock ueventd.samsungexynos8895.rc:138-144): rild opens umts_ipc0 as radio
+# Modem interface: rild opens umts_ipc0 as radio
 /dev/umts*                       0660    system    radio
 /dev/umts_csd                    0660    system    loop_radio
 /dev/smd4                        0660    system    radio
 /dev/ramdump_memshare            0660    system    radio
 /dev/drb                         0660    system    radio
 
-# Panel backlight and mDNIe, owners of stock init.samsungexynos8895.rc. The panel framework
-# registers them at the first display enable, after "on boot".
+# Panel backlight and mDNIe; the panel framework registers them at the first display enable, after
+# "on boot"
 /sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/backlight/panel    brightness       0664    system    system
 /sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel/mdnie    bypass           0664    system    media_rw
 /sys/devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel/mdnie    mode             0664    system    media_rw

@@ -1,9 +1,7 @@
-# The panel framework creates the mDNIe nodes at the first display enable (the boot animation's
-# first frame: kernel panel-samsung-s6e3ha6.c s6e3ha6_stock_probe()). Started with class hal, the
-# LiveDisplay HAL probed before that, registered nothing, and system_server waited for it forever.
-# Start it on demand instead: servicemanager starts it on the first lookup, after the display is up.
-# The file name sorts after vendor.lineage.livedisplay-service.samsung-exynos.rc, so that "override"
-# finds the service already defined.
+# Started on demand: the mDNIe nodes appear at the first display enable, and with class hal the
+# HAL probed before that, registered nothing and system_server waited for it forever
+# The name sorts after vendor.lineage.livedisplay-service.samsung-exynos.rc so "override" finds the
+# service already defined
 service vendor.livedisplay-hal-samsung-exynos /vendor/bin/hw/vendor.lineage.livedisplay-service.samsung-exynos
     override
     class hal

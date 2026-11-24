@@ -12,8 +12,7 @@
 
 namespace aidl::android::hardware::biometrics::face {
 
-// Stock IrisService.startIRCamera() raises the CPU minimum frequency while the IR camera runs
-// (acquireDVFS); here that is the IRIS_CAPTURE hint of the power HAL (powerhint.json).
+// Raises the CPU minimum frequency while the IR camera runs, through the IRIS_CAPTURE power hint
 class PowerBoost {
   public:
     void start();

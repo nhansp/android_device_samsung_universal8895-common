@@ -84,7 +84,7 @@ object IrisHal {
         }
     }
 
-    /** Captures again in the held attempt (board 4: tap to retry). */
+    /** Captures again in the held attempt (tap to retry). */
     fun resumeCapture() {
         executor.execute { call { it.resumeCapture() } }
     }

@@ -15,8 +15,7 @@ struct ISchedulingPolicyService : public virtual RefBase {
                                                    bool getStub = false);
 };
 
-// frameworks/hardware/interfaces/schedulerservice is gone and no service
-// registers it any more, so there is no instance to hand out.
+// the schedulerservice HAL is gone, so there is no instance to hand out
 sp<ISchedulingPolicyService> ISchedulingPolicyService::getService(const std::string&, bool) {
     return nullptr;
 }

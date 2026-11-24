@@ -18,7 +18,7 @@ namespace {
 
 constexpr char kPowerHal[] = "android.hardware.power.IPower/default";
 constexpr char kHint[] = "IRIS_CAPTURE";
-// Stock acquireDVFS(9000), the same as the eye safety timeout that ends every capture.
+// Same as the eye safety timeout that ends every capture
 constexpr int32_t kDurationMs = 9000;
 
 }  // namespace
@@ -43,7 +43,7 @@ void PowerBoost::start() {
 }
 
 void PowerBoost::end() {
-    // A negative duration ends the hint (power-libperfmgr PowerExt::setBoost).
+    // A negative duration ends the hint
     if (auto power = ext()) power->setBoost(kHint, -1);
 }
 

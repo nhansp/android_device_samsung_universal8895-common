@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-     The panel scaler (DSU) offers 1440x2960 and 1080x2220. The display has no identification
-     data, so DisplayDeviceConfig finds this file by its port (port 0). Densities as stock:
-     ro.sf.init.lcd_density=560 (native), ro.sf.lcd_density=420 (FHD+), stock build.prop:124-125.
+     The panel scaler offers 1440x2960 and 1080x2220. The display has no identification data, so
+     DisplayDeviceConfig finds this file by its port (0).
 -->
 <displayConfiguration>
     <densityMapping>
@@ -18,18 +17,11 @@
         </density>
     </densityMapping>
     <!--
-         Backlight -> luminance. LightsService sends round(1 + 254 * value) to the Samsung lights
-         HAL, which writes value * 36600 / 255 to the panel (max_brightness = BRT(366)); the panel
-         driver uses level ceil(brightness / 100) (BRT_TBL_INDEX, stock panel_bl.h). Each point is
-         one value the HAL can send: levels 0..255 take the stock framework-res
-         config_screenBrightnessNits, the HBM levels (256..365) the panel's own candela table
-         (/sys/class/lcd/panel/brightness_table). The map reaches HAL value 254 = level 365, stock's
-         config_screenBrightnessExtendedMaximum, which the framework maximum of the overlay
-         (config_screenBrightnessSettingMaximumFloat = 0.996063) also is; the closing point at HAL
-         value 255 = level 366 (720 nits) is never requested. HAL values 178..195 (levels 256..280)
-         sit on the panel's 420-nit step but are interpolated towards 465: a second 420-nit point
-         would break the strictly increasing nits that the nits-to-backlight spline needs
-         (Spline.createSpline).
+         Backlight -> luminance. Each point is a value the lights HAL can send (panel brightness =
+         value * 36600 / 255, level = ceil(brightness / 100)); levels 0..255 use the framework nits,
+         HBM levels 256..365 the panel's candela table, and HAL value 255 is never requested. Levels
+         256..280 are interpolated towards 465 because a repeated 420-nit point breaks the strictly
+         increasing nits the spline needs
     -->
     <screenBrightnessMap>
         <point>
@@ -774,19 +766,10 @@
         </point>
     </screenBrightnessMap>
     <!--
-         Stock offered the HBM levels (above UI_MAX_BRIGHTNESS = level 255) only to auto-brightness
-         in bright light: config_autoBrightnessHbmAmbientLux = 3000 (stock framework-res). The
-         transition point is the last HAL value that stays at level <= 255.
-         Stock had no HBM time budget (none in stock framework-res, no timer in the stock panel
-         driver, panel_bl.c), but HighBrightnessModeController has no unlimited setting. With
-         timeMinSecs = 0 (or no timing, all three default to 0) a used-up budget still passes
-         remainingTime >= timeMinMillis, so HBM stays on and the controller re-arms its
-         recalculation at now + 0 + 1 ms, a 1 ms loop. timeMaxSecs = timeWindowSecs keeps the
-         past sessions in the window from ever using the budget up; only one uninterrupted session
-         of timeMaxSecs can, as the running session is not clipped to the window. One day is longer
-         than daylight above 3000 lux lasts outside the polar summer. timeMinSecs is the example
-         of DisplayDeviceConfig.java: a session that does use the budget up ends, and HBM comes
-         back once 60 s of it are free again.
+         HBM (levels above 255) only applies to auto-brightness in bright light; the transition point
+         is the last HAL value at level <= 255. HighBrightnessModeController has no unlimited budget:
+         timeMinSecs = 0 would spin a 1 ms recalculation loop once the budget is used up, and
+         timeMaxSecs = timeWindowSecs keeps past sessions from ever using it up
     -->
     <highBrightnessMode enabled="true">
         <transitionPoint>0.692913</transitionPoint>

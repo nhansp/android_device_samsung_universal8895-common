@@ -17,7 +17,7 @@ namespace {
 
 // The fingerprint HAL is sensor 0.
 constexpr int kSensorId = 1;
-// Stock SecIrisService allows one iris enrollment per user, and the library keeps one template.
+// The library keeps one template per user
 constexpr int kMaxEnrollmentsPerUser = 1;
 // Matching, liveness and the auth token all happen in the iris trustlet.
 constexpr common::SensorStrength kSensorStrength = common::SensorStrength::STRONG;

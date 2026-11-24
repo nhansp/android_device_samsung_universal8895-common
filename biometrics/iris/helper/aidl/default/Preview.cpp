@@ -17,7 +17,7 @@ namespace aidl::android::hardware::biometrics::face {
 
 namespace {
 
-// Stock IrisGLPreview STR_COLOR_PREVIEW_FRAGMENT_SHADER: BT.601 limited range, in 8.8 fixed point.
+// BT.601 limited range, in 8.8 fixed point
 uint32_t Rgba(uint8_t y, uint8_t v, uint8_t u) {
     int c = (static_cast<int>(y) - 16) * 298;  // 1.1643
     int d = static_cast<int>(u) - 128;

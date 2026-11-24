@@ -962,7 +962,6 @@
 
 	<!-- meeting input -->
 	<path name="meeting-mic">
-		<!-- TODO: We will make this -->
 	</path>
 
 	<!-- lpsd control input -->

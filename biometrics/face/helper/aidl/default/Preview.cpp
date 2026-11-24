@@ -21,7 +21,7 @@ namespace {
 using face_camera::kHeight;
 using face_camera::kWidth;
 
-// BT.601 limited range in 8.8 fixed point, as the iris preview (stock IrisGLPreview shader).
+// BT.601 limited range in 8.8 fixed point
 uint32_t Rgba(uint8_t y, uint8_t v, uint8_t u) {
     int c = (static_cast<int>(y) - 16) * 298;
     int d = static_cast<int>(u) - 128;

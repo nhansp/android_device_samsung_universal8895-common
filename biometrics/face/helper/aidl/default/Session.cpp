@@ -31,17 +31,15 @@ using namespace std::chrono_literals;
 
 namespace {
 
-// Stock FaceUtils.getRotationInfoForPreview() for the natural (portrait) display rotation.
+// Frame rotation for the natural (portrait) display orientation
 constexpr int kRotation = 270;
-// Stock AuthenticationClient SECURE_LEVEL_HIGH: the level unless the user turned on "Faster
-// recognition" (Settings.Secure face_faster_recognition), which stock passes as 0.
+// SECURE_LEVEL_HIGH
 constexpr uint32_t kSecureLevel = 2;
-// Stock FaceService DEFAULT_INACTIVITY_AUTHENTICATION_TIMEOUT, DEFAULT_INACTIVITY_ENROLLMENT_TIMEOUT
 constexpr auto kAuthenticationTimeout = 6000ms;
 constexpr auto kEnrollmentTimeout = 15000ms;
 // /data/vendor/biometrics/face is created by the APEX's init rc. The library creates the store
 // directory and the one above it, which it takes as the path minus its last three characters
-// (setStorePath): the store is named "fr" like stock /data/system/users/<user>/bio/fr.
+// (setStorePath)
 constexpr char kStoreDir[] = "/data/vendor/biometrics/face/%d/fr";
 // The library numbers its templates but keeps no enrollment ids; the id it reported at
 // enrollment is kept here.
@@ -158,7 +156,7 @@ bool Session::onFrame(const uint8_t* nv21) {
     std::lock_guard<std::mutex> lock(*mEngine.lock);
     // Returns the engine's keepProcessing: 1 once the enrollment or match is over (the library
     // closes its session itself; its result was sent to notify() before), any other value to
-    // keep feeding frames; -2 without a FaceService. Stock processFrontImage 0x5a24-0x5a54.
+    // keep feeding frames; -2 when the library is not open.
     int ret = mEngine.lib->ss_face_processFrontImage(nv21, face_camera::kFrameBytes,
                                                       face_camera::kWidth, face_camera::kHeight,
                                                       kRotation, FACE_IMAGE_FORMAT_NV21);
@@ -226,7 +224,6 @@ void Session::enroll(const HardwareAuthToken& hat, ANativeWindow* previewWindow)
             self->mCb->onError(Error::UNABLE_TO_PROCESS, 0);
             return;
         }
-        // Stock FaceService.startEnrollment(): open the session, enroll, then feed the camera.
         int ret;
         {
             std::lock_guard<std::mutex> lock(*self->mEngine.lock);
@@ -335,18 +332,18 @@ void Session::notify(const FaceMsg* msg) {
 
 void Session::onAcquired(uint64_t op, int32_t code) {
     if (mOp.load() != op || mState == State::IDLE) return;
-    // Stock FaceService.onAcquired() skips a code equal to the previous one.
+    // A code equal to the previous one is skipped
     if (code == mLastAcquired) return;
     mLastAcquired = code;
-    // The hints stock shows (FaceUtils.getAcquiredString); live face, process fail and fake
-    // face show nothing, the core migration notices are not about the user.
+    // Live face, process fail and fake face show nothing; the core migration notices are not
+    // about the user.
     AcquiredInfo info;
     switch (code) {
         case FACE_ACQUIRED_NONE_FACE:
-        case FACE_ACQUIRED_MISALIGNED_FACE:  // stock: "No face detected" for both
+        case FACE_ACQUIRED_MISALIGNED_FACE:
             info = AcquiredInfo::NOT_DETECTED;
             break;
-        case FACE_ACQUIRED_LOW_QUALITY:  // stock: "Front camera may be dirty"
+        case FACE_ACQUIRED_LOW_QUALITY:
             info = AcquiredInfo::SENSOR_DIRTY;
             break;
         case FACE_ACQUIRED_BIG_FACE:
@@ -392,13 +389,12 @@ void Session::onAuthenticated(uint64_t op, uint32_t fid) {
     if (fid != 0) {
         LOG(INFO) << "onAuthenticationSucceeded";
         mLockout->reset(true);
-        // The library gives no signed token (libFaceService processFrontImage 0x58a8 passes
-        // none), so the token carries only the challenge.
+        // The library gives no signed token, so the token carries only the challenge
         HardwareAuthToken token;
         token.challenge = mOperationId;
         mCb->onAuthenticationSucceeded(static_cast<int32_t>(fid), token);
     } else {
-        // Five frames without a match (processFrontImage 0x5984)
+        // Five frames without a match
         LOG(INFO) << "onAuthenticationFailed";
         mLockout->addFailedAttempt();
         mCb->onAuthenticationFailed();
@@ -410,8 +406,7 @@ void Session::onError(uint64_t op, int32_t error) {
     if (mOp.load() != op || mState == State::IDLE) return;
     LOG(ERROR) << "Face error " << error;
     endCapture(true);
-    // Stock FaceUtils.getErrorString(): 1004 is the broken template database ("Register your
-    // face again"); everything else is error 2, "Face recognition not working".
+    // 1004 is the broken template database; everything else is a processing failure
     if (error == kFaceErrorBrokenDatabase) {
         mCb->onError(Error::REENROLL_REQUIRED, 0);
     } else {

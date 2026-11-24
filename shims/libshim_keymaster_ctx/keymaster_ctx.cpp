@@ -14,11 +14,10 @@ namespace {
 
 using namespace keymaster;
 
-// The Android 9 libskeymaster3device allocates the passthrough context itself with a fixed size (104 and 72
-// bytes on arm64, 56 and 40 on arm: operator new in CreateSKeymasterDevice(keymaster1_device*) and
-// (keymaster2_device*)) and runs a one-argument constructor that system/keymaster has replaced by a
-// (KmVersion, device) one. The current classes are larger than that storage, so the storage holds a context
-// that only forwards to the real one, which lives on the heap.
+// The Android 9 libskeymaster3device allocates the passthrough context itself in fixed-size storage
+// (104 and 72 bytes on arm64, 56 and 40 on arm) and runs a constructor that system/keymaster has
+// since replaced. The current classes are larger, so the storage holds a context that forwards to
+// the real one on the heap.
 class ForwardingContext : public KeymasterContext {
   public:
     explicit ForwardingContext(KeymasterContext* context) : context_(context) {

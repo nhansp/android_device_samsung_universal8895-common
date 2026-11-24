@@ -25,10 +25,8 @@ namespace iris_camera {
 
 constexpr char kSocketName[] = "iris_camera";
 
-// Stock SecIrisService IRV1Controller: camera 90, 1920x1920.
 constexpr int kWidth = 1920;
 constexpr int kHeight = 1920;
-// Stock IRV1Controller.startFrontCamera(): camera 1 at 752x1328 (CAMERA_CONFIG_IRIS_OPERATION=RGB).
 constexpr int kFrontWidth = 752;
 constexpr int kFrontHeight = 1328;
 
@@ -46,8 +44,7 @@ namespace face_camera {
 
 constexpr char kSocketName[] = "face_camera";
 
-// Stock BioFaceService FrCamCtrl: camera 1 at 640x480 NV21; the face library takes exactly this
-// size (libFaceService processFrontImage 0x55a8: mov w1,#0x280; orr w2,wzr,#0x1e0).
+// Camera 1, NV21; the face library takes exactly this size
 constexpr int kWidth = 640;
 constexpr int kHeight = 480;
 constexpr size_t kFrameBytes = kWidth * kHeight * 3 / 2;

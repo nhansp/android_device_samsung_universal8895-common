@@ -22,7 +22,6 @@ namespace vibrator {
 
 namespace {
 
-// Samsung's timed_output nodes (drivers/motor/max77865_haptic.c)
 constexpr char kEnable[] = "/sys/class/timed_output/vibrator/enable";
 constexpr char kIntensity[] = "/sys/class/timed_output/vibrator/intensity";
 constexpr char kMultiFreq[] = "/sys/class/timed_output/vibrator/multi_freq";
@@ -43,7 +42,7 @@ constexpr int kFreqResonance = 0;
 constexpr int kFreqShort = 2000;
 constexpr int kFreqLow = 1200;
 
-// the stock HAL's CLICK amplitudes 36/128/255
+// amplitudes match the stock HAL's CLICK
 const std::map<EffectStrength, float> kStrength = {
         {EffectStrength::LIGHT, 36.0f / 255.0f},
         {EffectStrength::MEDIUM, 128.0f / 255.0f},
@@ -60,10 +59,9 @@ void ramp(std::vector<Packet>* out, float from, float to, int ms, int freq, bool
     }
 }
 
-// The short ones follow stock's 7 ms, 200 Hz overdrive tick (framework-res
-// config_vibeCommonN/O); the long ones follow the length and envelope of the
-// Pixel primitives at this motor's resonance. Frequency does not change how a
-// short pulse feels on this LRA, so only the level and the length differ.
+// Short primitives follow the stock 7 ms, 200 Hz overdrive tick, long ones the length and envelope
+// of the Pixel primitives at resonance; frequency does not change how a short pulse feels on this
+// LRA, so only level and length differ
 std::vector<Packet> primitivePackets(CompositePrimitive primitive) {
     std::vector<Packet> p;
     switch (primitive) {

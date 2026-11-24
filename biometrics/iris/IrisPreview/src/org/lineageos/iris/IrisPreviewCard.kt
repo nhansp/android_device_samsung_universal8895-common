@@ -43,26 +43,20 @@ import androidx.compose.ui.viewinterop.AndroidView
 import vendor.lineage.biometrics.iris.IrisAcquired
 
 // The RGB preview the HAL draws: the iris library's 192x108 image of both eyes
-// (libIrisService processFrontImage, IrisServiceCallback::sendImageProcessed id 1).
 private const val PREVIEW_WIDTH = 192f
 private const val PREVIEW_HEIGHT = 108f
 
-// Stock SecIrisService eye guides (IrisGLPreview EYE_POS from values/dimens.xml): two 121 dp
-// circles 30 dp apart, centred in the 360 x 202.5 dp preview, so the eyes sit at 29.0 % and
-// 71.0 % of its width, at half its height, and a circle spans 59.8 % of its height.
+// Eye guides: two 121 dp circles 30 dp apart, centred in the 360 x 202.5 dp preview
 private const val EYE_LEFT_X = (44f + 60.5f) / 360f
 private const val EYE_RIGHT_X = (44f + 121f + 30f + 60.5f) / 360f
 private const val EYE_DIAMETER = 121f / 202.5f
 
-// The hint sits 12 dp below the card's top edge (design decision, not in M3).
 private val HINT_TOP = 12.dp
 
-// Board 4's retry icon (design decision, not in M3: M3's large icon button icon size) and its gap
-// to the hint.
 private val RETRY_ICON_SIZE = 32.dp
 private val RETRY_GAP = 8.dp
 
-/** Stock IrisViewManager.processAcquiredInfo(): the hint of each acquired code. */
+/** The hint of each acquired code. */
 @StringRes
 fun hintText(acquired: Int?): Int? =
     when (acquired) {
@@ -77,8 +71,8 @@ fun hintText(acquired: Int?): Int? =
 /**
  * The preview field: the HAL's colour preview cropped to fill, the stock eye guides on top, a
  * light Monet border and shadow, and the guidance when [showMessage] is set. On failure the
- * preview blurs under the dynamic tint, and with [showRetry] board 4's retry icon and hint sit
- * in its centre.
+ * preview blurs under the dynamic tint, and with [showRetry] the retry icon and hint sit in its
+ * centre.
  */
 @Composable
 fun IrisPreviewCard(
@@ -142,7 +136,7 @@ private fun EyeGuides(modifier: Modifier, color: Color) {
     }
 }
 
-/** Board 4: the retry icon in the field's centre, the hint under it. */
+/** The retry icon in the field's centre, the hint under it. */
 @Composable
 private fun RetryPrompt(modifier: Modifier) {
     Column(
@@ -174,7 +168,6 @@ private fun CardMessage(text: String) {
         textAlign = TextAlign.Center,
         style =
             MaterialTheme.typography.titleMedium.copy(
-                // Board 7: the guide carries a soft shadow over the preview
                 shadow = Shadow(Color(0xB3000000), blurRadius = 3f),
             ),
     )
@@ -228,10 +221,7 @@ private fun cropToFill(view: TextureView, width: Int, height: Int) {
 }
 
 object IrisColors {
-    /**
-     * Board 4/7 tint: the dynamic secondary tone 20 (the dark scheme's onSecondary) at 55 %,
-     * like SystemUI tints its blurred backgrounds.
-     */
+    /** The dark scheme's onSecondary (dynamic secondary tone 20) at 55 %. */
     @Composable
     fun tint(): Color =
         androidx.compose.material3.dynamicDarkColorScheme(androidx.compose.ui.platform.LocalContext.current)

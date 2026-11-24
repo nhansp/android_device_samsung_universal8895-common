@@ -3,9 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-// hardware/interfaces' composer 2.1 passthrough service, linked against the stock HWC1 adapter
-// (libhwc2on1adapter from the vendor tree). The prebuilt replaces the AOSP library, so the
-// adapter header that library would export is included from its source directory.
+// libhwc2on1adapter is the vendor prebuilt, so its header is taken from the AOSP source directory
 cc_binary {
     name: "android.hardware.graphics.composer@2.1-service.exynos8895",
     defaults: ["hidl_defaults"],

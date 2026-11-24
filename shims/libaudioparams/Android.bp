@@ -4,7 +4,7 @@
 //
 
 // str_parms_get_mod() for audio.primary.exynos8895 (blob_fixup renames its str_parms_get_str):
-// g_sco_samplerate follows bt_wbs. From codeberg universal8895 lineage-23.2 shims/libaudioparams.
+// g_sco_samplerate follows bt_wbs
 cc_library_shared {
     name: "libaudioparams_shim",
     srcs: ["audioparams.cpp"],

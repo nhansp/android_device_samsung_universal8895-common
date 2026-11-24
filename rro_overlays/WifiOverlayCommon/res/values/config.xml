@@ -8,9 +8,6 @@
     <bool name="config_wifi5ghzSupport">true</bool>
     <bool name="config_wifiSoftap5ghzSupported">true</bool>
     <bool name="config_wifi_softap_ieee80211ac_supported">true</bool>
-    <!-- The 5 GHz soft AP runs at 40/80 MHz (hostapd ht_capab=[HT40+], the bcmdhd firmware's
-         5 GHz bw_cap 0x7) and the framework picks its channel (no ACS offload): only the
-         non-DFS channels with a 40 MHz partner. 165 has none, and hostapd refused it
-         ("Configured channel (165) ... (secondary_channel=1) not found"). -->
+    <!-- Non-DFS channels with a 40 MHz partner only; hostapd refuses 165 as it has none -->
     <string name="config_wifiSoftap5gChannelList">36-48,149-161</string>
 </resources>

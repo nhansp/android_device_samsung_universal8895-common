@@ -9,8 +9,6 @@
 
 namespace aidl::android::hardware::biometrics::face {
 
-// Stock SecIrisService: MAX_FAILED_ATTEMPTS_LOCKOUT_TIMED 5, FAIL_LOCKOUT_TIMEOUT_MS 30000,
-// MAX_FAILED_ATTEMPTS_LOCKOUT_PERMANENT 20.
 class LockoutTracker {
   public:
     enum class Mode { NONE, TIMED, PERMANENT };

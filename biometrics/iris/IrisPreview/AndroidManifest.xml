@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.INTERNAL_SYSTEM_WINDOW" />
     <uses-permission android:name="android.permission.MANAGE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC_INTERNAL" />
-    <!-- FaceService.registerBiometricStateListener() lists the users on the caller's behalf -->
+    <!-- FaceService lists the users on the caller's behalf for registerBiometricStateListener() -->
     <uses-permission android:name="android.permission.MANAGE_USERS" />
 
     <application
@@ -19,8 +19,6 @@
         android:label="@string/app_name"
         android:persistent="true">
 
-        <!-- Settings' face enrollment hands over a hardware auth token: callers need the same
-             permission Settings uses for biometrics -->
         <activity
             android:name=".IrisEnrollActivity"
             android:exported="true"

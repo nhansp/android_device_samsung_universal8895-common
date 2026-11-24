@@ -1,7 +1,5 @@
-# USB gadget (configfs); the controller is 10c00000.usb on 6.18. The gadget HAL
-# (android.hardware.usb.gadget-service.samsung, user system) switches the functions, so the gadget
-# belongs to system and sys.usb.configfs is 2, as in LineageOS exynos9820-common
-# configs/init/init.exynos9820.usb.rc.
+# USB gadget (configfs): the gadget HAL runs as system and switches the functions, so the gadget
+# belongs to system and sys.usb.configfs is 2
 on init
     setprop sys.usb.controller 10c00000.usb
     mkdir /config/usb_gadget/g1 0770 shell shell
@@ -11,9 +9,8 @@ on init
     mkdir /config/usb_gadget/g1/strings/0x409 0770 shell shell
     mkdir /config/usb_gadget/g1/configs/b.1 0770 shell shell
     mkdir /config/usb_gadget/g1/configs/b.1/strings/0x409 0770 shell shell
-    # MTP and PTP over FunctionFS: 6.18 has no in-kernel MTP function (mtp.gs0), and the gadget HAL
-    # links ffs.mtp/ffs.ptp and watches /dev/usb-ffs/mtp (hardware/google/pixel/usb CommonUtils.cpp
-    # addGenericAndroidFunctions); as LineageOS xiaomi msm8996-common init.qcom.usb.rc:98-104.
+    # MTP and PTP over FunctionFS: 6.18 has no in-kernel MTP function, and the gadget HAL links
+    # ffs.mtp/ffs.ptp and watches /dev/usb-ffs/mtp
     mkdir /config/usb_gadget/g1/functions/ffs.mtp
     mkdir /config/usb_gadget/g1/functions/ffs.ptp
     mkdir /config/usb_gadget/g1/functions/ffs.adb

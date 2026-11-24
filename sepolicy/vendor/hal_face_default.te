@@ -1,4 +1,4 @@
-# Both face HALs: the iris HAL or the face HAL serves the face sensor (UNIVERSAL8895_FACE_UNLOCK).
+# Serves both the iris HAL and the face HAL (UNIVERSAL8895_FACE_UNLOCK)
 
 # /dev/mobicore-user and /vendor/app/mcRegistry: the iris and face trustlet sessions
 allow hal_face_default tee_device:chr_file rw_file_perms;
@@ -16,8 +16,7 @@ unix_socket_connect(hal_face_default, iris_camera, hal_camera_default)
 unix_socket_connect(hal_face_default, face_camera, hal_camera_default)
 allow hal_face_default hal_camera_default:fd use;
 
-# The iris card's preview service, and the IR preview it draws into the surfaces of the iris
-# card and of the enrollment (gralloc buffers handed over by the app)
+# The iris preview service, drawing into gralloc buffers handed over by the app
 hal_server_domain(hal_face_default, hal_lineage_iris_preview)
 hal_client_domain(hal_face_default, hal_graphics_allocator)
 allow hal_face_default platform_app:fd use;
@@ -26,11 +25,10 @@ allow hal_face_default platform_app:fd use;
 hal_client_domain(hal_face_default, hal_power)
 
 # The face HAL draws Settings' enrollment preview into the surface Settings passes with the
-# enrollment (config_face_enroll_hal_owns_camera), as Pixel's face HAL does
+# enrollment (config_face_enroll_hal_owns_camera)
 binder_call(hal_face_default, system_app)
 allow hal_face_default system_app:fd use;
-# The surface's buffer queue lives in Settings (BLAST): Settings calls back into the HAL, the
-# producer, and dequeued buffers come with SurfaceFlinger's release fences (as hal_camera,
-# system/sepolicy/private/hal_camera.te; the callback as Pixel's googlebattery system_app.te)
+# The buffer queue lives in Settings (BLAST), which calls back into the HAL as producer; dequeued
+# buffers come with SurfaceFlinger's release fences
 binder_call(system_app, hal_face_default)
 allow hal_face_default surfaceflinger:fd use;

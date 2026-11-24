@@ -15,11 +15,9 @@ namespace {
 
 // The fingerprint HAL is sensor 0.
 constexpr int kSensorId = 1;
-// Stock FaceService DEFAULT_MAX_TEMPLATES_PER_USER
 constexpr int kMaxEnrollmentsPerUser = 1;
-// Matching runs in the face trustlet. The library returns no signed token, so keystore-bound
-// operations (BiometricPrompt with a CryptoObject) cannot use this sensor; unlock and plain
-// BiometricPrompt work.
+// The library returns no signed token, so keystore-bound operations (BiometricPrompt with a
+// CryptoObject) cannot use this sensor
 constexpr common::SensorStrength kSensorStrength = common::SensorStrength::STRONG;
 
 }  // namespace
@@ -59,7 +57,6 @@ ndk::ScopedAStatus Face::getSensorProps(std::vector<SensorProps>* out) {
     SensorProps props;
     props.commonProps = commonProps;
     props.sensorType = FaceSensorType::RGB;
-    // The HAL opens the camera and draws the enrollment preview (Preview.cpp).
     props.halControlsPreview = true;
     props.enrollPreviewWidth = Preview::kSize;
     props.enrollPreviewHeight = Preview::kSize;

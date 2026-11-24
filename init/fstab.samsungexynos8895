@@ -1,14 +1,10 @@
 # Android fstab file
 #
-# Mount options and flags follow the stock /fstab.samsungexynos8895 of N950NKSU5DZE2. The read-only
-# partitions are logical partitions of the super partition on SYSTEM and HIDDEN, mounted in first
-# stage. /data uses file-based encryption with the UFS inline crypto engine (FMP). /metadata lives
-# on the OMR partition (stock: empty) with the ext4 options of the Pixel 8 Pro /metadata entry,
-# mounted in first stage so that adb remount's scratch image on /data is found at boot; a blank OMR
-# is skipped there and formatted in second stage. vendor and odm are EROFS, with ext4 kept as a
-# fallback (as nothing/Spacewar). /data may be f2fs, with the mount options of samsung/a55x's
-# userdata entry, AID_RESERVED_DISK (1065) for its reserved blocks and the compression options of
-# the Pixel 8 (zuma) entry (lz4, the kernel default), or the stock ext4.
+# The read-only partitions are logical partitions of the super partition on SYSTEM and HIDDEN
+# /metadata lives on OMR (empty on stock), mounted in first stage so adb remount finds its scratch
+# image on /data; a blank OMR is skipped there and formatted in second stage
+# vendor and odm are EROFS with ext4 as fallback; /data is f2fs, with AID_RESERVED_DISK (1065)
+# for its reserved blocks, or ext4
 #
 #<src>                                   <mnt_point>  <type>  <mnt_flags and options>                                                                  <fs_mgr_flags>
 system                                   /system      ext4    ro,errors=panic,noload                                                                   wait,logical,first_stage_mount

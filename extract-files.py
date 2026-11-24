@@ -31,10 +31,10 @@ blob_fixups: blob_fixups_user_type = {
     # __aeabi_idiv, __aeabi_ldivmod, __aeabi_f2lz and __aeabi_l2f are not exported by bionic
     'vendor/lib/lib_SamsungRec_06006.so': blob_fixup()
         .add_needed('libcompiler_rt-samsung.so'),
-    # codeberg universal8895 lineage-23.2 extract-files.sh:81-86 (BT SCO shim, no SoundTrigger HAL);
-    # the Samsung libaudioroute and libtinyalsa are renamed away from the AOSP ones
-    # patchelf 0.17.2 and 0.18 put its program headers at offset 0x34 but vaddr 0x1a034 (inside
-    # the text LOAD), which the linker would read as code; 0.9 maps them in a new LOAD
+    # BT SCO shim, no SoundTrigger HAL; the Samsung libaudioroute and libtinyalsa are renamed away
+    # from the AOSP ones
+    # patchelf 0.17.2 and 0.18 put the program headers inside the text LOAD (vaddr 0x1a034); 0.9
+    # maps them in a new LOAD
     'vendor/lib/hw/audio.primary.exynos8895.so': blob_fixup()
         .patchelf_version('0_9')
         .add_needed('libaudioparams_shim.so')
@@ -63,8 +63,7 @@ blob_fixups: blob_fixups_user_type = {
         .clear_symbol_version('AHardwareBuffer_describe')
         .clear_symbol_version('AHardwareBuffer_getNativeHandle')
         .clear_symbol_version('AHardwareBuffer_release'),
-    # Only libc, libc++, liblog and libIrisTlc are used; the others are the A9 framework libraries
-    # the stock irisd had loaded anyway
+    # Only libc, libc++, liblog and libIrisTlc are used; the rest are A9 framework libraries
     'vendor/lib64/libIrisService.so': blob_fixup()
         .remove_needed('libbinder.so')
         .remove_needed('libexif.so')
@@ -76,8 +75,7 @@ blob_fixups: blob_fixups_user_type = {
         .remove_needed('libutils.so'),
     'vendor/lib64/libIrisTlc.so': blob_fixup()
         .remove_needed('libutils.so'),
-    # Neither is used: no symbol of either is imported. The stock soname is
-    # libsecfr_engine_tbase.so, which nothing needs; libFaceService needs it by file name.
+    # Neither is used; libFaceService needs it by file name, not by the stock soname
     'vendor/lib64/libsecfr_engine.so': blob_fixup()
         .remove_needed('libcutils.so')
         .remove_needed('libutils.so')

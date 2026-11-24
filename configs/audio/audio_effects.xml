@@ -22,7 +22,7 @@
         <library name="loudness_enhancer" path="libldnhncr.so"/>
         <library name="dynamics_processing" path="libdynproc.so"/>
         <library name="haptic_generator" path="libhapticgenerator.so"/>
-        <!-- Stock Dolby DAP (SamsungDAP), as in stock vendor/etc/audio_effects_sec.xml -->
+        <!-- Dolby DAP -->
         <library name="dap" path="libswdap.so"/>
     </libraries>
 

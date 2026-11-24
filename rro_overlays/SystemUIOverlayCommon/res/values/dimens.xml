@@ -4,8 +4,6 @@
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources>
-    <!-- The fingerprint sensor is on the back, next to the cameras. The prompt's icon is a
-         drawing of the top of the back of the phone (res/raw/fingerprint_dialogue_*), 2.29 times
-         as wide as it is tall; the height stays at SystemUI's 100dp. -->
+    <!-- The icon shows the back of the phone and is 2.29 times as wide as tall; the height stays at 100dp -->
     <dimen name="biometric_dialog_fingerprint_icon_width">229dp</dimen>
 </resources>

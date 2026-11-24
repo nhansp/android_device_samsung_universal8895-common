@@ -4,17 +4,12 @@
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources>
-    <!-- Stock values (N950NKSU5DZE2 framework-res) -->
     <bool name="config_automatic_brightness_available">true</bool>
     <bool name="config_supportDoubleTapWake">true</bool>
     <bool name="config_enableAutoPowerModes">true</bool>
     <bool name="config_enableWifiDisplay">true</bool>
     <bool name="config_showNavigationBar">true</bool>
 
-
-    <!-- codeberg universal8895 lineage-23.2 (57bbd96)
-         overlay/frameworks/base/core/res/res/values/config.xml, the values that ran on this
-         phone; only those lineage-24.0 still reads. -->
     <bool name="config_dozeAlwaysOnDisplayAvailable">true</bool>
     <bool name="config_dozeAlwaysOnEnabled">false</bool>
     <string name="config_dozeComponent">com.android.systemui/com.android.systemui.doze.DozeService</string>
@@ -22,38 +17,25 @@
     <bool name="config_enableBurnInProtection">true</bool>
     <bool name="config_powerDecoupleAutoSuspendModeFromDisplay">true</bool>
     <bool name="config_powerDecoupleInteractiveModeFromDisplay">true</bool>
-    <!-- Brightness. The stock framework-res values (N950NKSU5DZE2) are levels of the panel's
-         0..255 range; the framework here works on the 0..1 scale of the LightsService, which
-         reaches the panel as level ceil(round(1 + 254 * value) * 366 / 255) (display_port_0.xml).
-         Each float below is the HAL step whose luminance in the display_port_0.xml map (stock
-         config_screenBrightnessNits up to level 255, the panel's candela table above) is the
-         closest to the stock level's config_screenBrightnessNits:
-         minimum = stock 0, maximum = stock config_screenBrightnessExtendedMaximum (365),
-         default = stock 123 (157.4 nits; the HAL steps either side give 152.0 and 162.0),
-         dim = stock 57 (20.0 nits; the steps either side give 19.0 and 20.8).
-         The AOSP defaults of the dim and doze floats (0.05, 0.0) would otherwise win over any
-         integer. -->
+    <!-- Brightness on the 0..1 LightsService scale: each float is the HAL step whose luminance in
+         display_port_0.xml is closest to the stock level. The AOSP defaults of
+         the dim and doze floats (0.05, 0.0) would otherwise win over any integer -->
     <item name="config_screenBrightnessSettingMinimumFloat" format="float" type="dimen">0.0</item>
     <item name="config_screenBrightnessSettingMaximumFloat" format="float" type="dimen">0.996063</item>
     <item name="config_screenBrightnessSettingDefaultFloat" format="float" type="dimen">0.334646</item>
     <item name="config_screenBrightnessDimFloat" format="float" type="dimen">0.153543</item>
 
-    <!-- Always-on display luminance. Stock has config_screenBrightnessDoze = 1 (2.2 nits) and
-         config_aodBrightnessValues = [1, 97] (dark, lit); level 97 is 70.1 nits, which the HAL
-         step 0.259843 reproduces exactly. The panel shows a doze level from 97 up at its 60-nit
-         low-power level and a lower one at 2 nits. The lit value is the default; SystemUI lowers
-         it to the user's brightness when that is lower. With adaptive brightness the display
-         keeps following the light sensor while dozing, on the normal auto-brightness curve. -->
+    <!-- Always-on display luminance: HAL step 0.259843 reproduces the stock lit level 97 (70.1 nits);
+         the panel shows doze levels from 97 up at its 60-nit low-power level and lower ones at 2 nits -->
     <item name="config_screenBrightnessDozeFloat" format="float" type="dimen">0.259843</item>
     <bool name="config_allowAutoBrightnessWhileDozing">true</bool>
-    <!-- The panel's low-power mode has two luminances only: no brightness ramps in doze. -->
+    <!-- The panel's low-power mode has two luminances only: no brightness ramps in doze -->
     <bool name="config_displayBrightnessBucketsInDoze">true</bool>
 
-    <!-- The sensor hub's pick-up gesture (android.sensor.pick_up_gesture, one-shot, wake-up):
-         "Lift to check phone" wakes the device. -->
+    <!-- Sensor hub pick-up gesture (one-shot, wake-up) for "Lift to check phone" -->
     <bool name="config_dozePulsePickup">true</bool>
 
-    <!-- Automatic brightness: the stock lux thresholds and luminance (nits) per bucket. -->
+    <!-- Automatic brightness: lux thresholds and luminance (nits) per bucket -->
     <integer-array name="config_autoBrightnessLevels">
         <item>1</item>
         <item>2</item>
@@ -156,16 +138,12 @@
         <item>"mobile_emergency,15,0,2,-1,true"</item>
     </string-array>
     <string-array translatable="false" name="radioAttributes">
-        <!-- DEFAULT -->
         <item>"1,1"</item>
-        <!-- MOBILE -->
         <item>"0,1"</item>
-        <!-- BLUETOOTH -->
         <item>"7,1"</item>
     </string-array>
     <string name="config_datause_iface" translatable="false">rmnet4</string>
 
-    <!-- The display outline at the highest resolution (1440x2960), corners as rounded_corner_radius
-         (Samsung Galaxy Note8 emulator skin mask, see dimens.xml). -->
+    <!-- Display outline at 1440x2960, corners as rounded_corner_radius -->
     <string translatable="false" name="config_mainDisplayShape">M 0,54 A 54,54 0 0 1 54,0 H 1386 A 54,54 0 0 1 1440,54 V 2906 A 54,54 0 0 1 1386,2960 H 54 A 54,54 0 0 1 0,2906 Z</string>
 </resources>

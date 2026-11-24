@@ -49,9 +49,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 /**
- * Iris enrollment, reached from Settings' face enrollment through config_face_enroll: the iris
- * preview, the progress and the guidance. Settings passes the hardware auth token it got for the
- * user's credential, and finishes its own flow on RESULT_FINISHED.
+ * Iris enrollment, launched from Settings' face enrollment through config_face_enroll. Settings
+ * passes the hardware auth token and finishes its own flow on RESULT_FINISHED.
  */
 class IrisEnrollActivity : ComponentActivity() {
     private enum class Phase {
@@ -83,7 +82,7 @@ class IrisEnrollActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        // Like Settings' enrollment: leaving the screen ends the attempt.
+        // Leaving the screen ends the attempt
         if (phase != Phase.DONE && !isChangingConfigurations) {
             cancel?.cancel()
             finish()
@@ -143,11 +142,9 @@ class IrisEnrollActivity : ComponentActivity() {
                 label = "progress",
             )
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
-            // The preview field sits where it does on the bouncer and in prompts.
             IrisField(
                 acquired = acquired,
                 failed = phase == Phase.FAILED,
-                // Enrollment shows its guidance below the field.
                 showMessage = false,
                 onSurface = ::onSurface,
             )
@@ -224,7 +221,7 @@ class IrisEnrollActivity : ComponentActivity() {
 
     private companion object {
         const val TAG = "IrisEnroll"
-        // Settings ChooseLockSettingsHelper / BiometricEnrollBase
+        // Extras of Settings' face enrollment
         const val EXTRA_KEY_CHALLENGE_TOKEN = "hw_auth_token"
         const val EXTRA_FINISHED_ENROLL_FACE = "finished_enrolling_face"
         const val RESULT_FINISHED = RESULT_FIRST_USER

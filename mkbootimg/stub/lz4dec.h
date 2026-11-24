@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * lz4dec.h - freestanding LZ4 decoder and CRC-32 for the compressed bounce stub
- * (sboot-bounce-lz4.S/.c). No libc, no globals, no relocations: the same source is built for
- * aarch64 into the stub and for the host by tests/stub-lz4/test.c.
+ * (sboot-bounce-lz4.S/.c). No libc, no globals, no relocations.
  */
 #ifndef GL_LZ4DEC_H
 #define GL_LZ4DEC_H

@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* sboot-bounce-lz4 - constants shared by the .S, the .c and (as comments) lib/stub.py. */
+/* sboot-bounce-lz4 - constants shared by the .S and the .c */
 #ifndef GL_SBOOT_BOUNCE_LZ4_H
 #define GL_SBOOT_BOUNCE_LZ4_H
 
-#define DEST		0x84000000	/* decompressed Image lands here: same address as sboot-bounce.S */
+#define DEST		0x84000000	/* decompressed Image lands here */
 #define INITRD_PA	0x89000000	/* S-Boot copies the ramdisk here: DEST + image_size must stay below */
 #define SCRATCH		0x83E00000	/* 128 KiB scratch, see the memory map in sboot-bounce-lz4.S */
 #define SCRATCH_SIZE	0x20000

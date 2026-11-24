@@ -24,8 +24,7 @@ namespace aidl::android::hardware::biometrics::face {
 
 namespace {
 
-// Opening the front camera and getting its first frame takes about 0.5 s through the camera
-// service (camera2, measured 2026-11-16); the HAL1 path should not be slower.
+// Opening the front camera and getting its first frame takes about 0.5 s
 constexpr int kStartTimeoutSec = 5;
 
 // Receives one message. Returns its type, or -1 on EOF or error.

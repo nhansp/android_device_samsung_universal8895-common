@@ -31,13 +31,11 @@ std::atomic<int> gClient{-1};
 // A frame is out until the HAL sends MSG_RELEASE; later preview frames are dropped meanwhile.
 std::atomic<bool> gInFlight{false};
 
-// Stock FrCamCtrl.h1OpenCamera(): the lowest minimum among the fps ranges that reach 30 fps.
 std::string FpsRange(const CameraParams& defaults) {
     auto it = defaults.find("preview-fps-range-values");
     if (it == defaults.end()) return {};
     int bestMin = INT_MAX;
     std::string best;
-    // "(min,max),(min,max)"
     for (std::string range : android::base::Split(it->second, "),")) {
         range.erase(std::remove(range.begin(), range.end(), '('), range.end());
         range.erase(std::remove(range.begin(), range.end(), ')'), range.end());
@@ -55,20 +53,15 @@ std::string FpsRange(const CameraParams& defaults) {
     return best;
 }
 
-// Stock FrCamCtrl.h1OpenCamera() for the front camera of the face service.
 CameraParams FaceParams(const CameraParams& defaults) {
     CameraParams params = {
             {"preview-size", std::to_string(kWidth) + "x" + std::to_string(kHeight)},
-            // setPreviewFormat(ImageFormat.NV21)
             {"preview-format", "yuv420sp"},
-            // No SurfaceTexture: the preview the user sees is drawn by the face HAL
+            // No SurfaceTexture: the face HAL draws the preview
             {"no-display-mode", "1"},
-            // "set night shot mode" for great* and dream*: libexynoscamera m_setShotMode case
-            // 10 -> setMetaCtlSceneMode(AA_CONTROL_USE_SCENE_MODE, AA_SCENE_MODE_LLS), the
-            // ISP's low light mode (other products use 40, AA_SCENE_MODE_FACE_LOCK)
+            // ISP low light scene mode (AA_SCENE_MODE_LLS); other products use 40 (FACE_LOCK)
             {"shot-mode", "10"},
     };
-    // mIsAvailableFocusMode: only when the camera has autofocus
     auto focus = defaults.find("focus-mode-values");
     if (focus != defaults.end()) {
         auto modes = android::base::Split(focus->second, ",");

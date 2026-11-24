@@ -4,8 +4,7 @@
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources>
-    <!-- Hardware keys: home (1, the pressure key under the display) and volume (64); the Bixby
-         key (703) has no Android keycode in Generic.kl, so no assistant bit. -->
+    <!-- Hardware keys: home (1) and volume (64); the Bixby key has no Android keycode, so no assistant bit -->
     <integer name="config_deviceHardwareKeys">65</integer>
     <integer name="config_deviceHardwareWakeKeys">65</integer>
 

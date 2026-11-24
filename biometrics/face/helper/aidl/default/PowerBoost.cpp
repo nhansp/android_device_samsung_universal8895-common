@@ -18,8 +18,7 @@ namespace {
 
 constexpr char kPowerHal[] = "android.hardware.power.IPower/default";
 constexpr char kHint[] = "FACE_CAPTURE";
-// Stock acquireDVFS(mInactivityTimeOut): at most the enrollment timeout, 15 s; every capture ends
-// the hint itself.
+// At most the enrollment timeout; every capture ends the hint itself
 constexpr int32_t kDurationMs = 15000;
 
 }  // namespace
@@ -44,7 +43,7 @@ void PowerBoost::start() {
 }
 
 void PowerBoost::end() {
-    // A negative duration ends the hint (power-libperfmgr PowerExt::setBoost).
+    // A negative duration ends the hint
     if (auto power = ext()) power->setBoost(kHint, -1);
 }
 

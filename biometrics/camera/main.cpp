@@ -34,8 +34,7 @@ int Listen(const char* name) {
 
 }  // namespace
 
-// Hosts the camera HAL for the biometrics HALs, like vendor.camera.provider hosts it for the
-// others. One capture at a time: the iris and the face capture both use the front camera.
+// One capture at a time: the iris and the face capture both use the front camera
 int main() {
     pollfd fds[] = {
             {Listen(iris_camera::kSocketName), POLLIN, 0},

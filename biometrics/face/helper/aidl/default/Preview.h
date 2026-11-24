@@ -14,7 +14,6 @@
 namespace aidl::android::hardware::biometrics::face {
 
 // Draws the camera frames into the surface Settings passes with the enrollment
-// (FaceEnrollOptions.surfacePreview, config_face_enroll_hal_owns_camera).
 class Preview {
   public:
     // The side of the square drawn: the upright frame's width.

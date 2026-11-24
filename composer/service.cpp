@@ -2,11 +2,6 @@
  * SPDX-FileCopyrightText: The Android Open Source Project
  * SPDX-FileCopyrightText: The LineageOS Project
  * SPDX-License-Identifier: Apache-2.0
- *
- * hardware/interfaces/graphics/composer/2.1/default/service.cpp, loading the HWC through a
- * HwcHal that keeps solid-color layers away from the stock HWC1, reports HWC2 present fences,
- * enters DOZE_SUSPEND through DOZE and offers the stock display scaler's resolutions as display
- * configs (see SolidColorHwcHal).
  */
 
 #define LOG_TAG "android.hardware.graphics.composer@2.1-service"
@@ -48,15 +43,9 @@ using android::hardware::hidl_vec;
 
 namespace {
 
-// The display scaler (DSU) of the stock HWC: the panel shows a lower resolution, scaled up by the
-// DECON and the panel's DDI. Stock SurfaceFlinger drove it through ExynosDisplay::
-// setDDIScalerEnable(w, h) (libexynosdisplay 0x23610: primary display only, stores w and h as
-// mXres/mYres and mScaledXres/mScaledYres; the next frame's WIN_CONFIG carries the scaler mode,
-// ExynosDisplay::getDDIScalerMode(), 0x1efc0). The modes are the HWC's mDSUInfo, which it reads
-// from the DECON's psr_info: a count at +0xc48 and {width, height} pairs from +0xc4c (as
-// getDDIScalerMode() reads them). The ExynosDevice is stored at +0xe8 of the HWC1 device
-// (hwcomposer.exynos5.so exynos_open(), 0x20a0-0x20b0); ExynosDevice::getDisplay(type), 0x23908,
-// returns the display of that HWC1 type.
+// Display scaler (DSU) of the stock HWC: the panel shows a lower resolution, scaled up by the DECON
+// and the DDI. The modes are the HWC's mDSUInfo (count at +0xc48, {width, height} pairs from
+// +0xc4c) and the ExynosDevice is stored at +0xe8 of the HWC1 device; neither is exported.
 class ExynosScaler {
   public:
     struct Mode {
@@ -113,8 +102,7 @@ class ExynosScaler {
     void (*mSetScaler)(void*, int, int) = nullptr;
 };
 
-// Notes the first display connected, the primary (HWC2On1Adapter connects HWC_DISPLAY_PRIMARY
-// first), and forwards the events.
+// Records the first connected display as the primary, which HWC2On1Adapter connects first
 class HotplugTracker : public ComposerHal::EventCallback {
   public:
     void setTarget(ComposerHal::EventCallback* target) { mTarget = target; }
@@ -139,46 +127,15 @@ class HotplugTracker : public ComposerHal::EventCallback {
     std::atomic<Display> mPrimary{kNone};
 };
 
-// The stock libexynosdisplay create_layers() passes hwc_layer_1.handle of every layer to
-// ExynosLayer::setLayerBuffer(), which dereferences it. For a SOLID_COLOR layer the HWC1 adapter
-// keeps the color in the union that also holds the handle, so the HWC read through the color
-// (fault address 0xff5b5288 = color 0xff5b5250 + 0x38). The adapter composes solid colors as
-// HWC_FRAMEBUFFER | HWC_SKIP_LAYER anyway, so ask it for CLIENT composition instead, which leaves
-// the handle slot to the (null) buffer, and report the layer as changed to CLIENT so that
-// SurfaceFlinger draws it.
-//
-// HWC1 has no present fence. For frame N the adapter returns the HWC1 retire fence, which signals
-// when N is replaced on the panel: the DECON timeline of a DSI display starts one ahead
-// (kernel exynos8895_s3cfb.c, stock dpu/helper.c:326-339), so it signals a refresh after N is
-// shown. SurfaceFlinger takes it as the HWC2 present fence and counts each frame as missed
-// (FrameTargeter::beginFrame: the fence signalled more than half a refresh after its expected
-// present time), then composes every other vsync. The retire fence of frame N-1 signals when N
-// replaces it on the panel, which is what the HWC2 present fence of N means; return that one.
-// Release fences are not touched.
-//
-// The stock HWC blanks the display (FBIOBLANK POWERDOWN) when it leaves ON for DOZE or
-// DOZE_SUSPEND, then sets the doze mode with S3CFB_POWER_MODE; from a doze mode it sets the new
-// mode only, except that it enters DOZE_SUSPEND after posting six black colour windows
-// (libexynosdisplay ExynosPrimaryDisplay::setPowerMode, 0x26bfc-0x26d38, and
-// ExynosDisplay::clearAllDisplay, 0x21558), which the DECON shows before it stops
-// (decon_set_doze_suspend() flushes the update worker). With the display off, DOZE brings the
-// panel up in ALPM with the next frame; DOZE_SUSPEND before that frame leaves it off, and in
-// DOZE_SUSPEND the DECON drops every frame (check_decon_state()). The framework reaches
-// DOZE_SUSPEND as ON to DOZE_SUSPEND (DisplayPowerController.animateScreenStateChange asks for
-// DOZE first, but the two requests reach the HAL as one), and as DOZE and DOZE_SUSPEND back to
-// back from OFF or from DOZE_SUSPEND (LocalDisplayAdapter leaves a suspended state through DOZE,
-// for a new state or a new doze brightness), before SurfaceFlinger draws.
-// So on the primary display DOZE_SUSPEND waits for a frame presented in DOZE (from ON the display
-// enters DOZE and a frame is requested), and is then set on the framebuffer directly, keeping
-// that frame in ALPM; the HWC stays in DOZE and the kernel releases the window buffers when the
-// display pipe goes off. A frame presented in DOZE_SUSPEND, new always-on display content, is
-// shown the same way: DOZE, a new frame, DOZE_SUSPEND.
-//
-// The stock HWC1 reports one config, 1440x2960, and ignores setActiveConfig on the primary
-// display (exynos_hwc1_setActiveConfig() passes 0, libexynosdisplay 0x152a0). For each further
-// scaler mode the primary display gets a config of that size, the same vsync, and a DPI scaled
-// with it (the same physical size); setActiveConfig selects the scaler mode. SurfaceFlinger
-// renders at the config's size, which the HWC composes into the scaled window.
+// Works around the stock HWC1 behind HWC2On1Adapter:
+// - SOLID_COLOR layers are composed by the client: the HWC dereferences the color, which the adapter
+//   keeps in the union that holds the buffer handle
+// - the retire fence of frame N-1 is the present fence of N: the HWC1 retire fence of N signals one
+//   refresh late and SurfaceFlinger would count every frame as missed
+// - DOZE_SUSPEND waits for a frame presented in DOZE, then goes to the framebuffer directly: from
+//   an off display it would stay off, and the DECON drops every frame in DOZE_SUSPEND
+// - the scaler modes are offered as display configs, as the HWC1 reports one config and ignores
+//   setActiveConfig on the primary display
 class SolidColorHwcHal : public HwcHal {
   public:
     void initScaler(hwc_composer_device_1* hwc1) { mScalerReady = mScaler.init(hwc1); }
@@ -449,7 +406,7 @@ class SolidColorHwcHal : public HwcHal {
         }
     }
 
-    // S3CFB_POWER_MODE and the DECON's doze modes (stock decon.h enum doze_mode)
+    // S3CFB_POWER_MODE and the DECON's doze modes
     static constexpr unsigned int kS3cfbPowerMode = 0x400446df;
     static constexpr uint32_t kDeconPowerDoze = 1;
     static constexpr uint32_t kDeconPowerDozeSuspend = 3;
@@ -524,9 +481,7 @@ class SolidColorHwcHal : public HwcHal {
     std::unordered_map<Display, android::base::unique_fd> mPreviousRetire;
 };
 
-// HwcLoader::load() with SolidColorHwcHal in place of HwcHal; the HWC1 device is opened and
-// adapted here as HwcLoader::openDeviceWithAdapter() and adaptHwc1Device() do, to keep it for
-// the scaler.
+// HwcLoader::load() with SolidColorHwcHal, opening the HWC1 device here to keep it for the scaler
 class SolidColorHwcLoader : public HwcLoader {
   public:
     static IComposer* load() {

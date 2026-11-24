@@ -1,9 +1,8 @@
-# Display: DECON-F and the SoC revision the stock composer reads (6.18 sysfs paths)
+# Display: DECON-F and the SoC revision read by the composer
 genfscon sysfs /devices/platform/12860000.decon_f                                       u:object_r:sysfs_display:s0
 genfscon sysfs /devices/system/chip-id                                                  u:object_r:sysfs_chipid:s0
 
-# Battery: MAX77865 charger (32-0069) and fuel gauge (32-0036) on USI 10960000, IDT wireless
-# receiver (29-003b) on USI 10940000 (6.18 sysfs paths)
+# Battery: MAX77865 charger and fuel gauge on USI 10960000, IDT wireless receiver on USI 10940000
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0069/power_supply u:object_r:sysfs_battery:s0
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10960000/10970000.i2c/i2c-32/32-0036/power_supply u:object_r:sysfs_battery:s0
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10940000/10940000.i2c/i2c-29/29-003b/power_supply u:object_r:sysfs_battery:s0
@@ -27,7 +26,7 @@ genfscon sysfs /devices/platform/soc@0/soc@0:usi@10900000/10900000.i2c/i2c-25/25
 # Device tree model info
 genfscon sysfs /firmware/devicetree/base/model_info-system_rev                          u:object_r:sysfs_dt_model_info:s0
 
-# Panel and mDNIe (/sys/class/lcd/panel, /sys/class/mdnie/mdnie is panel/mdnie) at their 6.18 path
+# Panel and mDNIe
 genfscon sysfs /devices/platform/soc@0/12870000.dsi/12870000.dsi.0/lcd/panel           u:object_r:sysfs_lcd_writable:s0
 
 genfscon sysfs /devices/platform/bluetooth/rfkill/rfkill0/state                     u:object_r:sysfs_bt_writable:s0
@@ -35,18 +34,17 @@ genfscon sysfs /devices/platform/soc@0/12870000.dsi/12870000.dsi.0/backlight/pan
 genfscon sysfs /devices/platform/soc@0/soc@0:usi@10460000/10460000.spi/spi_master/spi3/spi3.0/madera-extcon/extcon u:object_r:sysfs_extcon:s0
 genfscon sysfs /devices/platform/soc@0/11120000.ufs/host0                          u:object_r:sysfs_scsi_host_writable:s0
 
-# Sensor hub MCU rail and GNSS standby line, switched by lhd (lhd.conf GpioNPowerPath and
-# GpioNStdbyPath; device/samsung_slsi/sepolicy common/vendor/lhd.te grants it these types)
+# Sensor hub MCU rail and GNSS standby line, switched by lhd
 genfscon sysfs /devices/virtual/sec/sensorhub/mcu_power                       u:object_r:sysfs_sensorhub_writable:s0
 genfscon sysfs /devices/virtual/sec/gps/GPS_PWR_EN/value                      u:object_r:sysfs_gps_writable:s0
 
-# GPU frequency floor and cap the power HAL writes (powerhint.json GPUMinFreq, GPUMaxFreq)
+# GPU frequency floor and cap the power HAL writes
 genfscon sysfs /devices/platform/soc@0/13900000.mali/devfreq/13900000.mali/min_freq u:object_r:sysfs_gpu:s0
 genfscon sysfs /devices/platform/soc@0/13900000.mali/devfreq/13900000.mali/max_freq u:object_r:sysfs_gpu:s0
-# ADPF GPU boost (powerhint.json GpuSysfsPath)
+# ADPF GPU boost
 genfscon sysfs /devices/platform/soc@0/13900000.mali/capacity_headroom u:object_r:sysfs_gpu:s0
 genfscon sysfs /devices/platform/soc@0/13900000.mali/cur_freq u:object_r:sysfs_gpu:s0
-# Memory bus (MIF) frequency floor the power HAL writes (powerhint.json MIFMinFreq)
+# Memory bus (MIF) frequency floor the power HAL writes
 genfscon sysfs /devices/platform/bus-mif/devfreq/bus-mif/min_freq u:object_r:sysfs_devfreq_mif:s0
 
 # video4linux: the class directory the Exynos OMX components scan for the MFC, and the MFC nodes
@@ -55,11 +53,11 @@ genfscon sysfs /devices/platform/soc@0/13ce0000.codec/video4linux       u:object
 
 genfscon proc /sys/vm/swappiness                                        u:object_r:vendor_proc_swappiness:s0
 
-# MAX77865 RGB LED, Samsung's sec led interface (/sys/class/sec/led): led_blink for the lights HAL
+# MAX77865 RGB LED, Samsung's sec led interface: led_blink for the lights HAL
 genfscon sysfs /devices/virtual/sec/led                                 u:object_r:sysfs_leds:s0
 
 # Wakeup sources of platform devices, read by the suspend service (AOSP labels only
-# /class/wakeup and /devices/virtual/wakeup); 6.18 sysfs paths
+# /class/wakeup and /devices/virtual/wakeup)
 genfscon sysfs /devices/platform/10000.mif_pdata/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/13e50000.abox/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/14020000.vts/wakeup u:object_r:sysfs_wakeup:s0

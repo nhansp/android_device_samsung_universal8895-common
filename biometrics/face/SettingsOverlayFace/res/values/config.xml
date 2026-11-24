@@ -4,10 +4,9 @@
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources>
-    <!-- The face HAL opens the front camera itself (the stock face service did too) and draws
-         Settings' enrollment preview into this surface -->
+    <!-- The face HAL opens the front camera and draws the enrollment preview -->
     <bool name="config_face_enroll_hal_owns_camera">true</bool>
-    <!-- The size it draws (Preview::kSize: the 640x480 frame upright, middle square) -->
+    <!-- Preview::kSize: the 640x480 frame upright, middle square -->
     <integer name="face_preview_width">480</integer>
     <integer name="face_preview_height">480</integer>
 

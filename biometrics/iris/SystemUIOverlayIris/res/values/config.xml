@@ -4,17 +4,13 @@
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources>
-    <!-- The front camera: SystemUI places the face sensor (config_face_auth_props) only for it
-         (FacePropertyRepository.loadCameraInfo) -->
+    <!-- SystemUI places the face sensor only for the front camera -->
     <string name="config_protectedCameraId" translatable="false">1</string>
 
-    <!-- Iris, the face sensor here, is not started by waking the screen: it fires the IR LED, and
-         the rear fingerprint sensor is the lockscreen's unlock. As in stock One UI, it starts when
-         the user swipes up to the bouncer, or swipes up again on the bouncer to retry. -->
+    <!-- No wake-up trigger: iris fires the IR LED, so it starts on the swipe up to the bouncer -->
     <integer-array name="config_face_auth_wake_up_triggers" />
 
-    <!-- Where the unlock ripple starts: the iris camera, in the top bezel above the display's top
-         edge (Galaxy Note8 emulator skin: display at 194,312, lens centre 502,247, radius 31) -->
+    <!-- The iris camera lens sits in the top bezel, above the display's top edge -->
     <integer-array name="config_face_auth_props">
         <item>308</item> <!-- sensorLocationX -->
         <item>0</item> <!-- sensorLocationY -->

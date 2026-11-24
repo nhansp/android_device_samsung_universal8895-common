@@ -13,12 +13,9 @@
 #include <utils/Trace.h>
 
 /*
- * android::Fence as of Android 9, which libexynoscamera3 was built against:
- * the reference count at offset 0 and a plain descriptor at offset 4. The HAL
- * allocates the object, counts references and closes the descriptor inline,
- * and only calls the constructor and wait(). Its imports of those two are
- * renamed to this namespace at extraction, because libui now has a vtable in
- * front of both fields and hands the descriptor to fdsan.
+ * android::Fence as libexynoscamera3 expects it: refcount at offset 0, descriptor at offset 4.
+ * The HAL manages both inline and only imports the constructor and wait(), which are renamed to
+ * this namespace at extraction because libui now has a vtable in front and uses fdsan.
  */
 namespace libui28 {
 

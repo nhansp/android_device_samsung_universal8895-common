@@ -10,7 +10,7 @@
 typedef uint64_t u64;
 typedef uint32_t u32;
 
-struct hdr {			/* stub_hdr in the .S, patched by gl-pack (lib/stub.py) */
+struct hdr {			/* stub_hdr in the .S, patched at image build */
 	char magic[8];
 	u64 dest;
 	u64 comp_len;

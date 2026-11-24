@@ -12,9 +12,7 @@
 
 namespace aidl::android::hardware::biometrics::face {
 
-// Stock BioFaceService raises the CPU minimum frequency while the face camera runs (acquireDVFS:
-// SemDvfsManager "BIO_FACE_SERVICE", getApproximateFrequency(2000000)); here that is the
-// FACE_CAPTURE hint of the power HAL (powerhint.json).
+// Raises the CPU minimum frequency while the face camera runs (FACE_CAPTURE hint, powerhint.json)
 class PowerBoost {
   public:
     void start();

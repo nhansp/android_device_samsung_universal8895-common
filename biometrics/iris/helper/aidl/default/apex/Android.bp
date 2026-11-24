@@ -9,8 +9,7 @@ prebuilt_etc {
     installable: false,
 }
 
-// The iris HAL with everything it links against. The one library it takes from /vendor,
-// the stock libIrisService.so, is exported to it by ../../../linker.config.json.
+// libIrisService.so is the one library taken from /vendor, exported by ../../../linker.config.json
 apex {
     name: "com.android.hardware.biometrics.iris.samsung",
     manifest: "apex_manifest.json",
