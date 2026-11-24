@@ -66,6 +66,8 @@ PRODUCT_PACKAGES += \
     android.hardware.biometrics.fingerprint-service.samsung
 
 # Face unlock
+UNIVERSAL8895_USE_FACE_IMPL ?= false
+ifeq ($(UNIVERSAL8895_USE_FACE_IMPL),true)
 UNIVERSAL8895_FACE_UNLOCK ?= face
 ifeq ($(UNIVERSAL8895_FACE_UNLOCK),iris)
 $(call inherit-product, $(COMMON_PATH)/biometrics/iris/iris.mk)
@@ -73,6 +75,10 @@ else ifeq ($(UNIVERSAL8895_FACE_UNLOCK),face)
 $(call inherit-product, $(COMMON_PATH)/biometrics/face/face.mk)
 else
 $(error UNIVERSAL8895_FACE_UNLOCK must be face or iris, not $(UNIVERSAL8895_FACE_UNLOCK))
+endif
+TARGET_PROVIDES_FACE_UNLOCK_HAL := true
+else ifneq ($(UNIVERSAL8895_USE_FACE_IMPL),false)
+$(error UNIVERSAL8895_USE_FACE_IMPL must be true or false, not $(UNIVERSAL8895_USE_FACE_IMPL))
 endif
 
 # Gatekeeper
