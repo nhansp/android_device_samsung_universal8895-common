@@ -49,4 +49,4 @@ const char CameraParameters::KEY_PHASE_AF[] = "phase-af";
 const char CameraParameters::KEY_SUPPORTED_RT_HDR[] = "rt-hdr-values";
 const char CameraParameters::KEY_RT_HDR[] = "rt-hdr";
 
-}; // namespace android
+};  // namespace android

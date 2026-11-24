@@ -142,10 +142,10 @@ static_assert(sizeof(ForwardingContext) <= kKm1ContextAllocSize &&
 
 #define SHIM_EXPORT extern "C" __attribute__((visibility("default"), used))
 
-SHIM_EXPORT void* shim_Keymaster1PassthroughContext(void* self, keymaster1_device_t* dev)
-        __asm__("_ZN9keymaster28Keymaster1PassthroughContextC1EP17keymaster1_device");
-SHIM_EXPORT void* shim_Keymaster2PassthroughContext(void* self, keymaster2_device_t* dev)
-        __asm__("_ZN9keymaster28Keymaster2PassthroughContextC1EP17keymaster2_device");
+SHIM_EXPORT void* shim_Keymaster1PassthroughContext(void* self, keymaster1_device_t* dev) __asm__(
+        "_ZN9keymaster28Keymaster1PassthroughContextC1EP17keymaster1_device");
+SHIM_EXPORT void* shim_Keymaster2PassthroughContext(void* self, keymaster2_device_t* dev) __asm__(
+        "_ZN9keymaster28Keymaster2PassthroughContextC1EP17keymaster2_device");
 
 void* shim_Keymaster1PassthroughContext(void* self, keymaster1_device_t* dev) {
     new (self) ForwardingContext(new Keymaster1PassthroughContext(KmVersion::KEYMASTER_3, dev));

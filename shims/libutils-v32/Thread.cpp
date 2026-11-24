@@ -27,4 +27,4 @@ android::status_t Thread::run(const char* name, int32_t priority, size_t stack) 
     return android::Thread::run(name, priority, stack);
 }
 
-} // namespace utils32
+}  // namespace utils32
