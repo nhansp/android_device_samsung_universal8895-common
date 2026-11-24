@@ -81,21 +81,34 @@ fun IrisPreviewCard(
     failed: Boolean,
     showMessage: Boolean,
     showRetry: Boolean = false,
-    onSurface: (Surface?) -> Unit,
+    onSurface: (Surface?) -> Unit
 ) {
     val shape = RoundedCornerShape(dimensionResource(R.dimen.iris_card_radius))
     val monet = MaterialTheme.colorScheme.primaryFixedDim
     Box(
         modifier
-            .shadow(dimensionResource(R.dimen.iris_card_elevation), shape, ambientColor = monet, spotColor = monet)
+            .shadow(
+                dimensionResource(R.dimen.iris_card_elevation),
+                shape,
+                ambientColor = monet,
+                spotColor = monet
+            )
             .border(dimensionResource(R.dimen.iris_card_border), monet, shape)
             .clip(shape)
             .background(Color.Black)
     ) {
         PreviewTexture(
             Modifier.fillMaxSize()
-                .then(if (failed) Modifier.blur(dimensionResource(R.dimen.iris_blur_radius)) else Modifier),
-            onSurface,
+                .then(
+                    if (failed) {
+                        Modifier.blur(
+                            dimensionResource(R.dimen.iris_blur_radius)
+                        )
+                    } else {
+                        Modifier
+                    }
+                ),
+            onSurface
         )
         if (failed) {
             Box(Modifier.fillMaxSize().background(IrisColors.tint()))
@@ -130,7 +143,7 @@ private fun EyeGuides(modifier: Modifier, color: Color) {
                 color = color,
                 radius = radius,
                 center = Offset(left + x * shownWidth, top + shownHeight / 2f),
-                style = Stroke(thickness.toPx()),
+                style = Stroke(thickness.toPx())
             )
         }
     }
@@ -142,19 +155,19 @@ private fun RetryPrompt(modifier: Modifier) {
     Column(
         modifier.padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(RETRY_GAP),
+        verticalArrangement = Arrangement.spacedBy(RETRY_GAP)
     ) {
         Icon(
             painterResource(R.drawable.ic_iris_retry),
             contentDescription = null,
             modifier = Modifier.size(RETRY_ICON_SIZE),
-            tint = Color.White,
+            tint = Color.White
         )
         Text(
             text = stringResource(R.string.iris_tap_to_retry),
             color = Color.White,
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium
         )
     }
 }
@@ -167,9 +180,9 @@ private fun CardMessage(text: String) {
         color = Color.White,
         textAlign = TextAlign.Center,
         style =
-            MaterialTheme.typography.titleMedium.copy(
-                shadow = Shadow(Color(0xB3000000), blurRadius = 3f),
-            ),
+        MaterialTheme.typography.titleMedium.copy(
+            shadow = Shadow(Color(0xB3000000), blurRadius = 3f)
+        )
     )
 }
 
@@ -184,7 +197,7 @@ private fun PreviewTexture(modifier: Modifier, onSurface: (Surface?) -> Unit) {
                         override fun onSurfaceTextureAvailable(
                             texture: SurfaceTexture,
                             width: Int,
-                            height: Int,
+                            height: Int
                         ) {
                             cropToFill(this@apply, width, height)
                             onSurface(Surface(texture))
@@ -193,7 +206,7 @@ private fun PreviewTexture(modifier: Modifier, onSurface: (Surface?) -> Unit) {
                         override fun onSurfaceTextureSizeChanged(
                             texture: SurfaceTexture,
                             width: Int,
-                            height: Int,
+                            height: Int
                         ) = cropToFill(this@apply, width, height)
 
                         override fun onSurfaceTextureDestroyed(texture: SurfaceTexture): Boolean {
@@ -205,7 +218,7 @@ private fun PreviewTexture(modifier: Modifier, onSurface: (Surface?) -> Unit) {
                         override fun onSurfaceTextureUpdated(texture: SurfaceTexture) {}
                     }
             }
-        },
+        }
     )
 }
 
@@ -215,7 +228,12 @@ private fun cropToFill(view: TextureView, width: Int, height: Int) {
     val scale = maxOf(width / PREVIEW_WIDTH, height / PREVIEW_HEIGHT)
     view.setTransform(
         Matrix().apply {
-            setScale(PREVIEW_WIDTH * scale / width, PREVIEW_HEIGHT * scale / height, width / 2f, height / 2f)
+            setScale(
+                PREVIEW_WIDTH * scale / width,
+                PREVIEW_HEIGHT * scale / height,
+                width / 2f,
+                height / 2f
+            )
         }
     )
 }
@@ -224,7 +242,9 @@ object IrisColors {
     /** The dark scheme's onSecondary (dynamic secondary tone 20) at 55 %. */
     @Composable
     fun tint(): Color =
-        androidx.compose.material3.dynamicDarkColorScheme(androidx.compose.ui.platform.LocalContext.current)
+        androidx.compose.material3.dynamicDarkColorScheme(
+            androidx.compose.ui.platform.LocalContext.current
+        )
             .onSecondary
             .copy(alpha = 0.55f)
 }

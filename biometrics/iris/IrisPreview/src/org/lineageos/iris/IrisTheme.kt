@@ -20,8 +20,9 @@ import androidx.compose.ui.platform.LocalContext
 fun IrisTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val context = LocalContext.current
     MaterialExpressiveTheme(
-        colorScheme = if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context),
+        colorScheme =
+        if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context),
         motionScheme = MotionScheme.expressive(),
-        content = content,
+        content = content
     )
 }

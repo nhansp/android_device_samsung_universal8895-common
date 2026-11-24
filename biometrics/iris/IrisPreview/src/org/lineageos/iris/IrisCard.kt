@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 enum class IrisCardMode {
     NONE,
     BOUNCER,
-    ISLAND,
+    ISLAND
 }
 
 @Composable
@@ -74,7 +74,7 @@ fun IrisField(
     showMessage: Boolean,
     onSurface: (Surface?) -> Unit,
     reveal: Animatable<Float, AnimationVector1D> = rememberFieldReveal(),
-    onRetry: (() -> Unit)? = null,
+    onRetry: (() -> Unit)? = null
 ) {
     val top = irisFieldTop()
     val height = dimensionResource(R.dimen.iris_field_bottom) - top
@@ -89,7 +89,7 @@ fun IrisField(
                         Modifier.clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
-                            onClick = onRetry,
+                            onClick = onRetry
                         )
                     } else {
                         Modifier
@@ -99,7 +99,7 @@ fun IrisField(
             failed = failed,
             showMessage = showMessage,
             showRetry = onRetry != null,
-            onSurface = onSurface,
+            onSurface = onSurface
         )
     }
 }
@@ -120,7 +120,7 @@ fun IrisCard(
     onBlur: (Float) -> Unit,
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
-    onExited: () -> Unit,
+    onExited: () -> Unit
 ) {
     val acquired by IrisHal.hint.collectAsState()
     val exited by rememberUpdatedState(onExited)
@@ -136,9 +136,16 @@ fun IrisCard(
             return@LaunchedEffect
         }
         joinAll(
-            launch { if (mode == IrisCardMode.BOUNCER) blur.animateTo(0f, effects) { onBlur(value) } },
+            launch {
+                if (mode == IrisCardMode.BOUNCER) {
+                    blur.animateTo(
+                        0f,
+                        effects
+                    ) { onBlur(value) }
+                }
+            },
             launch { alpha.animateTo(0f, effects) },
-            launch { reveal.animateTo(0f, fastSpatial) },
+            launch { reveal.animateTo(0f, fastSpatial) }
         )
         exited()
     }
@@ -150,7 +157,7 @@ fun IrisCard(
                 failed = failed,
                 showMessage = true,
                 onSurface = onSurface,
-                reveal = reveal,
+                reveal = reveal
             )
             return@Box
         }
@@ -167,7 +174,10 @@ fun IrisCard(
             Modifier.fillMaxSize()
                 .graphicsLayer { this.alpha = blur.value * alpha.value }
                 .background(IrisColors.tint())
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
                     onDismiss()
                 }
         )
@@ -177,31 +187,37 @@ fun IrisCard(
             showMessage = true,
             onSurface = onSurface,
             reveal = reveal,
-            onRetry = onRetry,
+            onRetry = onRetry
         )
         Box(Modifier.fillMaxSize()) {
             Button(
                 onClick = onDismiss,
                 modifier =
-                    Modifier.align(Alignment.TopCenter)
-                        .offset(y = dimensionResource(R.dimen.iris_field_bottom) + dimensionResource(R.dimen.iris_pin_button_gap))
-                        .size(
-                            dimensionResource(R.dimen.iris_pin_button_width),
-                            dimensionResource(R.dimen.iris_pin_button_height),
-                        )
-                        .graphicsLayer {
-                            scaleX = 0.6f + 0.4f * button.value
-                            scaleY = 0.6f + 0.4f * button.value
-                            this.alpha = buttonAlpha.value * alpha.value
-                        },
+                Modifier.align(Alignment.TopCenter)
+                    .offset(
+                        y = dimensionResource(R.dimen.iris_field_bottom) +
+                            dimensionResource(R.dimen.iris_pin_button_gap)
+                    )
+                    .size(
+                        dimensionResource(R.dimen.iris_pin_button_width),
+                        dimensionResource(R.dimen.iris_pin_button_height)
+                    )
+                    .graphicsLayer {
+                        scaleX = 0.6f + 0.4f * button.value
+                        scaleY = 0.6f + 0.4f * button.value
+                        this.alpha = buttonAlpha.value * alpha.value
+                    },
                 shapes = ButtonDefaults.shapes(),
                 colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    ),
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
             ) {
-                Text(stringResource(R.string.iris_use_pin), style = MaterialTheme.typography.labelLarge)
+                Text(
+                    stringResource(R.string.iris_use_pin),
+                    style = MaterialTheme.typography.labelLarge
+                )
             }
         }
     }

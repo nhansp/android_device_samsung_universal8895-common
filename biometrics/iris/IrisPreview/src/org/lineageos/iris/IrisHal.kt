@@ -89,7 +89,9 @@ object IrisHal {
         executor.execute { call { it.resumeCapture() } }
     }
 
-    /** Ends the current keyguard attempt: "Use PIN", a tap outside the card, the screen going off. */
+    /**
+     * Ends the current keyguard attempt: "Use PIN", a tap outside the card, the screen going off.
+     */
     fun endCapture() {
         executor.execute { call { it.endCapture() } }
     }

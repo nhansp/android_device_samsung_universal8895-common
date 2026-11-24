@@ -57,7 +57,7 @@ class IrisEnrollActivity : ComponentActivity() {
         WAITING,
         ENROLLING,
         DONE,
-        FAILED,
+        FAILED
     }
 
     private var phase by mutableStateOf(Phase.WAITING)
@@ -116,7 +116,10 @@ class IrisEnrollActivity : ComponentActivity() {
                     percent = (100 - remaining).coerceIn(0, 100)
                     if (remaining == 0) {
                         phase = Phase.DONE
-                        setResult(RESULT_FINISHED, Intent().putExtra(EXTRA_FINISHED_ENROLL_FACE, true))
+                        setResult(
+                            RESULT_FINISHED,
+                            Intent().putExtra(EXTRA_FINISHED_ENROLL_FACE, true)
+                        )
                     }
                 }
 
@@ -127,7 +130,7 @@ class IrisEnrollActivity : ComponentActivity() {
             IntArray(0),
             previewSurface,
             false,
-            FaceEnrollOptions.Builder().build(),
+            FaceEnrollOptions.Builder().build()
         )
     }
 
@@ -139,51 +142,52 @@ class IrisEnrollActivity : ComponentActivity() {
             animateFloatAsState(
                 percent / 100f,
                 MaterialTheme.motionScheme.defaultSpatialSpec(),
-                label = "progress",
+                label = "progress"
             )
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
             IrisField(
                 acquired = acquired,
                 failed = phase == Phase.FAILED,
                 showMessage = false,
-                onSurface = ::onSurface,
+                onSurface = ::onSurface
             )
             Column(
                 Modifier.fillMaxSize()
                     .safeDrawingPadding()
                     .padding(top = dimensionResource(R.dimen.iris_field_bottom) - statusBarHeight())
                     .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     stringResource(R.string.iris_enroll_title),
                     modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp),
                     style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(Modifier.height(24.dp))
                 val description = stringResource(R.string.iris_enroll_progress_description)
                 LinearWavyProgressIndicator(
                     progress = { shownProgress },
-                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = description },
+                    modifier =
+                    Modifier.fillMaxWidth().semantics { contentDescription = description }
                 )
                 Text(
                     "$percent%",
                     modifier = Modifier.padding(top = 16.dp),
                     style = MaterialTheme.typography.displaySmallEmphasized,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     stringResource(message(acquired)),
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.weight(1f))
                 Row(
                     Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     when (phase) {
                         Phase.DONE -> {
@@ -215,12 +219,16 @@ class IrisEnrollActivity : ComponentActivity() {
             Phase.DONE -> R.string.iris_enroll_complete
             Phase.FAILED -> R.string.iris_enroll_failed
             Phase.WAITING -> R.string.iris_enroll_guide
-            Phase.ENROLLING ->
-                hintText(acquired) ?: if (percent > 0) R.string.iris_enroll_progress else R.string.iris_enroll_guide
+            Phase.ENROLLING -> {
+                val fallback =
+                    if (percent > 0) R.string.iris_enroll_progress else R.string.iris_enroll_guide
+                hintText(acquired) ?: fallback
+            }
         }
 
     private companion object {
         const val TAG = "IrisEnroll"
+
         // Extras of Settings' face enrollment
         const val EXTRA_KEY_CHALLENGE_TOKEN = "hw_auth_token"
         const val EXTRA_FINISHED_ENROLL_FACE = "finished_enrolling_face"

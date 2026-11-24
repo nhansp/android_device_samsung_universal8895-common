@@ -68,7 +68,8 @@ class IrisCardController(private val context: Context) {
         bouncerDelayMs =
             systemUiResources()
                 ?.let { res ->
-                    val id = res.getIdentifier("primary_bouncer_passive_auth_delay", "integer", SYSTEMUI)
+                    val id =
+                        res.getIdentifier("primary_bouncer_passive_auth_delay", "integer", SYSTEMUI)
                     if (id != 0) res.getInteger(id) else null
                 }
                 ?.toLong() ?: bouncerDelayMs
@@ -92,7 +93,7 @@ class IrisCardController(private val context: Context) {
                 addAction(Intent.ACTION_USER_PRESENT)
                 addAction(Intent.ACTION_SCREEN_OFF)
             },
-            Context.RECEIVER_NOT_EXPORTED,
+            Context.RECEIVER_NOT_EXPORTED
         )
     }
 
@@ -168,20 +169,20 @@ class IrisCardController(private val context: Context) {
         val res = context.resources
         val lp =
             WindowManager.LayoutParams(
-                    if (newMode == IrisCardMode.BOUNCER) {
-                        // Above the notification shade; unlike secure overlays it takes touches
-                        WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG
-                    } else {
-                        // Part of the prompt, so above its dim
-                        WindowManager.LayoutParams.TYPE_SECURE_SYSTEM_OVERLAY
-                    },
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                        // The scan holds the screen on; a no match hands it back to the timeout.
-                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
-                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                        WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-                    PixelFormat.TRANSLUCENT,
-                )
+                if (newMode == IrisCardMode.BOUNCER) {
+                    // Above the notification shade; unlike secure overlays it takes touches
+                    WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG
+                } else {
+                    // Part of the prompt, so above its dim
+                    WindowManager.LayoutParams.TYPE_SECURE_SYSTEM_OVERLAY
+                },
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    // The scan holds the screen on; a no match hands it back to the timeout.
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+                PixelFormat.TRANSLUCENT
+            )
                 .apply {
                     title = TAG
                     fitInsetsTypes = 0
@@ -212,10 +213,15 @@ class IrisCardController(private val context: Context) {
                             visible = visible,
                             failed = failed,
                             onSurface = IrisHal::setPreviewSurface,
-                            onBlur = { fraction -> setBlur(fraction, res.getDimensionPixelSize(R.dimen.iris_blur_radius)) },
+                            onBlur = { fraction ->
+                                setBlur(
+                                    fraction,
+                                    res.getDimensionPixelSize(R.dimen.iris_blur_radius)
+                                )
+                            },
                             onRetry = ::retry,
                             onDismiss = ::usePin,
-                            onExited = ::remove,
+                            onExited = ::remove
                         )
                     }
                 }
@@ -246,8 +252,11 @@ class IrisCardController(private val context: Context) {
         val v = view ?: return
         val lp = params ?: return
         val flags =
-            if (on) lp.flags or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-            else lp.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON.inv()
+            if (on) {
+                lp.flags or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            } else {
+                lp.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON.inv()
+            }
         if (flags == lp.flags) return
         lp.flags = flags
         windowManager.updateViewLayout(v, lp)
