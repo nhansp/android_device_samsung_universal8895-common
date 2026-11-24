@@ -15,14 +15,14 @@ namespace aidl::android::hardware::biometrics::face {
 // Raises the CPU minimum frequency while the IR camera runs, through the IRIS_CAPTURE power hint
 class PowerBoost {
   public:
-    void start();
-    void end();
+    void Start();
+    void End();
 
   private:
-    std::shared_ptr<::aidl::google::hardware::power::extension::pixel::IPowerExt> ext();
+    std::shared_ptr<::aidl::google::hardware::power::extension::pixel::IPowerExt> Ext();
 
-    std::mutex mLock;
-    std::shared_ptr<::aidl::google::hardware::power::extension::pixel::IPowerExt> mExt;
+    std::mutex lock_;
+    std::shared_ptr<::aidl::google::hardware::power::extension::pixel::IPowerExt> ext_;
 };
 
 }  // namespace aidl::android::hardware::biometrics::face

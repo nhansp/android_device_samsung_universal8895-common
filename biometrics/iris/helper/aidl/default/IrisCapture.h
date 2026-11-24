@@ -21,27 +21,27 @@ class IrisCapture {
     using FrameCallback = std::function<void(int fd)>;
     using EndCallback = std::function<void(int error)>;
     struct Callbacks {
-        FrameCallback onIrFrame;
-        FrameCallback onFrontFrame;  // the front camera's iris data
-        EndCallback onEnd;
+        FrameCallback on_ir_frame;
+        FrameCallback on_front_frame;  // the front camera's iris data
+        EndCallback on_end;
     };
 
     ~IrisCapture();
 
     // Opens the cameras and returns the IR camera's parameters in *params; frames then go to
-    // the callbacks on the capture thread until stop(). onEnd runs on that thread if the IR
+    // the callbacks on the capture thread until Stop(). on_end runs on that thread if the IR
     // camera fails or goes away.
-    bool start(std::map<std::string, std::string>* params, Callbacks callbacks);
-    void setParameters(const std::string& flattened);
+    bool Start(std::map<std::string, std::string>* params, Callbacks callbacks);
+    void SetParameters(const std::string& flattened);
     // Closes the camera; returns once no callback runs any more. Not from a callback.
-    void stop();
+    void Stop();
 
   private:
-    void loop(Callbacks callbacks);
+    void Loop(Callbacks callbacks);
 
-    ::android::base::unique_fd mSocket;
-    std::atomic<bool> mStopping = false;
-    std::thread mThread;
+    ::android::base::unique_fd socket_;
+    std::atomic<bool> stopping_ = false;
+    std::thread thread_;
 };
 
 }  // namespace aidl::android::hardware::biometrics::face

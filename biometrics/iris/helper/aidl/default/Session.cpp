@@ -61,19 +61,19 @@ constexpr const char* kIrProperties[][3] = {
 class CancellationSignal : public BnCancellationSignal {
   public:
     CancellationSignal(std::shared_ptr<Session> session, uint64_t op)
-        : mSession(session), mOp(op) {}
+        : session_(session), op_(op) {}
 
     ndk::ScopedAStatus cancel() override {
-        if (auto session = mSession.lock()) session->cancel(mOp);
+        if (auto session = session_.lock()) session->Cancel(op_);
         return ndk::ScopedAStatus::ok();
     }
 
   private:
-    std::weak_ptr<Session> mSession;
-    uint64_t mOp;
+    std::weak_ptr<Session> session_;
+    uint64_t op_;
 };
 
-hw_auth_token_t toLegacy(const HardwareAuthToken& token) {
+hw_auth_token_t ToLegacy(const HardwareAuthToken& token) {
     hw_auth_token_t hat = {};
     hat.version = HW_AUTH_TOKEN_VERSION;
     hat.challenge = token.challenge;
@@ -85,7 +85,7 @@ hw_auth_token_t toLegacy(const HardwareAuthToken& token) {
     return hat;
 }
 
-HardwareAuthToken fromLegacy(const hw_auth_token_t& hat) {
+HardwareAuthToken FromLegacy(const hw_auth_token_t& hat) {
     HardwareAuthToken token;
     token.challenge = hat.challenge;
     token.userId = hat.user_id;
@@ -97,8 +97,8 @@ HardwareAuthToken fromLegacy(const hw_auth_token_t& hat) {
     return token;
 }
 
-Error toError(int32_t error, int32_t* vendorCode) {
-    *vendorCode = 0;
+Error ToError(int32_t error, int32_t* vendor_code) {
+    *vendor_code = 0;
     switch (error) {
         case 1:
             return Error::HW_UNAVAILABLE;
@@ -113,80 +113,80 @@ Error toError(int32_t error, int32_t* vendorCode) {
         case 6:
             return Error::UNABLE_TO_REMOVE;
         default:
-            *vendorCode = error;
+            *vendor_code = error;
             return Error::VENDOR;
     }
 }
 
 // The keyguard attempts the iris card shows on: the bouncer coming up and the swipe up on it.
-bool isBouncerReason(int32_t faceReason) {
-    auto reason = static_cast<AuthenticateReason::Face>(faceReason);
+bool IsBouncerReason(int32_t face_reason) {
+    auto reason = static_cast<AuthenticateReason::Face>(face_reason);
     return reason == AuthenticateReason::Face::PRIMARY_BOUNCER_SHOWN ||
            reason == AuthenticateReason::Face::SWIPE_UP_ON_BOUNCER;
 }
 
-void onClientDeath(void* cookie) {
+void OnClientDeath(void* cookie) {
     LOG(INFO) << "FaceService has died";
     auto* session = static_cast<Session*>(cookie);
-    if (!session->isClosed()) session->close();
+    if (!session->IsClosed()) session->close();
 }
 
 }  // namespace
 
 Session::Session(IrisLib* lib, Worker* worker, LockoutTracker* lockout, Preview* preview,
-                 PowerBoost* boost, int32_t userId, std::shared_ptr<ISessionCallback> cb)
-    : mLib(lib),
-      mWorker(worker),
-      mLockout(lockout),
-      mPreview(preview),
-      mBoost(boost),
-      mUserId(userId),
-      mCb(std::move(cb)) {
-    mDeathRecipient = AIBinder_DeathRecipient_new(onClientDeath);
-    mLib->ss_iris_set_active_group(mUserId, storePath().c_str());
+                 PowerBoost* boost, int32_t user_id, std::shared_ptr<ISessionCallback> cb)
+    : lib_(lib),
+      worker_(worker),
+      lockout_(lockout),
+      preview_(preview),
+      boost_(boost),
+      user_id_(user_id),
+      cb_(std::move(cb)) {
+    death_recipient_ = AIBinder_DeathRecipient_new(OnClientDeath);
+    lib_->ss_iris_set_active_group(user_id_, StorePath().c_str());
 }
 
 Session::~Session() {
-    AIBinder_DeathRecipient_delete(mDeathRecipient);
+    AIBinder_DeathRecipient_delete(death_recipient_);
 }
 
-void Session::linkToDeath(AIBinder* binder) {
-    AIBinder_linkToDeath(binder, mDeathRecipient, this);
+void Session::LinkToDeath(AIBinder* binder) {
+    AIBinder_linkToDeath(binder, death_recipient_, this);
 }
 
-std::string Session::storePath() const {
+std::string Session::StorePath() const {
     char path[64];
-    snprintf(path, sizeof(path), kStoreDir, mUserId);
+    snprintf(path, sizeof(path), kStoreDir, user_id_);
     return path;
 }
 
-std::vector<int32_t> Session::enrollments() const {
+std::vector<int32_t> Session::Enrollments() const {
     std::string id;
     int32_t fid;
-    if (::android::base::ReadFileToString(storePath() + "/" + kEnrollmentFile, &id) &&
+    if (::android::base::ReadFileToString(StorePath() + "/" + kEnrollmentFile, &id) &&
         ::android::base::ParseInt(::android::base::Trim(id), &fid)) {
         return {fid};
     }
     return {};
 }
 
-std::shared_ptr<ICancellationSignal> Session::cancellationSignal() {
-    return SharedRefBase::make<CancellationSignal>(ref<Session>(), mOp.load());
+std::shared_ptr<ICancellationSignal> Session::NewCancellationSignal() {
+    return SharedRefBase::make<CancellationSignal>(ref<Session>(), op_.load());
 }
 
 ndk::ScopedAStatus Session::generateChallenge() {
-    mWorker->post([self = ref<Session>()] {
-        uint64_t challenge = self->mLib->ss_iris_pre_enroll();
+    worker_->Post([self = ref<Session>()] {
+        uint64_t challenge = self->lib_->ss_iris_pre_enroll();
         LOG(INFO) << "generateChallenge";
-        self->mCb->onChallengeGenerated(challenge);
+        self->cb_->onChallengeGenerated(challenge);
     });
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Session::revokeChallenge(int64_t challenge) {
-    mWorker->post([self = ref<Session>(), challenge] {
-        self->mLib->ss_iris_post_enroll();
-        self->mCb->onChallengeRevoked(challenge);
+    worker_->Post([self = ref<Session>(), challenge] {
+        self->lib_->ss_iris_post_enroll();
+        self->cb_->onChallengeRevoked(challenge);
     });
     return ndk::ScopedAStatus::ok();
 }
@@ -197,195 +197,195 @@ ndk::ScopedAStatus Session::getEnrollmentConfig(EnrollmentType /*type*/,
     return ndk::ScopedAStatus::ok();
 }
 
-bool Session::startCapture(State state) {
+bool Session::StartCapture(State state) {
     std::map<std::string, std::string> params;
     std::weak_ptr<Session> weak = ref<Session>();
-    uint64_t gen = ++mGen;
+    uint64_t gen = ++gen_;
     IrisCapture::Callbacks callbacks = {
-            .onIrFrame =
+            .on_ir_frame =
                     [this](int fd) {
-                        mLib->ss_iris_processIRImage(fd, iris_camera::kWidth, iris_camera::kHeight,
+                        lib_->ss_iris_processIRImage(fd, iris_camera::kWidth, iris_camera::kHeight,
                                                      kIrRotation);
                     },
             // The front data takes the IR rotation too
-            .onFrontFrame =
+            .on_front_frame =
                     [this](int fd) {
-                        mLib->ss_iris_processFrontImage(fd, iris_camera::kFrontWidth,
+                        lib_->ss_iris_processFrontImage(fd, iris_camera::kFrontWidth,
                                                         iris_camera::kFrontHeight, kIrRotation);
                     },
-            .onEnd =
+            .on_end =
                     [this, weak, gen](int error) {
-                        mWorker->post([weak, gen, error] {
-                            if (auto self = weak.lock()) self->onError(gen, -error);
+                        worker_->Post([weak, gen, error] {
+                            if (auto self = weak.lock()) self->OnError(gen, -error);
                         });
                     },
     };
-    mBoost->start();
-    if (!mCapture.start(&params, std::move(callbacks))) {
-        mBoost->end();
+    boost_->Start();
+    if (!capture_.Start(&params, std::move(callbacks))) {
+        boost_->End();
         return false;
     }
 
     // Seed the library with the camera's IR settings
     for (const auto& prop : kIrProperties) {
-        mLib->ss_iris_sendIRProperty(prop[0], params[prop[0]].c_str(), params[prop[1]].c_str(),
+        lib_->ss_iris_sendIRProperty(prop[0], params[prop[0]].c_str(), params[prop[1]].c_str(),
                                      params[prop[2]].c_str());
     }
-    mLib->ss_iris_request(IRIS_REQUEST_IR_PREVIEW_ENABLE, nullptr, 0, nullptr, 0, 0);
-    mLib->ss_iris_request(IRIS_REQUEST_SECURE_ENABLE, nullptr, 0, nullptr, 0, 0);
-    mState = state;
+    lib_->ss_iris_request(kIrisRequestIrPreviewEnable, nullptr, 0, nullptr, 0, 0);
+    lib_->ss_iris_request(kIrisRequestSecureEnable, nullptr, 0, nullptr, 0, 0);
+    state_ = state;
 
-    mWorker->postDelayed(kEyeSafetyTimeout, [weak, gen] {
-        if (auto self = weak.lock()) self->onTimeout(gen);
+    worker_->PostDelayed(kEyeSafetyTimeout, [weak, gen] {
+        if (auto self = weak.lock()) self->OnTimeout(gen);
     });
     return true;
 }
 
-void Session::endCapture(bool cancelLibrary) {
-    mOp++;
-    mGen++;
-    mState = State::IDLE;
-    mCapture.stop();
-    if (cancelLibrary) mLib->ss_iris_cancel();
-    mLib->ss_iris_request(IRIS_REQUEST_SECURE_DISABLE, nullptr, 0, nullptr, 0, 0);
-    mPreview->setEnrollSurface(nullptr);
-    mBoost->end();
+void Session::EndCapture(bool cancel_library) {
+    op_++;
+    gen_++;
+    state_ = State::kIdle;
+    capture_.Stop();
+    if (cancel_library) lib_->ss_iris_cancel();
+    lib_->ss_iris_request(kIrisRequestSecureDisable, nullptr, 0, nullptr, 0, 0);
+    preview_->SetEnrollSurface(nullptr);
+    boost_->End();
 }
 
 ndk::ScopedAStatus Session::enroll(const HardwareAuthToken& hat, EnrollmentType /*type*/,
                                    const std::vector<Feature>& /*features*/,
-                                   const std::optional<NativeHandle>& /*previewSurface*/,
+                                   const std::optional<NativeHandle>& /*preview_surface*/,
                                    std::shared_ptr<ICancellationSignal>* out) {
     // The framework passes the preview as a Surface (enrollWithOptions), not a NativeHandle.
-    *out = cancellationSignal();
-    enroll(hat, nullptr);
+    *out = NewCancellationSignal();
+    Enroll(hat, nullptr);
     return ndk::ScopedAStatus::ok();
 }
 
-void Session::enroll(const HardwareAuthToken& hat, ANativeWindow* previewWindow) {
-    if (previewWindow) ANativeWindow_acquire(previewWindow);
-    std::shared_ptr<ANativeWindow> window(previewWindow, [](ANativeWindow* w) {
+void Session::Enroll(const HardwareAuthToken& hat, ANativeWindow* preview_window) {
+    if (preview_window) ANativeWindow_acquire(preview_window);
+    std::shared_ptr<ANativeWindow> window(preview_window, [](ANativeWindow* w) {
         if (w) ANativeWindow_release(w);
     });
-    mWorker->post([self = ref<Session>(), hat, window] {
+    worker_->Post([self = ref<Session>(), hat, window] {
         LOG(INFO) << "enroll";
-        if (self->mState != State::IDLE) {
-            self->mCb->onError(Error::UNABLE_TO_PROCESS, 0);
+        if (self->state_ != State::kIdle) {
+            self->cb_->onError(Error::UNABLE_TO_PROCESS, 0);
             return;
         }
-        self->mLib->ss_iris_set_active_group(self->mUserId, self->storePath().c_str());
-        self->mPreview->setEnrollSurface(window.get());
-        if (!self->startCapture(State::ENROLLING)) {
-            self->mPreview->setEnrollSurface(nullptr);
-            self->mCb->onError(Error::HW_UNAVAILABLE, 0);
+        self->lib_->ss_iris_set_active_group(self->user_id_, self->StorePath().c_str());
+        self->preview_->SetEnrollSurface(window.get());
+        if (!self->StartCapture(State::kEnrolling)) {
+            self->preview_->SetEnrollSurface(nullptr);
+            self->cb_->onError(Error::HW_UNAVAILABLE, 0);
             return;
         }
-        hw_auth_token_t authToken = toLegacy(hat);
-        int ret = self->mLib->ss_iris_enroll(&authToken, self->mUserId, 0);
+        hw_auth_token_t auth_token = ToLegacy(hat);
+        int ret = self->lib_->ss_iris_enroll(&auth_token, self->user_id_, 0);
         if (ret) {
             LOG(ERROR) << "ss_iris_enroll: " << ret;
-            self->endCapture(true);
-            self->mCb->onError(Error::UNABLE_TO_PROCESS, ret);
+            self->EndCapture(true);
+            self->cb_->onError(Error::UNABLE_TO_PROCESS, ret);
         }
     });
 }
 
-ndk::ScopedAStatus Session::authenticate(int64_t operationId,
+ndk::ScopedAStatus Session::authenticate(int64_t operation_id,
                                          std::shared_ptr<ICancellationSignal>* out) {
-    *out = cancellationSignal();
-    authenticate(operationId, static_cast<int32_t>(AuthenticateReason::Face::UNKNOWN));
+    *out = NewCancellationSignal();
+    Authenticate(operation_id, static_cast<int32_t>(AuthenticateReason::Face::UNKNOWN));
     return ndk::ScopedAStatus::ok();
 }
 
-void Session::authenticate(int64_t operationId, int32_t faceReason) {
-    mWorker->post([self = ref<Session>(), operationId, faceReason] {
+void Session::Authenticate(int64_t operation_id, int32_t face_reason) {
+    worker_->Post([self = ref<Session>(), operation_id, face_reason] {
         LOG(INFO) << "authenticate";
-        if (self->mState != State::IDLE) {
-            self->mCb->onError(Error::UNABLE_TO_PROCESS, 0);
+        if (self->state_ != State::kIdle) {
+            self->cb_->onError(Error::UNABLE_TO_PROCESS, 0);
             return;
         }
-        if (self->checkLockout()) return;
-        self->mOperationId = operationId;
-        self->mFaceReason = faceReason;
-        self->mLib->ss_iris_set_active_group(self->mUserId, self->storePath().c_str());
-        if (!self->startCapture(State::AUTHENTICATING)) {
-            self->mCb->onError(Error::HW_UNAVAILABLE, 0);
+        if (self->CheckLockout()) return;
+        self->operation_id_ = operation_id;
+        self->face_reason_ = face_reason;
+        self->lib_->ss_iris_set_active_group(self->user_id_, self->StorePath().c_str());
+        if (!self->StartCapture(State::kAuthenticating)) {
+            self->cb_->onError(Error::HW_UNAVAILABLE, 0);
             return;
         }
-        int ret = self->mLib->ss_iris_authenticate(operationId, self->mUserId, nullptr, 0);
+        int ret = self->lib_->ss_iris_authenticate(operation_id, self->user_id_, nullptr, 0);
         if (ret) {
             LOG(ERROR) << "ss_iris_authenticate: " << ret;
-            self->endCapture(true);
-            self->mCb->onError(Error::UNABLE_TO_PROCESS, ret);
+            self->EndCapture(true);
+            self->cb_->onError(Error::UNABLE_TO_PROCESS, ret);
             return;
         }
-        self->mPreview->notifyCaptureStarted(faceReason);
+        self->preview_->NotifyCaptureStarted(face_reason);
     });
 }
 
 ndk::ScopedAStatus Session::detectInteraction(std::shared_ptr<ICancellationSignal>* out) {
-    *out = cancellationSignal();
-    mWorker->post([self = ref<Session>()] { self->mCb->onError(Error::UNABLE_TO_PROCESS, 0); });
+    *out = NewCancellationSignal();
+    worker_->Post([self = ref<Session>()] { self->cb_->onError(Error::UNABLE_TO_PROCESS, 0); });
     return ndk::ScopedAStatus::ok();
 }
 
-void Session::cancel(uint64_t op) {
-    mWorker->post([self = ref<Session>(), op] {
-        if (self->mOp.load() == op) {
-            if (self->mState == State::HELD) {
+void Session::Cancel(uint64_t op) {
+    worker_->Post([self = ref<Session>(), op] {
+        if (self->op_.load() == op) {
+            if (self->state_ == State::kHeld) {
                 LOG(INFO) << "cancel held";
-                self->releaseHeld();
-            } else if (self->mState != State::IDLE) {
+                self->ReleaseHeld();
+            } else if (self->state_ != State::kIdle) {
                 LOG(INFO) << "cancel";
-                self->endCapture(true);
+                self->EndCapture(true);
             }
         }
-        self->mCb->onError(Error::CANCELED, 0);
+        self->cb_->onError(Error::CANCELED, 0);
     });
 }
 
-void Session::notify(const IrisMsg* msg) {
-    uint64_t gen = mGen.load();
+void Session::Notify(const IrisMsg* msg) {
+    uint64_t gen = gen_.load();
     std::weak_ptr<Session> weak = ref<Session>();
     switch (msg->type) {
-        case IRIS_MSG_IR_PROPERTY_CHANGED:
+        case kIrisMsgIrPropertyChanged:
             // The library's exposure and IR LED settings for the next frames
-            if (msg->data.property.value) mCapture.setParameters(msg->data.property.value);
+            if (msg->data.property.value) capture_.SetParameters(msg->data.property.value);
             break;
-        case IRIS_MSG_IMAGE_PROCESSED:
+        case kIrisMsgImageProcessed:
             // Sent on the capture thread; the image is the library's and only valid until we
             // return
             if (msg->data.image.id == kRgbPreviewImageId && msg->data.image.data &&
                 msg->data.image.width > 0 && msg->data.image.height > 0) {
-                mPreview->render(msg->data.image.data, msg->data.image.width,
+                preview_->Render(msg->data.image.data, msg->data.image.width,
                                  msg->data.image.height);
             }
             break;
-        case IRIS_MSG_ACQUIRED: {
+        case kIrisMsgAcquired: {
             int32_t code;
             memcpy(&code, reinterpret_cast<const uint8_t*>(msg) + kAcquiredCodeOffset,
                    sizeof(code));
-            mWorker->post([weak, gen, code] {
-                if (auto self = weak.lock()) self->onAcquired(gen, code);
+            worker_->Post([weak, gen, code] {
+                if (auto self = weak.lock()) self->OnAcquired(gen, code);
             });
         } break;
-        case IRIS_MSG_TEMPLATE_ENROLLING: {
+        case kIrisMsgTemplateEnrolling: {
             uint32_t fid = msg->data.enroll.fid, progress = msg->data.enroll.progress;
-            mWorker->post([weak, gen, fid, progress] {
-                if (auto self = weak.lock()) self->onTemplateEnrolling(gen, fid, progress);
+            worker_->Post([weak, gen, fid, progress] {
+                if (auto self = weak.lock()) self->OnTemplateEnrolling(gen, fid, progress);
             });
         } break;
-        case IRIS_MSG_AUTHENTICATED: {
+        case kIrisMsgAuthenticated: {
             uint32_t fid = msg->data.authenticated.fid;
             hw_auth_token_t hat = msg->data.authenticated.hat;
-            mWorker->post([weak, gen, fid, hat] {
-                if (auto self = weak.lock()) self->onAuthenticated(gen, fid, hat);
+            worker_->Post([weak, gen, fid, hat] {
+                if (auto self = weak.lock()) self->OnAuthenticated(gen, fid, hat);
             });
         } break;
-        case IRIS_MSG_ERROR: {
+        case kIrisMsgError: {
             int32_t error = msg->data.error;
-            mWorker->post([weak, gen, error] {
-                if (auto self = weak.lock()) self->onError(gen, error);
+            worker_->Post([weak, gen, error] {
+                if (auto self = weak.lock()) self->OnError(gen, error);
             });
         } break;
         default:
@@ -393,8 +393,8 @@ void Session::notify(const IrisMsg* msg) {
     }
 }
 
-void Session::onAcquired(uint64_t gen, int32_t code) {
-    if (mGen.load() != gen || (mState != State::ENROLLING && mState != State::AUTHENTICATING)) {
+void Session::OnAcquired(uint64_t gen, int32_t code) {
+    if (gen_.load() != gen || (state_ != State::kEnrolling && state_ != State::kAuthenticating)) {
         return;
     }
     switch (static_cast<IrisAcquired>(code)) {
@@ -403,7 +403,7 @@ void Session::onAcquired(uint64_t gen, int32_t code) {
         case IrisAcquired::OPEN_WIDER:
         case IrisAcquired::MOVE_SOMEWHERE_DARKER:
         case IrisAcquired::CHANGE_POSITION:
-            mPreview->notifyAcquired(code);
+            preview_->NotifyAcquired(code);
             break;
         default:
             return;
@@ -412,272 +412,272 @@ void Session::onAcquired(uint64_t gen, int32_t code) {
     frame.acquiredInfo = AcquiredInfo::VENDOR;
     frame.vendorCode = code;
     frame.isCancellable = true;
-    if (mState == State::ENROLLING) {
+    if (state_ == State::kEnrolling) {
         EnrollmentFrame enrollment;
         enrollment.data = frame;
-        mCb->onEnrollmentFrame(enrollment);
+        cb_->onEnrollmentFrame(enrollment);
     } else {
         AuthenticationFrame authentication;
         authentication.data = frame;
-        mCb->onAuthenticationFrame(authentication);
+        cb_->onAuthenticationFrame(authentication);
     }
 }
 
-void Session::onTemplateEnrolling(uint64_t gen, uint32_t fid, uint32_t progress) {
-    if (mGen.load() != gen || mState != State::ENROLLING) return;
+void Session::OnTemplateEnrolling(uint64_t gen, uint32_t fid, uint32_t progress) {
+    if (gen_.load() != gen || state_ != State::kEnrolling) return;
     int32_t remaining = 100 - static_cast<int32_t>(std::min(progress, 100u));
     LOG(INFO) << "onEnrollmentProgress fid " << fid << " progress " << progress;
     if (remaining == 0) {
         if (!::android::base::WriteStringToFile(std::to_string(fid),
-                                                storePath() + "/" + kEnrollmentFile)) {
+                                                StorePath() + "/" + kEnrollmentFile)) {
             PLOG(ERROR) << "Failed to record enrollment " << fid;
         }
-        endCapture(false);
+        EndCapture(false);
     }
-    mCb->onEnrollmentProgress(fid, remaining);
+    cb_->onEnrollmentProgress(fid, remaining);
 }
 
-void Session::onAuthenticated(uint64_t gen, uint32_t fid, const hw_auth_token_t& hat) {
-    if (mGen.load() != gen || mState != State::AUTHENTICATING) return;
+void Session::OnAuthenticated(uint64_t gen, uint32_t fid, const hw_auth_token_t& hat) {
+    if (gen_.load() != gen || state_ != State::kAuthenticating) return;
     if (fid != 0) {
         LOG(INFO) << "onAuthenticationSucceeded";
-        endCapture(false);
-        mLockout->reset(true);
-        mCb->onAuthenticationSucceeded(fid, fromLegacy(hat));
+        EndCapture(false);
+        lockout_->Reset(true);
+        cb_->onAuthenticationSucceeded(fid, FromLegacy(hat));
         return;
     }
     // Every no match counts at once, so retrying a held attempt never gets around lockout.
-    mLockout->addFailedAttempt();
-    if (mLockout->mode() == LockoutTracker::Mode::NONE && canHold()) {
-        hold(false);
+    lockout_->AddFailedAttempt();
+    if (lockout_->GetMode() == LockoutTracker::Mode::kNone && CanHold()) {
+        Hold(false);
         return;
     }
     LOG(INFO) << "onAuthenticationFailed";
-    endCapture(false);
-    mCb->onAuthenticationFailed();
-    checkLockout();
+    EndCapture(false);
+    cb_->onAuthenticationFailed();
+    CheckLockout();
 }
 
-void Session::onError(uint64_t gen, int32_t error) {
-    if (mGen.load() != gen || (mState != State::ENROLLING && mState != State::AUTHENTICATING)) {
+void Session::OnError(uint64_t gen, int32_t error) {
+    if (gen_.load() != gen || (state_ != State::kEnrolling && state_ != State::kAuthenticating)) {
         return;
     }
     LOG(ERROR) << "Iris error " << error;
-    int32_t vendorCode;
-    if (toError(error, &vendorCode) == Error::TIMEOUT && canHold()) {
-        hold(true);
+    int32_t vendor_code;
+    if (ToError(error, &vendor_code) == Error::TIMEOUT && CanHold()) {
+        Hold(true);
         return;
     }
-    endCapture(true);
-    Error result = toError(error, &vendorCode);
-    mCb->onError(result, vendorCode);
+    EndCapture(true);
+    Error result = ToError(error, &vendor_code);
+    cb_->onError(result, vendor_code);
 }
 
-void Session::onTimeout(uint64_t gen) {
-    if (mGen.load() != gen || (mState != State::ENROLLING && mState != State::AUTHENTICATING)) {
+void Session::OnTimeout(uint64_t gen) {
+    if (gen_.load() != gen || (state_ != State::kEnrolling && state_ != State::kAuthenticating)) {
         return;
     }
     LOG(INFO) << "Eye safety timeout";
     // The IR LED goes off now. A frame the library is still processing may complete the
     // enrollment or match; its result is queued behind this task, so decide after it.
-    mCapture.stop();
-    mWorker->post([weak = std::weak_ptr<Session>(ref<Session>()), gen] {
+    capture_.Stop();
+    worker_->Post([weak = std::weak_ptr<Session>(ref<Session>()), gen] {
         auto self = weak.lock();
-        if (!self || self->mGen.load() != gen ||
-            (self->mState != State::ENROLLING && self->mState != State::AUTHENTICATING)) {
+        if (!self || self->gen_.load() != gen ||
+            (self->state_ != State::kEnrolling && self->state_ != State::kAuthenticating)) {
             return;
         }
-        if (self->canHold()) {
-            self->hold(true);
+        if (self->CanHold()) {
+            self->Hold(true);
             return;
         }
-        self->endCapture(true);
-        self->mCb->onError(Error::TIMEOUT, 0);
+        self->EndCapture(true);
+        self->cb_->onError(Error::TIMEOUT, 0);
     });
 }
 
-bool Session::canHold() const {
-    return mState == State::AUTHENTICATING && isBouncerReason(mFaceReason) &&
-           mPreview->hasListener();
+bool Session::CanHold() const {
+    return state_ == State::kAuthenticating && IsBouncerReason(face_reason_) &&
+           preview_->HasListener();
 }
 
-void Session::hold(bool timedOut) {
-    LOG(INFO) << "Holding the attempt, timedOut " << timedOut;
-    mGen++;
-    mState = State::HELD;
-    mHeldTimedOut = timedOut;
-    mCapture.stop();
-    if (timedOut) mLib->ss_iris_cancel();
-    mLib->ss_iris_request(IRIS_REQUEST_SECURE_DISABLE, nullptr, 0, nullptr, 0, 0);
-    mBoost->end();
-    mWorker->postDelayed(kHoldTimeout,
-                         [weak = std::weak_ptr<Session>(ref<Session>()), gen = mGen.load()] {
+void Session::Hold(bool timed_out) {
+    LOG(INFO) << "Holding the attempt, timed_out " << timed_out;
+    gen_++;
+    state_ = State::kHeld;
+    held_timed_out_ = timed_out;
+    capture_.Stop();
+    if (timed_out) lib_->ss_iris_cancel();
+    lib_->ss_iris_request(kIrisRequestSecureDisable, nullptr, 0, nullptr, 0, 0);
+    boost_->End();
+    worker_->PostDelayed(kHoldTimeout,
+                         [weak = std::weak_ptr<Session>(ref<Session>()), gen = gen_.load()] {
                              auto self = weak.lock();
-                             if (self && self->mState == State::HELD && self->mGen.load() == gen) {
-                                 self->finishHeld();
+                             if (self && self->state_ == State::kHeld && self->gen_.load() == gen) {
+                                 self->FinishHeld();
                              }
                          });
-    mPreview->notifyCaptureHeld(timedOut);
+    preview_->NotifyCaptureHeld(timed_out);
 }
 
-void Session::releaseHeld() {
-    mOp++;
-    mGen++;
-    mState = State::IDLE;
+void Session::ReleaseHeld() {
+    op_++;
+    gen_++;
+    state_ = State::kIdle;
 }
 
-void Session::finishHeld() {
+void Session::FinishHeld() {
     LOG(INFO) << "Ending the held attempt";
-    releaseHeld();
-    if (mHeldTimedOut) {
-        mCb->onError(Error::TIMEOUT, 0);
+    ReleaseHeld();
+    if (held_timed_out_) {
+        cb_->onError(Error::TIMEOUT, 0);
     } else {
-        mCb->onAuthenticationFailed();
+        cb_->onAuthenticationFailed();
     }
 }
 
-void Session::onUserAction(bool resume) {
-    mWorker->post([self = ref<Session>(), resume] {
+void Session::OnUserAction(bool resume) {
+    worker_->Post([self = ref<Session>(), resume] {
         if (!resume) {
-            if (self->mState == State::HELD) {
-                self->finishHeld();
-            } else if (self->mState == State::AUTHENTICATING &&
-                       isBouncerReason(self->mFaceReason)) {
+            if (self->state_ == State::kHeld) {
+                self->FinishHeld();
+            } else if (self->state_ == State::kAuthenticating &&
+                       IsBouncerReason(self->face_reason_)) {
                 LOG(INFO) << "Attempt ended from the iris card";
-                self->endCapture(true);
-                self->mCb->onError(Error::CANCELED, 0);
+                self->EndCapture(true);
+                self->cb_->onError(Error::CANCELED, 0);
             }
             return;
         }
-        if (self->mState != State::HELD) return;
+        if (self->state_ != State::kHeld) return;
         LOG(INFO) << "Resuming the held attempt";
-        self->mLib->ss_iris_set_active_group(self->mUserId, self->storePath().c_str());
-        if (!self->startCapture(State::AUTHENTICATING)) {
-            self->finishHeld();
+        self->lib_->ss_iris_set_active_group(self->user_id_, self->StorePath().c_str());
+        if (!self->StartCapture(State::kAuthenticating)) {
+            self->FinishHeld();
             return;
         }
-        int ret = self->mLib->ss_iris_authenticate(self->mOperationId, self->mUserId, nullptr, 0);
+        int ret = self->lib_->ss_iris_authenticate(self->operation_id_, self->user_id_, nullptr, 0);
         if (ret) {
             LOG(ERROR) << "ss_iris_authenticate: " << ret;
-            self->endCapture(true);
-            if (self->mHeldTimedOut) {
-                self->mCb->onError(Error::TIMEOUT, 0);
+            self->EndCapture(true);
+            if (self->held_timed_out_) {
+                self->cb_->onError(Error::TIMEOUT, 0);
             } else {
-                self->mCb->onAuthenticationFailed();
+                self->cb_->onAuthenticationFailed();
             }
             return;
         }
-        self->mPreview->notifyCaptureStarted(self->mFaceReason);
+        self->preview_->NotifyCaptureStarted(self->face_reason_);
     });
 }
 
-bool Session::checkLockout() {
-    switch (mLockout->mode()) {
-        case LockoutTracker::Mode::PERMANENT:
-            mCb->onLockoutPermanent();
+bool Session::CheckLockout() {
+    switch (lockout_->GetMode()) {
+        case LockoutTracker::Mode::kPermanent:
+            cb_->onLockoutPermanent();
             return true;
-        case LockoutTracker::Mode::TIMED: {
-            auto left = mLockout->timeLeft();
-            mCb->onLockoutTimed(left.count());
-            mWorker->postDelayed(left, [weak = std::weak_ptr<Session>(ref<Session>())] {
+        case LockoutTracker::Mode::kTimed: {
+            auto left = lockout_->TimeLeft();
+            cb_->onLockoutTimed(left.count());
+            worker_->PostDelayed(left, [weak = std::weak_ptr<Session>(ref<Session>())] {
                 auto self = weak.lock();
-                if (self && self->mLockout->mode() == LockoutTracker::Mode::NONE) {
-                    self->mCb->onLockoutCleared();
+                if (self && self->lockout_->GetMode() == LockoutTracker::Mode::kNone) {
+                    self->cb_->onLockoutCleared();
                 }
             });
             return true;
         }
-        case LockoutTracker::Mode::NONE:
+        case LockoutTracker::Mode::kNone:
             return false;
     }
     return false;
 }
 
 ndk::ScopedAStatus Session::enumerateEnrollments() {
-    mWorker->post(
-            [self = ref<Session>()] { self->mCb->onEnrollmentsEnumerated(self->enrollments()); });
+    worker_->Post(
+            [self = ref<Session>()] { self->cb_->onEnrollmentsEnumerated(self->Enrollments()); });
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus Session::removeEnrollments(const std::vector<int32_t>& enrollmentIds) {
-    mWorker->post([self = ref<Session>(), enrollmentIds] {
+ndk::ScopedAStatus Session::removeEnrollments(const std::vector<int32_t>& enrollment_ids) {
+    worker_->Post([self = ref<Session>(), enrollment_ids] {
         LOG(INFO) << "removeEnrollments";
-        for (int32_t fid : enrollmentIds) {
-            int ret = self->mLib->ss_iris_remove(self->mUserId, fid);
+        for (int32_t fid : enrollment_ids) {
+            int ret = self->lib_->ss_iris_remove(self->user_id_, fid);
             if (ret) LOG(ERROR) << "ss_iris_remove " << fid << ": " << ret;
         }
-        unlink((self->storePath() + "/" + kEnrollmentFile).c_str());
-        self->mCb->onEnrollmentsRemoved(enrollmentIds);
+        unlink((self->StorePath() + "/" + kEnrollmentFile).c_str());
+        self->cb_->onEnrollmentsRemoved(enrollment_ids);
     });
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Session::getFeatures() {
-    mWorker->post([self = ref<Session>()] { self->mCb->onFeaturesRetrieved({}); });
+    worker_->Post([self = ref<Session>()] { self->cb_->onFeaturesRetrieved({}); });
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Session::setFeature(const HardwareAuthToken& /*hat*/, Feature /*feature*/,
                                        bool /*enabled*/) {
-    mWorker->post([self = ref<Session>()] { self->mCb->onError(Error::UNABLE_TO_PROCESS, 0); });
+    worker_->Post([self = ref<Session>()] { self->cb_->onError(Error::UNABLE_TO_PROCESS, 0); });
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Session::getAuthenticatorId() {
-    mWorker->post([self = ref<Session>()] {
-        self->mCb->onAuthenticatorIdRetrieved(self->mLib->ss_iris_get_auth_id());
+    worker_->Post([self = ref<Session>()] {
+        self->cb_->onAuthenticatorIdRetrieved(self->lib_->ss_iris_get_auth_id());
     });
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Session::invalidateAuthenticatorId() {
     // The authenticator id lives in the trustlet's sid.dat and only changes with a new enrollment.
-    mWorker->post([self = ref<Session>()] {
-        self->mCb->onAuthenticatorIdInvalidated(self->mLib->ss_iris_get_auth_id());
+    worker_->Post([self = ref<Session>()] {
+        self->cb_->onAuthenticatorIdInvalidated(self->lib_->ss_iris_get_auth_id());
     });
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Session::resetLockout(const HardwareAuthToken& /*hat*/) {
-    mWorker->post([self = ref<Session>()] {
-        self->mLockout->reset(true);
-        self->mCb->onLockoutCleared();
+    worker_->Post([self = ref<Session>()] {
+        self->lockout_->Reset(true);
+        self->cb_->onLockoutCleared();
     });
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Session::close() {
-    mWorker->post([self = ref<Session>()] {
-        if (self->mState == State::HELD) {
-            self->releaseHeld();
-        } else if (self->mState != State::IDLE) {
-            self->endCapture(true);
+    worker_->Post([self = ref<Session>()] {
+        if (self->state_ == State::kHeld) {
+            self->ReleaseHeld();
+        } else if (self->state_ != State::kIdle) {
+            self->EndCapture(true);
         }
-        self->mCb->onSessionClosed();
+        self->cb_->onSessionClosed();
     });
-    mClosed = true;
+    closed_ = true;
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus Session::authenticateWithContext(int64_t operationId,
+ndk::ScopedAStatus Session::authenticateWithContext(int64_t operation_id,
                                                     const OperationContext& context,
                                                     std::shared_ptr<ICancellationSignal>* out) {
-    *out = cancellationSignal();
+    *out = NewCancellationSignal();
     AuthenticateReason::Face reason = AuthenticateReason::Face::UNKNOWN;
     if (context.authenticateReason &&
         context.authenticateReason->getTag() == AuthenticateReason::faceAuthenticateReason) {
         reason = context.authenticateReason->get<AuthenticateReason::faceAuthenticateReason>();
     }
-    authenticate(operationId, static_cast<int32_t>(reason));
+    Authenticate(operation_id, static_cast<int32_t>(reason));
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Session::enrollWithContext(const HardwareAuthToken& hat, EnrollmentType type,
                                               const std::vector<Feature>& features,
-                                              const std::optional<NativeHandle>& previewSurface,
+                                              const std::optional<NativeHandle>& preview_surface,
                                               const OperationContext& /*context*/,
                                               std::shared_ptr<ICancellationSignal>* out) {
-    return enroll(hat, type, features, previewSurface, out);
+    return enroll(hat, type, features, preview_surface, out);
 }
 
 ndk::ScopedAStatus Session::detectInteractionWithContext(
@@ -691,8 +691,8 @@ ndk::ScopedAStatus Session::onContextChanged(const OperationContext& /*context*/
 
 ndk::ScopedAStatus Session::enrollWithOptions(const FaceEnrollOptions& options,
                                               std::shared_ptr<ICancellationSignal>* out) {
-    *out = cancellationSignal();
-    enroll(options.hardwareAuthToken,
+    *out = NewCancellationSignal();
+    Enroll(options.hardwareAuthToken,
            options.surfacePreview ? options.surfacePreview->get() : nullptr);
     return ndk::ScopedAStatus::ok();
 }

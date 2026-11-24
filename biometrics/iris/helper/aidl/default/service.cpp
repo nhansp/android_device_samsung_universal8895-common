@@ -21,7 +21,7 @@ int main() {
     CHECK_EQ(status, STATUS_OK);
 
     const std::string preview = std::string(Preview::descriptor) + "/default";
-    status = AServiceManager_addService(face->preview()->asBinder().get(), preview.c_str());
+    status = AServiceManager_addService(face->GetPreview()->asBinder().get(), preview.c_str());
     CHECK_EQ(status, STATUS_OK);
 
     ABinderProcess_joinThreadPool();

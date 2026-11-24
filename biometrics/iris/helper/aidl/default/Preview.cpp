@@ -31,10 +31,10 @@ uint32_t Rgba(uint8_t y, uint8_t v, uint8_t u) {
 
 }  // namespace
 
-void Preview::Window::reset(ANativeWindow* w) {
+void Preview::Window::Reset(ANativeWindow* w) {
     if (w) {
         ANativeWindow_acquire(w);
-        // Async mode: a new image replaces one the app has not latched yet, so render() on the
+        // Async mode: a new image replaces one the app has not latched yet, so Render() on the
         // capture thread never waits for a view that stopped drawing (e.g. with the screen off).
         if (ANativeWindow_setSwapInterval(w, 0)) LOG(WARNING) << "No async preview surface";
     }
@@ -44,28 +44,28 @@ void Preview::Window::reset(ANativeWindow* w) {
 }
 
 Preview::~Preview() {
-    mEnroll.reset(nullptr);
-    mCard.reset(nullptr);
+    enroll_.Reset(nullptr);
+    card_.Reset(nullptr);
 }
 
 ndk::ScopedAStatus Preview::setPreviewSurface(
         const std::optional<::aidl::android::view::Surface>& surface) {
-    std::lock_guard<std::mutex> lock(mLock);
-    mCard.reset(surface ? surface->get() : nullptr);
+    std::lock_guard<std::mutex> lock(lock_);
+    card_.Reset(surface ? surface->get() : nullptr);
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Preview::setListener(const std::shared_ptr<IIrisPreviewListener>& listener) {
-    std::lock_guard<std::mutex> lock(mLock);
-    mListener = listener;
+    std::lock_guard<std::mutex> lock(lock_);
+    listener_ = listener;
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Preview::resumeCapture() {
     std::function<void(bool)> control;
     {
-        std::lock_guard<std::mutex> lock(mLock);
-        control = mControl;
+        std::lock_guard<std::mutex> lock(lock_);
+        control = control_;
     }
     if (control) control(true);
     return ndk::ScopedAStatus::ok();
@@ -74,38 +74,38 @@ ndk::ScopedAStatus Preview::resumeCapture() {
 ndk::ScopedAStatus Preview::endCapture() {
     std::function<void(bool)> control;
     {
-        std::lock_guard<std::mutex> lock(mLock);
-        control = mControl;
+        std::lock_guard<std::mutex> lock(lock_);
+        control = control_;
     }
     if (control) control(false);
     return ndk::ScopedAStatus::ok();
 }
 
-void Preview::setControl(std::function<void(bool resume)> control) {
-    std::lock_guard<std::mutex> lock(mLock);
-    mControl = std::move(control);
+void Preview::SetControl(std::function<void(bool resume)> control) {
+    std::lock_guard<std::mutex> lock(lock_);
+    control_ = std::move(control);
 }
 
-bool Preview::hasListener() {
-    std::lock_guard<std::mutex> lock(mLock);
-    return mListener != nullptr;
+bool Preview::HasListener() {
+    std::lock_guard<std::mutex> lock(lock_);
+    return listener_ != nullptr;
 }
 
-void Preview::setEnrollSurface(ANativeWindow* window) {
-    std::lock_guard<std::mutex> lock(mLock);
-    mEnroll.reset(window);
+void Preview::SetEnrollSurface(ANativeWindow* window) {
+    std::lock_guard<std::mutex> lock(lock_);
+    enroll_.Reset(window);
 }
 
-void Preview::render(const uint8_t* nv21, int32_t width, int32_t height) {
-    std::lock_guard<std::mutex> lock(mLock);
-    Window& target = mEnroll.window ? mEnroll : mCard;
+void Preview::Render(const uint8_t* nv21, int32_t width, int32_t height) {
+    std::lock_guard<std::mutex> lock(lock_);
+    Window& target = enroll_.window ? enroll_ : card_;
     if (!target.window) return;
 
     if (target.width != width || target.height != height) {
         if (ANativeWindow_setBuffersGeometry(target.window, width, height,
                                              AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM)) {
             LOG(ERROR) << "Failed to size the preview surface";
-            target.reset(nullptr);
+            target.Reset(nullptr);
             return;
         }
         target.width = width;
@@ -115,7 +115,7 @@ void Preview::render(const uint8_t* nv21, int32_t width, int32_t height) {
     ANativeWindow_Buffer buffer;
     if (ANativeWindow_lock(target.window, &buffer, nullptr)) {
         // The surface went away; the app sets a new one.
-        target.reset(nullptr);
+        target.Reset(nullptr);
         return;
     }
     const uint8_t* vu = nv21 + static_cast<size_t>(width) * height;
@@ -129,29 +129,29 @@ void Preview::render(const uint8_t* nv21, int32_t width, int32_t height) {
     ANativeWindow_unlockAndPost(target.window);
 }
 
-void Preview::notifyCaptureStarted(int32_t faceReason) {
+void Preview::NotifyCaptureStarted(int32_t face_reason) {
     std::shared_ptr<IIrisPreviewListener> listener;
     {
-        std::lock_guard<std::mutex> lock(mLock);
-        listener = mListener;
+        std::lock_guard<std::mutex> lock(lock_);
+        listener = listener_;
     }
-    if (listener) listener->onCaptureStarted(faceReason);
+    if (listener) listener->onCaptureStarted(face_reason);
 }
 
-void Preview::notifyCaptureHeld(bool timedOut) {
+void Preview::NotifyCaptureHeld(bool timed_out) {
     std::shared_ptr<IIrisPreviewListener> listener;
     {
-        std::lock_guard<std::mutex> lock(mLock);
-        listener = mListener;
+        std::lock_guard<std::mutex> lock(lock_);
+        listener = listener_;
     }
-    if (listener) listener->onCaptureHeld(timedOut);
+    if (listener) listener->onCaptureHeld(timed_out);
 }
 
-void Preview::notifyAcquired(int32_t code) {
+void Preview::NotifyAcquired(int32_t code) {
     std::shared_ptr<IIrisPreviewListener> listener;
     {
-        std::lock_guard<std::mutex> lock(mLock);
-        listener = mListener;
+        std::lock_guard<std::mutex> lock(lock_);
+        listener = listener_;
     }
     if (listener) listener->onAcquired(code);
 }

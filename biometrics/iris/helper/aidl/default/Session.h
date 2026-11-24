@@ -28,7 +28,7 @@ using ::aidl::android::hardware::keymaster::HardwareAuthToken;
 class Session : public BnSession {
   public:
     Session(IrisLib* lib, Worker* worker, LockoutTracker* lockout, Preview* preview,
-            PowerBoost* boost, int32_t userId, std::shared_ptr<ISessionCallback> cb);
+            PowerBoost* boost, int32_t user_id, std::shared_ptr<ISessionCallback> cb);
     ~Session();
 
     ndk::ScopedAStatus generateChallenge() override;
@@ -37,13 +37,13 @@ class Session : public BnSession {
                                            std::vector<EnrollmentStageConfig>* out) override;
     ndk::ScopedAStatus enroll(const HardwareAuthToken& hat, EnrollmentType type,
                               const std::vector<Feature>& features,
-                              const std::optional<NativeHandle>& previewSurface,
+                              const std::optional<NativeHandle>& preview_surface,
                               std::shared_ptr<ICancellationSignal>* out) override;
-    ndk::ScopedAStatus authenticate(int64_t operationId,
+    ndk::ScopedAStatus authenticate(int64_t operation_id,
                                     std::shared_ptr<ICancellationSignal>* out) override;
     ndk::ScopedAStatus detectInteraction(std::shared_ptr<ICancellationSignal>* out) override;
     ndk::ScopedAStatus enumerateEnrollments() override;
-    ndk::ScopedAStatus removeEnrollments(const std::vector<int32_t>& enrollmentIds) override;
+    ndk::ScopedAStatus removeEnrollments(const std::vector<int32_t>& enrollment_ids) override;
     ndk::ScopedAStatus getFeatures() override;
     ndk::ScopedAStatus setFeature(const HardwareAuthToken& hat, Feature feature,
                                   bool enabled) override;
@@ -51,11 +51,12 @@ class Session : public BnSession {
     ndk::ScopedAStatus invalidateAuthenticatorId() override;
     ndk::ScopedAStatus resetLockout(const HardwareAuthToken& hat) override;
     ndk::ScopedAStatus close() override;
-    ndk::ScopedAStatus authenticateWithContext(int64_t operationId, const OperationContext& context,
+    ndk::ScopedAStatus authenticateWithContext(int64_t operation_id,
+                                               const OperationContext& context,
                                                std::shared_ptr<ICancellationSignal>* out) override;
     ndk::ScopedAStatus enrollWithContext(const HardwareAuthToken& hat, EnrollmentType type,
                                          const std::vector<Feature>& features,
-                                         const std::optional<NativeHandle>& previewSurface,
+                                         const std::optional<NativeHandle>& preview_surface,
                                          const OperationContext& context,
                                          std::shared_ptr<ICancellationSignal>* out) override;
     ndk::ScopedAStatus detectInteractionWithContext(
@@ -64,56 +65,56 @@ class Session : public BnSession {
     ndk::ScopedAStatus enrollWithOptions(const FaceEnrollOptions& options,
                                          std::shared_ptr<ICancellationSignal>* out) override;
 
-    void cancel(uint64_t op);
-    bool isClosed() const { return mClosed; }
-    void linkToDeath(AIBinder* binder);
+    void Cancel(uint64_t op);
+    bool IsClosed() const { return closed_; }
+    void LinkToDeath(AIBinder* binder);
     // From the iris library, on whatever thread called into it.
-    void notify(const IrisMsg* msg);
+    void Notify(const IrisMsg* msg);
     // From the iris card (IIrisPreview): retry a held attempt, or end the attempt.
-    void onUserAction(bool resume);
+    void OnUserAction(bool resume);
 
   private:
     // HELD: a bouncer attempt with no match, camera off, waiting for the card's retry.
-    enum class State { IDLE, ENROLLING, AUTHENTICATING, HELD };
+    enum class State { kIdle, kEnrolling, kAuthenticating, kHeld };
 
-    std::shared_ptr<ICancellationSignal> cancellationSignal();
-    void enroll(const HardwareAuthToken& hat, ANativeWindow* previewWindow);
-    void authenticate(int64_t operationId, int32_t faceReason);
-    bool startCapture(State state);
-    void endCapture(bool cancelLibrary);
-    bool canHold() const;
-    void hold(bool timedOut);
-    void releaseHeld();
-    void finishHeld();
-    void onAcquired(uint64_t gen, int32_t code);
-    void onTemplateEnrolling(uint64_t gen, uint32_t fid, uint32_t progress);
-    void onAuthenticated(uint64_t gen, uint32_t fid, const hw_auth_token_t& hat);
-    void onError(uint64_t gen, int32_t error);
-    void onTimeout(uint64_t gen);
-    bool checkLockout();
-    std::string storePath() const;
-    std::vector<int32_t> enrollments() const;
+    std::shared_ptr<ICancellationSignal> NewCancellationSignal();
+    void Enroll(const HardwareAuthToken& hat, ANativeWindow* preview_window);
+    void Authenticate(int64_t operation_id, int32_t face_reason);
+    bool StartCapture(State state);
+    void EndCapture(bool cancel_library);
+    bool CanHold() const;
+    void Hold(bool timed_out);
+    void ReleaseHeld();
+    void FinishHeld();
+    void OnAcquired(uint64_t gen, int32_t code);
+    void OnTemplateEnrolling(uint64_t gen, uint32_t fid, uint32_t progress);
+    void OnAuthenticated(uint64_t gen, uint32_t fid, const hw_auth_token_t& hat);
+    void OnError(uint64_t gen, int32_t error);
+    void OnTimeout(uint64_t gen);
+    bool CheckLockout();
+    std::string StorePath() const;
+    std::vector<int32_t> Enrollments() const;
 
-    IrisLib* mLib;
-    Worker* mWorker;
-    LockoutTracker* mLockout;
-    Preview* mPreview;
-    PowerBoost* mBoost;
-    int32_t mUserId;
-    std::shared_ptr<ISessionCallback> mCb;
-    AIBinder_DeathRecipient* mDeathRecipient;
-    bool mClosed = false;
+    IrisLib* lib_;
+    Worker* worker_;
+    LockoutTracker* lockout_;
+    Preview* preview_;
+    PowerBoost* boost_;
+    int32_t user_id_;
+    std::shared_ptr<ISessionCallback> cb_;
+    AIBinder_DeathRecipient* death_recipient_;
+    bool closed_ = false;
 
-    // Worker thread only, except mOp, which the cancellation signal reads, and mGen, which the
-    // library callbacks read. mOp names the framework's operation, mGen the camera capture: a held
+    // Worker thread only, except op_, which the cancellation signal reads, and gen_, which the
+    // library callbacks read. op_ names the framework's operation, gen_ the camera capture: a held
     // attempt keeps its operation across captures.
-    State mState = State::IDLE;
-    std::atomic<uint64_t> mOp = 0;
-    std::atomic<uint64_t> mGen = 0;
-    int64_t mOperationId = 0;
-    int32_t mFaceReason = 0;
-    bool mHeldTimedOut = false;
-    IrisCapture mCapture;
+    State state_ = State::kIdle;
+    std::atomic<uint64_t> op_ = 0;
+    std::atomic<uint64_t> gen_ = 0;
+    int64_t operation_id_ = 0;
+    int32_t face_reason_ = 0;
+    bool held_timed_out_ = false;
+    IrisCapture capture_;
 };
 
 }  // namespace aidl::android::hardware::biometrics::face

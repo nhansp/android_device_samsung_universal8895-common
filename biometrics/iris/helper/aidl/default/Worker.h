@@ -20,45 +20,45 @@ class Worker {
   public:
     using Clock = std::chrono::steady_clock;
 
-    Worker() : mThread(&Worker::loop, this) {}
+    Worker() : thread_(&Worker::Loop, this) {}
 
-    void post(std::function<void()> task) { postAt(Clock::now(), std::move(task)); }
+    void Post(std::function<void()> task) { PostAt(Clock::now(), std::move(task)); }
 
-    void postDelayed(std::chrono::milliseconds delay, std::function<void()> task) {
-        postAt(Clock::now() + delay, std::move(task));
+    void PostDelayed(std::chrono::milliseconds delay, std::function<void()> task) {
+        PostAt(Clock::now() + delay, std::move(task));
     }
 
   private:
-    void postAt(Clock::time_point when, std::function<void()> task) {
-        std::lock_guard<std::mutex> lock(mLock);
-        mTasks.emplace(when, std::move(task));
-        mCond.notify_one();
+    void PostAt(Clock::time_point when, std::function<void()> task) {
+        std::lock_guard<std::mutex> lock(lock_);
+        tasks_.emplace(when, std::move(task));
+        cond_.notify_one();
     }
 
-    [[noreturn]] void loop() {
-        std::unique_lock<std::mutex> lock(mLock);
+    [[noreturn]] void Loop() {
+        std::unique_lock<std::mutex> lock(lock_);
         for (;;) {
-            if (mTasks.empty()) {
-                mCond.wait(lock);
+            if (tasks_.empty()) {
+                cond_.wait(lock);
                 continue;
             }
-            auto next = mTasks.begin();
+            auto next = tasks_.begin();
             if (next->first > Clock::now()) {
-                mCond.wait_until(lock, next->first);
+                cond_.wait_until(lock, next->first);
                 continue;
             }
             auto task = std::move(next->second);
-            mTasks.erase(next);
+            tasks_.erase(next);
             lock.unlock();
             task();
             lock.lock();
         }
     }
 
-    std::mutex mLock;
-    std::condition_variable mCond;
-    std::multimap<Clock::time_point, std::function<void()>> mTasks;
-    std::thread mThread;
+    std::mutex lock_;
+    std::condition_variable cond_;
+    std::multimap<Clock::time_point, std::function<void()>> tasks_;
+    std::thread thread_;
 };
 
 }  // namespace aidl::android::hardware::biometrics::face

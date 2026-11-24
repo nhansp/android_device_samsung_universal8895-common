@@ -13,7 +13,7 @@
 
 namespace aidl::android::hardware::biometrics::face {
 
-bool IrisLib::load() {
+bool IrisLib::Load() {
     void* handle = dlopen("libIrisService.so", RTLD_NOW);
     if (!handle) {
         LOG(ERROR) << "Failed to load libIrisService.so: " << dlerror();

@@ -33,17 +33,17 @@ class Preview : public BnIrisPreview {
     ndk::ScopedAStatus endCapture() override;
 
     // Where resumeCapture() and endCapture() go: the current session.
-    void setControl(std::function<void(bool resume)> control);
+    void SetControl(std::function<void(bool resume)> control);
     // Whether the iris card listens, so a held attempt has someone to resume or end it.
-    bool hasListener();
+    bool HasListener();
 
     // The surface from FaceEnrollOptions for the current enrollment, or null when it ends.
-    void setEnrollSurface(ANativeWindow* window);
+    void SetEnrollSurface(ANativeWindow* window);
     // One NV21 preview image, stride = width.
-    void render(const uint8_t* nv21, int32_t width, int32_t height);
-    void notifyAcquired(int32_t code);
-    void notifyCaptureStarted(int32_t faceReason);
-    void notifyCaptureHeld(bool timedOut);
+    void Render(const uint8_t* nv21, int32_t width, int32_t height);
+    void NotifyAcquired(int32_t code);
+    void NotifyCaptureStarted(int32_t face_reason);
+    void NotifyCaptureHeld(bool timed_out);
 
   private:
     struct Window {
@@ -51,14 +51,14 @@ class Preview : public BnIrisPreview {
         int32_t width = 0;
         int32_t height = 0;
 
-        void reset(ANativeWindow* w);
+        void Reset(ANativeWindow* w);
     };
 
-    std::mutex mLock;
-    Window mEnroll;
-    Window mCard;
-    std::shared_ptr<IIrisPreviewListener> mListener;
-    std::function<void(bool resume)> mControl;
+    std::mutex lock_;
+    Window enroll_;
+    Window card_;
+    std::shared_ptr<IIrisPreviewListener> listener_;
+    std::function<void(bool resume)> control_;
 };
 
 }  // namespace aidl::android::hardware::biometrics::face
