@@ -29,7 +29,7 @@ class Vibrator : public BnVibrator {
   public:
     ndk::ScopedAStatus getCapabilities(int32_t* _aidl_return) override;
     ndk::ScopedAStatus off() override;
-    ndk::ScopedAStatus on(int32_t timeoutMs,
+    ndk::ScopedAStatus on(int32_t timeout_ms,
                           const std::shared_ptr<IVibratorCallback>& callback) override;
     ndk::ScopedAStatus perform(Effect effect, EffectStrength strength,
                                const std::shared_ptr<IVibratorCallback>& callback,
@@ -63,8 +63,8 @@ class Vibrator : public BnVibrator {
     ndk::ScopedAStatus play(const std::vector<Packet>& packets,
                             const std::shared_ptr<IVibratorCallback>& callback);
 
-    std::mutex mMutex;
-    float mAmplitude{1.0f};
+    std::mutex mutex_;
+    float amplitude_{1.0f};
 };
 
 }  // namespace vibrator

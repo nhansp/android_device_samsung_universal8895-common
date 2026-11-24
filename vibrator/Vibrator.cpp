@@ -49,7 +49,7 @@ const std::map<EffectStrength, float> kStrength = {
         {EffectStrength::STRONG, 1.0f},
 };
 
-void ramp(std::vector<Packet>* out, float from, float to, int ms, int freq, bool od) {
+void Ramp(std::vector<Packet>* out, float from, float to, int ms, int freq, bool od) {
     int left = ms;
     for (int i = 0; i < kRampSteps; i++) {
         int step = left / (kRampSteps - i);
@@ -62,7 +62,7 @@ void ramp(std::vector<Packet>* out, float from, float to, int ms, int freq, bool
 // Short primitives follow the stock 7 ms, 200 Hz overdrive tick, long ones the length and envelope
 // of the Pixel primitives at resonance; frequency does not change how a short pulse feels on this
 // LRA, so only level and length differ
-std::vector<Packet> primitivePackets(CompositePrimitive primitive) {
+std::vector<Packet> PrimitivePackets(CompositePrimitive primitive) {
     std::vector<Packet> p;
     switch (primitive) {
         case CompositePrimitive::CLICK:
@@ -75,21 +75,21 @@ std::vector<Packet> primitivePackets(CompositePrimitive primitive) {
             p.push_back({11, 0.5f, kFreqLow, false});
             break;
         case CompositePrimitive::THUD:
-            ramp(&p, 1.0f, 0.0f, 300, kFreqLow, false);
+            Ramp(&p, 1.0f, 0.0f, 300, kFreqLow, false);
             break;
         case CompositePrimitive::SPIN:
-            ramp(&p, 0.5f, 1.0f, 78, kFreqResonance, false);
-            ramp(&p, 1.0f, 0.5f, 54, kFreqResonance, false);
+            Ramp(&p, 0.5f, 1.0f, 78, kFreqResonance, false);
+            Ramp(&p, 1.0f, 0.5f, 54, kFreqResonance, false);
             break;
         case CompositePrimitive::QUICK_RISE:
-            ramp(&p, 0.0f, 1.0f, 150, kFreqResonance, false);
+            Ramp(&p, 0.0f, 1.0f, 150, kFreqResonance, false);
             break;
         case CompositePrimitive::SLOW_RISE:
-            ramp(&p, 0.0f, 1.0f, 500, kFreqResonance, false);
+            Ramp(&p, 0.0f, 1.0f, 500, kFreqResonance, false);
             break;
         case CompositePrimitive::QUICK_FALL:
-            ramp(&p, 0.5f, 1.0f, 51, kFreqShort, false);
-            ramp(&p, 1.0f, 0.0f, 50, kFreqShort, false);
+            Ramp(&p, 0.5f, 1.0f, 51, kFreqShort, false);
+            Ramp(&p, 1.0f, 0.0f, 50, kFreqShort, false);
             break;
         default:
             break;
@@ -97,12 +97,12 @@ std::vector<Packet> primitivePackets(CompositePrimitive primitive) {
     return p;
 }
 
-std::vector<Packet> effectPackets(Effect effect) {
+std::vector<Packet> EffectPackets(Effect effect) {
     switch (effect) {
         case Effect::CLICK:
-            return primitivePackets(CompositePrimitive::CLICK);
+            return PrimitivePackets(CompositePrimitive::CLICK);
         case Effect::TICK:
-            return primitivePackets(CompositePrimitive::LIGHT_TICK);
+            return PrimitivePackets(CompositePrimitive::LIGHT_TICK);
         case Effect::TEXTURE_TICK:
             return {{5, 0.4f, kFreqShort, true}};
         case Effect::HEAVY_CLICK:
@@ -117,20 +117,20 @@ std::vector<Packet> effectPackets(Effect effect) {
     }
 }
 
-int durationMs(const std::vector<Packet>& packets) {
+int DurationMs(const std::vector<Packet>& packets) {
     int ms = 0;
     for (const auto& p : packets) ms += p.ms;
     return ms;
 }
 
-int toIntensity(float level) {
+int ToIntensity(float level) {
     if (level == 0.0f) return 0;
     float mag = kLevelFloor + (1.0f - kLevelFloor) * std::min(std::fabs(level), 1.0f);
     int intensity = std::lround(mag * kIntensityMax);
     return level < 0 ? -intensity : intensity;
 }
 
-bool writeNode(const char* path, const std::string& value) {
+bool WriteNode(const char* path, const std::string& value) {
     if (!::android::base::WriteStringToFile(value, path)) {
         PLOG(ERROR) << "Failed to write " << value.size() << " bytes to " << path;
         return false;
@@ -138,7 +138,7 @@ bool writeNode(const char* path, const std::string& value) {
     return true;
 }
 
-void completeAfter(int ms, const std::shared_ptr<IVibratorCallback>& callback) {
+void CompleteAfter(int ms, const std::shared_ptr<IVibratorCallback>& callback) {
     if (callback == nullptr) return;
     std::thread([ms, callback] {
         std::this_thread::sleep_for(std::chrono::milliseconds(ms));
@@ -155,27 +155,27 @@ ndk::ScopedAStatus Vibrator::getCapabilities(int32_t* _aidl_return) {
 }
 
 ndk::ScopedAStatus Vibrator::off() {
-    std::lock_guard<std::mutex> lock(mMutex);
-    if (!writeNode(kEnable, "0")) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!WriteNode(kEnable, "0")) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_SERVICE_SPECIFIC);
     }
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus Vibrator::on(int32_t timeoutMs,
+ndk::ScopedAStatus Vibrator::on(int32_t timeout_ms,
                                 const std::shared_ptr<IVibratorCallback>& callback) {
-    if (timeoutMs <= 0) {
+    if (timeout_ms <= 0) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
 
-    std::lock_guard<std::mutex> lock(mMutex);
+    std::lock_guard<std::mutex> lock(mutex_);
     // 0 first: it drops any packets an effect left loaded
-    if (!writeNode(kEnable, "0") || !writeNode(kMultiFreq, std::to_string(kFreqResonance)) ||
-        !writeNode(kIntensity, std::to_string(std::lround(mAmplitude * kIntensityMax))) ||
-        !writeNode(kEnable, std::to_string(timeoutMs))) {
+    if (!WriteNode(kEnable, "0") || !WriteNode(kMultiFreq, std::to_string(kFreqResonance)) ||
+        !WriteNode(kIntensity, std::to_string(std::lround(amplitude_ * kIntensityMax))) ||
+        !WriteNode(kEnable, std::to_string(timeout_ms))) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_SERVICE_SPECIFIC);
     }
-    completeAfter(timeoutMs, callback);
+    CompleteAfter(timeout_ms, callback);
     return ndk::ScopedAStatus::ok();
 }
 
@@ -183,7 +183,7 @@ ndk::ScopedAStatus Vibrator::play(const std::vector<Packet>& packets,
                                   const std::shared_ptr<IVibratorCallback>& callback) {
     std::string buf;
     for (const auto& p : packets) {
-        buf += ::android::base::StringPrintf(" %d %d %d %d", p.ms, toIntensity(p.level), p.freq,
+        buf += ::android::base::StringPrintf(" %d %d %d %d", p.ms, ToIntensity(p.level), p.freq,
                                              p.od ? 1 : 0);
     }
     buf = std::to_string(packets.size() * 4) + buf;
@@ -191,18 +191,18 @@ ndk::ScopedAStatus Vibrator::play(const std::vector<Packet>& packets,
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
 
-    std::lock_guard<std::mutex> lock(mMutex);
-    if (!writeNode(kHapticEngine, buf) || !writeNode(kEnable, "1")) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!WriteNode(kHapticEngine, buf) || !WriteNode(kEnable, "1")) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_SERVICE_SPECIFIC);
     }
-    completeAfter(durationMs(packets), callback);
+    CompleteAfter(DurationMs(packets), callback);
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Vibrator::perform(Effect effect, EffectStrength strength,
                                      const std::shared_ptr<IVibratorCallback>& callback,
                                      int32_t* _aidl_return) {
-    auto packets = effectPackets(effect);
+    auto packets = EffectPackets(effect);
     if (packets.empty()) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
@@ -213,7 +213,7 @@ ndk::ScopedAStatus Vibrator::perform(Effect effect, EffectStrength strength,
     for (auto& p : packets) p.level *= it->second;
 
     auto status = play(packets, callback);
-    if (status.isOk()) *_aidl_return = durationMs(packets);
+    if (status.isOk()) *_aidl_return = DurationMs(packets);
     return status;
 }
 
@@ -228,9 +228,9 @@ ndk::ScopedAStatus Vibrator::setAmplitude(float amplitude) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
 
-    std::lock_guard<std::mutex> lock(mMutex);
-    mAmplitude = amplitude;
-    if (!writeNode(kIntensity, std::to_string(std::lround(amplitude * kIntensityMax)))) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    amplitude_ = amplitude;
+    if (!WriteNode(kIntensity, std::to_string(std::lround(amplitude * kIntensityMax)))) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_SERVICE_SPECIFIC);
     }
     return ndk::ScopedAStatus::ok();
@@ -265,11 +265,11 @@ ndk::ScopedAStatus Vibrator::getPrimitiveDuration(CompositePrimitive primitive,
         *_aidl_return = 0;
         return ndk::ScopedAStatus::ok();
     }
-    auto packets = primitivePackets(primitive);
+    auto packets = PrimitivePackets(primitive);
     if (packets.empty()) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
-    *_aidl_return = durationMs(packets);
+    *_aidl_return = DurationMs(packets);
     return ndk::ScopedAStatus::ok();
 }
 
@@ -287,7 +287,7 @@ ndk::ScopedAStatus Vibrator::compose(const std::vector<CompositeEffect>& composi
         if (e.delayMs > 0) packets.push_back({e.delayMs, 0.0f, kFreqResonance, false});
         if (e.primitive == CompositePrimitive::NOOP) continue;
 
-        auto p = primitivePackets(e.primitive);
+        auto p = PrimitivePackets(e.primitive);
         if (p.empty()) {
             return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
         }
@@ -295,7 +295,7 @@ ndk::ScopedAStatus Vibrator::compose(const std::vector<CompositeEffect>& composi
         packets.insert(packets.end(), p.begin(), p.end());
     }
     if (packets.empty()) {
-        completeAfter(0, callback);
+        CompleteAfter(0, callback);
         return ndk::ScopedAStatus::ok();
     }
     return play(packets, callback);
