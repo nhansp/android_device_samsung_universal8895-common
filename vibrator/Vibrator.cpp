@@ -250,8 +250,7 @@ ndk::ScopedAStatus Vibrator::getCompositionSizeMax(int32_t* _aidl_return) {
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus Vibrator::getSupportedPrimitives(
-        std::vector<CompositePrimitive>* _aidl_return) {
+ndk::ScopedAStatus Vibrator::getSupportedPrimitives(std::vector<CompositePrimitive>* _aidl_return) {
     *_aidl_return = {CompositePrimitive::NOOP,       CompositePrimitive::CLICK,
                      CompositePrimitive::THUD,       CompositePrimitive::SPIN,
                      CompositePrimitive::QUICK_RISE, CompositePrimitive::SLOW_RISE,
