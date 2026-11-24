@@ -21,23 +21,23 @@ namespace libui28 {
 
 class Fence : public android::LightRefBase<Fence> {
   public:
-    explicit Fence(int fenceFd);
+    explicit Fence(int fence_fd);
     android::status_t wait(int timeout);
 
   private:
-    int mFenceFd;
+    int fence_fd_;
 };
 
 static_assert(sizeof(Fence) == 8);
 
-Fence::Fence(int fenceFd) : mFenceFd(fenceFd) {}
+Fence::Fence(int fence_fd) : fence_fd_(fence_fd) {}
 
 android::status_t Fence::wait(int timeout) {
     ATRACE_CALL();
-    if (mFenceFd == -1) {
+    if (fence_fd_ == -1) {
         return android::NO_ERROR;
     }
-    int err = sync_wait(mFenceFd, timeout);
+    int err = sync_wait(fence_fd_, timeout);
     return err < 0 ? -errno : android::NO_ERROR;
 }
 
