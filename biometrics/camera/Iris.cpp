@@ -35,7 +35,7 @@ constexpr int32_t kCmdIrisPreviewData = 1832;
 // this name after extract-files.py renames it.
 constexpr char kCompanionDisableProp[] = "vendor.camera.CC.disable";
 
-std::atomic<int> gClient{-1};
+std::atomic<int> active_client{-1};
 
 // Returns the fd of an iris data message ({kFrameMagic, fd}), or -1.
 int IrisDataFd(const char* id, const uint8_t* data, size_t size) {
@@ -78,26 +78,26 @@ void ServeIris(int client) {
     // The iris library turns the front camera's iris data into the preview (IMAGE_PROCESSED
     // id 1); the display frames of the front camera are not used. A frame the HAL is too slow
     // for is dropped: the buffer goes back to the camera.
-    Hal1Camera front(kFrontCameraId, [](int32_t msgType, const uint8_t* data, size_t size) {
-        int c = gClient.load();
-        if (c < 0 || msgType != kMsgIrisPreviewData) return;
+    Hal1Camera front(kFrontCameraId, [](int32_t msg_type, const uint8_t* data, size_t size) {
+        int c = active_client.load();
+        if (c < 0 || msg_type != kMsgIrisPreviewData) return;
         int fd = IrisDataFd(kFrontCameraId, data, size);
         if (fd >= 0) Send(c, MSG_FRONT_FRAME, nullptr, 0, fd);
     });
     // Without the IR camera there is no capture; the front camera only adds the preview.
     Hal1Camera iris(
             kIrisCameraId,
-            [](int32_t msgType, const uint8_t* data, size_t size) {
-                int c = gClient.load();
-                if (c < 0 || msgType != kMsgIrisFrame) return;
+            [](int32_t msg_type, const uint8_t* data, size_t size) {
+                int c = active_client.load();
+                if (c < 0 || msg_type != kMsgIrisFrame) return;
                 int fd = IrisDataFd(kIrisCameraId, data, size);
                 if (fd >= 0) Send(c, MSG_FRAME, nullptr, 0, fd);
             },
             [](int32_t error) {
-                int c = gClient.load();
+                int c = active_client.load();
                 if (c >= 0) Send(c, MSG_ERROR, &error, sizeof(error));
             });
-    gClient.store(client);
+    active_client.store(client);
     StartFront(&front);
 
     CameraParams params;
@@ -135,7 +135,7 @@ void ServeIris(int client) {
             }
         }
     }
-    gClient.store(-1);
+    active_client.store(-1);
     Hal1Close(&iris, kMsgIrisFrame);
     Hal1Close(&front, kMsgIrisPreviewData);
     // Other users of the front camera get the companion again.

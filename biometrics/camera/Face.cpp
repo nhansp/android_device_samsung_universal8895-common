@@ -27,14 +27,14 @@ namespace {
 
 constexpr char kFrontCameraId[] = "1";
 
-std::atomic<int> gClient{-1};
+std::atomic<int> active_client{-1};
 // A frame is out until the HAL sends MSG_RELEASE; later preview frames are dropped meanwhile.
-std::atomic<bool> gInFlight{false};
+std::atomic<bool> frame_in_flight{false};
 
 std::string FpsRange(const CameraParams& defaults) {
     auto it = defaults.find("preview-fps-range-values");
     if (it == defaults.end()) return {};
-    int bestMin = INT_MAX;
+    int best_min = INT_MAX;
     std::string best;
     for (std::string range : android::base::Split(it->second, "),")) {
         range.erase(std::remove(range.begin(), range.end(), '('), range.end());
@@ -45,8 +45,8 @@ std::string FpsRange(const CameraParams& defaults) {
             !android::base::ParseInt(values[1], &max)) {
             continue;
         }
-        if (max == 30000 && min < bestMin) {
-            bestMin = min;
+        if (max == 30000 && min < best_min) {
+            best_min = min;
             best = values[0] + "," + values[1];
         }
     }
@@ -74,15 +74,15 @@ CameraParams FaceParams(const CameraParams& defaults) {
     return params;
 }
 
-void OnPreviewFrame(int32_t msgType, const uint8_t* data, size_t size) {
-    int client = gClient.load();
-    if (client < 0 || msgType != CAMERA_MSG_PREVIEW_FRAME || !data) return;
+void OnPreviewFrame(int32_t msg_type, const uint8_t* data, size_t size) {
+    int client = active_client.load();
+    if (client < 0 || msg_type != CAMERA_MSG_PREVIEW_FRAME || !data) return;
     if (size < kFrameBytes) {
         LOG(ERROR) << "Short preview frame: " << size;
         return;
     }
     bool idle = false;
-    if (!gInFlight.compare_exchange_strong(idle, true)) return;
+    if (!frame_in_flight.compare_exchange_strong(idle, true)) return;
     // The frame is only valid in this callback; it goes out before the buffer returns.
     for (size_t offset = 0; offset < kFrameBytes; offset += kChunkBytes) {
         uint32_t len = static_cast<uint32_t>(std::min(kChunkBytes, kFrameBytes - offset));
@@ -97,11 +97,11 @@ void OnPreviewFrame(int32_t msgType, const uint8_t* data, size_t size) {
 
 void ServeFace(int client) {
     Hal1Camera front(kFrontCameraId, OnPreviewFrame, [](int32_t error) {
-        int c = gClient.load();
+        int c = active_client.load();
         if (c >= 0) Send(c, MSG_ERROR, &error, sizeof(error));
     });
-    gInFlight.store(false);
-    gClient.store(client);
+    frame_in_flight.store(false);
+    active_client.store(client);
 
     CameraParams params;
     if (!Hal1Open(&front, FaceParams, &params)) {
@@ -124,12 +124,12 @@ void ServeFace(int client) {
             while ((n = TEMP_FAILURE_RETRY(recv(client, buf.data(), buf.size(), 0))) > 0) {
                 auto* hdr = reinterpret_cast<CameraMsg*>(buf.data());
                 if (n >= static_cast<ssize_t>(sizeof(*hdr)) && hdr->type == MSG_RELEASE) {
-                    gInFlight.store(false);
+                    frame_in_flight.store(false);
                 }
             }
         }
     }
-    gClient.store(-1);
+    active_client.store(-1);
     Hal1Close(&front, CAMERA_MSG_PREVIEW_FRAME);
     LOG(INFO) << "Face camera closed";
 }

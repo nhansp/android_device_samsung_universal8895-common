@@ -55,7 +55,7 @@ camera_module_t* Module() {
 // callback's index selects one
 struct Memory {
     camera_memory_t mem;
-    size_t bufSize;
+    size_t buf_size;
     unsigned int count;
 };
 
@@ -87,15 +87,15 @@ camera_memory_t* GetMemory(int fd, size_t size, unsigned int count, void*) {
     return mem;
 }
 
-void Notify(int32_t msgType, int32_t ext1, int32_t ext2, void* user) {
+void Notify(int32_t msg_type, int32_t ext1, int32_t ext2, void* user) {
     auto* camera = static_cast<Hal1Camera*>(user);
-    if (msgType != CAMERA_MSG_ERROR) return;
+    if (msg_type != CAMERA_MSG_ERROR) return;
     LOG(ERROR) << "Camera " << camera->id << " error " << ext1 << " " << ext2;
-    if (camera->onError) camera->onError(ext1);
+    if (camera->on_error) camera->on_error(ext1);
 }
 
-void Data(int32_t msgType, const camera_memory_t* mem, unsigned int index, camera_frame_metadata_t*,
-          void* user) {
+void Data(int32_t msg_type, const camera_memory_t* mem, unsigned int index,
+          camera_frame_metadata_t*, void* user) {
     auto* camera = static_cast<Hal1Camera*>(user);
     const uint8_t* data = nullptr;
     size_t size = 0;
@@ -106,12 +106,12 @@ void Data(int32_t msgType, const camera_memory_t* mem, unsigned int index, camer
             data = static_cast<const uint8_t*>(mem->data);
             size = mem->size;
         } else if (index < memory->count) {
-            data = static_cast<const uint8_t*>(mem->data) + index * memory->bufSize;
-            size = memory->bufSize;
+            data = static_cast<const uint8_t*>(mem->data) + index * memory->buf_size;
+            size = memory->buf_size;
         }
     }
-    camera->logFirst(msgType, data, size);
-    if (camera->onData) camera->onData(msgType, data, size);
+    camera->LogFirst(msg_type, data, size);
+    if (camera->on_data) camera->on_data(msg_type, data, size);
 }
 
 void DataTimestamp(int64_t, int32_t, const camera_memory_t*, unsigned int, void*) {}
@@ -141,12 +141,12 @@ bool OpenDevice(Hal1Camera* camera, CameraParams* defaults) {
 
 }  // namespace
 
-void Hal1Camera::logFirst(int32_t msgType, const uint8_t* data, size_t size) {
-    std::lock_guard<std::mutex> lock(mSeenLock);
-    if (!mSeen.insert(msgType).second) return;
+void Hal1Camera::LogFirst(int32_t msg_type, const uint8_t* data, size_t size) {
+    std::lock_guard<std::mutex> lock(seen_lock_);
+    if (!seen_.insert(msg_type).second) return;
     uint32_t words[2] = {};
     if (data && size >= sizeof(words)) memcpy(words, data, sizeof(words));
-    LOG(INFO) << "Camera " << id << " first message 0x" << std::hex << msgType << std::dec
+    LOG(INFO) << "Camera " << id << " first message 0x" << std::hex << msg_type << std::dec
               << " size " << size << " words "
               << android::base::StringPrintf("%08x %08x", words[0], words[1]);
 }
@@ -171,11 +171,11 @@ bool Hal1SetParameters(Hal1Camera* camera, const CameraParams& params) {
     return ret == 0;
 }
 
-void Hal1Close(Hal1Camera* camera, int32_t msgTypes) {
+void Hal1Close(Hal1Camera* camera, int32_t msg_types) {
     camera_device_t* device = camera->device;
     if (!device) return;
     device->ops->stop_preview(device);
-    device->ops->disable_msg_type(device, msgTypes);
+    device->ops->disable_msg_type(device, msg_types);
     device->ops->release(device);
     device->common.close(&device->common);
     camera->device = nullptr;
@@ -198,19 +198,19 @@ std::string Flatten(const CameraParams& params) {
 
 namespace {
 
-bool SendIov(int fd, iovec* iov, int iovcnt, int passFd, bool block) {
+bool SendIov(int fd, iovec* iov, int iovcnt, int pass_fd, bool block) {
     msghdr msg = {};
     msg.msg_iov = iov;
     msg.msg_iovlen = iovcnt;
     char control[CMSG_SPACE(sizeof(int))];
-    if (passFd >= 0) {
+    if (pass_fd >= 0) {
         msg.msg_control = control;
         msg.msg_controllen = sizeof(control);
         cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
         cmsg->cmsg_level = SOL_SOCKET;
         cmsg->cmsg_type = SCM_RIGHTS;
         cmsg->cmsg_len = CMSG_LEN(sizeof(int));
-        memcpy(CMSG_DATA(cmsg), &passFd, sizeof(int));
+        memcpy(CMSG_DATA(cmsg), &pass_fd, sizeof(int));
     }
     int flags = MSG_NOSIGNAL | (block ? 0 : MSG_DONTWAIT);
     return TEMP_FAILURE_RETRY(sendmsg(fd, &msg, flags)) >= 0;
@@ -218,10 +218,10 @@ bool SendIov(int fd, iovec* iov, int iovcnt, int passFd, bool block) {
 
 }  // namespace
 
-bool Send(int fd, uint32_t type, const void* data, uint32_t len, int passFd, bool block) {
+bool Send(int fd, uint32_t type, const void* data, uint32_t len, int pass_fd, bool block) {
     CameraMsg hdr = {type, len};
     iovec iov[2] = {{&hdr, sizeof(hdr)}, {const_cast<void*>(data), len}};
-    return SendIov(fd, iov, len ? 2 : 1, passFd, block);
+    return SendIov(fd, iov, len ? 2 : 1, pass_fd, block);
 }
 
 bool SendPrefixed(int fd, uint32_t type, uint32_t prefix, const void* data, uint32_t len) {
