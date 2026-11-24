@@ -13,7 +13,7 @@
 
 namespace aidl::android::hardware::biometrics::face {
 
-bool FaceLib::load() {
+bool FaceLib::Load() {
     void* handle = dlopen("libFaceService.so", RTLD_NOW);
     if (!handle) {
         LOG(ERROR) << "Failed to load libFaceService.so: " << dlerror();

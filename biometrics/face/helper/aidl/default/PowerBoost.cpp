@@ -23,9 +23,9 @@ constexpr int32_t kDurationMs = 15000;
 
 }  // namespace
 
-std::shared_ptr<IPowerExt> PowerBoost::ext() {
-    std::lock_guard<std::mutex> lock(mLock);
-    if (mExt) return mExt;
+std::shared_ptr<IPowerExt> PowerBoost::Ext() {
+    std::lock_guard<std::mutex> lock(lock_);
+    if (ext_) return ext_;
     ndk::SpAIBinder power(AServiceManager_checkService(kPowerHal));
     ndk::SpAIBinder extension;
     if (power.get() == nullptr ||
@@ -34,17 +34,17 @@ std::shared_ptr<IPowerExt> PowerBoost::ext() {
         LOG(WARNING) << "No power HAL extension";
         return nullptr;
     }
-    mExt = IPowerExt::fromBinder(extension);
-    return mExt;
+    ext_ = IPowerExt::fromBinder(extension);
+    return ext_;
 }
 
-void PowerBoost::start() {
-    if (auto power = ext()) power->setBoost(kHint, kDurationMs);
+void PowerBoost::Start() {
+    if (auto power = Ext()) power->setBoost(kHint, kDurationMs);
 }
 
-void PowerBoost::end() {
+void PowerBoost::End() {
     // A negative duration ends the hint
-    if (auto power = ext()) power->setBoost(kHint, -1);
+    if (auto power = Ext()) power->setBoost(kHint, -1);
 }
 
 }  // namespace aidl::android::hardware::biometrics::face

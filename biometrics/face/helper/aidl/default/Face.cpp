@@ -22,32 +22,32 @@ constexpr common::SensorStrength kSensorStrength = common::SensorStrength::STRON
 
 }  // namespace
 
-std::mutex Face::sSessionLock;
-std::shared_ptr<Session> Face::sSession;
+std::mutex Face::session_lock_;
+std::shared_ptr<Session> Face::session_;
 
 Face::Face() {
-    mLoaded = mLib.load();
-    if (mLoaded) {
-        std::lock_guard<std::mutex> lock(mLibLock);
-        mLib.ss_face_open(nullptr);
-        mLib.ss_set_notify_callback(notify);
+    loaded_ = lib_.Load();
+    if (loaded_) {
+        std::lock_guard<std::mutex> lock(lib_lock_);
+        lib_.ss_face_open(nullptr);
+        lib_.ss_set_notify_callback(Notify);
     }
 }
 
-void Face::notify(const FaceMsg* msg) {
+void Face::Notify(const FaceMsg* msg) {
     std::shared_ptr<Session> session;
     {
-        std::lock_guard<std::mutex> lock(sSessionLock);
-        session = sSession;
+        std::lock_guard<std::mutex> lock(session_lock_);
+        session = session_;
     }
-    if (session) session->notify(msg);
+    if (session) session->Notify(msg);
 }
 
 ndk::ScopedAStatus Face::getSensorProps(std::vector<SensorProps>* out) {
     *out = {};
-    if (!mLoaded) return ndk::ScopedAStatus::ok();
+    if (!loaded_) return ndk::ScopedAStatus::ok();
 
-    common::CommonProps commonProps = {
+    common::CommonProps common_props = {
             .sensorId = kSensorId,
             .sensorStrength = kSensorStrength,
             .maxEnrollmentsPerUser = kMaxEnrollmentsPerUser,
@@ -55,7 +55,7 @@ ndk::ScopedAStatus Face::getSensorProps(std::vector<SensorProps>* out) {
                               {"matchingAlgorithm", "", "", "", "Samsung face trustlet"}},
     };
     SensorProps props;
-    props.commonProps = commonProps;
+    props.commonProps = common_props;
     props.sensorType = FaceSensorType::RGB;
     props.halControlsPreview = true;
     props.enrollPreviewWidth = Preview::kSize;
@@ -65,15 +65,15 @@ ndk::ScopedAStatus Face::getSensorProps(std::vector<SensorProps>* out) {
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus Face::createSession(int32_t /*sensorId*/, int32_t userId,
+ndk::ScopedAStatus Face::createSession(int32_t /*sensor_id*/, int32_t user_id,
                                        const std::shared_ptr<ISessionCallback>& cb,
                                        std::shared_ptr<ISession>* out) {
-    auto session = SharedRefBase::make<Session>(FaceEngine{&mLib, &mLibLock}, &mWorker, &mLockout,
-                                                &mPreview, &mBoost, userId, cb);
-    session->linkToDeath(cb->asBinder().get());
+    auto session = SharedRefBase::make<Session>(FaceEngine{&lib_, &lib_lock_}, &worker_, &lockout_,
+                                                &preview_, &boost_, user_id, cb);
+    session->LinkToDeath(cb->asBinder().get());
     {
-        std::lock_guard<std::mutex> lock(sSessionLock);
-        sSession = session;
+        std::lock_guard<std::mutex> lock(session_lock_);
+        session_ = session;
     }
     *out = session;
     return ndk::ScopedAStatus::ok();

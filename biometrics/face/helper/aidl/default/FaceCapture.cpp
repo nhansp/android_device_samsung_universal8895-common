@@ -40,46 +40,46 @@ int Receive(int fd, std::vector<uint8_t>* buf, size_t* len) {
 }  // namespace
 
 FaceCapture::~FaceCapture() {
-    stop();
+    Stop();
 }
 
-bool FaceCapture::start(Callbacks callbacks) {
-    mSocket.reset(
+bool FaceCapture::Start(Callbacks callbacks) {
+    socket_.reset(
             socket_local_client(kSocketName, ANDROID_SOCKET_NAMESPACE_RESERVED, SOCK_SEQPACKET));
-    if (mSocket < 0) {
+    if (socket_ < 0) {
         PLOG(ERROR) << "Failed to connect to the face camera";
         return false;
     }
 
     timeval timeout = {kStartTimeoutSec, 0};
-    setsockopt(mSocket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
     std::vector<uint8_t> buf(kMaxMsgSize);
     size_t len;
-    int type = Receive(mSocket, &buf, &len);
+    int type = Receive(socket_, &buf, &len);
     if (type != MSG_STARTED) {
         LOG(ERROR) << "The face camera did not start (" << type << ")";
-        mSocket.reset();
+        socket_.reset();
         return false;
     }
     timeout = {0, 0};
-    setsockopt(mSocket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
-    mStopping = false;
-    mHaveFrame = false;
-    mLatest.resize(kFrameBytes);
-    mEngineThread = std::thread(&FaceCapture::engineLoop, this, callbacks.onFrame);
-    mThread = std::thread(&FaceCapture::loop, this, std::move(callbacks));
+    stopping_ = false;
+    have_frame_ = false;
+    latest_.resize(kFrameBytes);
+    engine_thread_ = std::thread(&FaceCapture::EngineLoop, this, callbacks.on_frame);
+    thread_ = std::thread(&FaceCapture::Loop, this, std::move(callbacks));
     return true;
 }
 
-void FaceCapture::loop(Callbacks callbacks) {
+void FaceCapture::Loop(Callbacks callbacks) {
     std::vector<uint8_t> buf(kMaxMsgSize);
     std::vector<uint8_t> frame(kFrameBytes);
     size_t filled = 0;
     int error = -EPIPE;
     for (;;) {
         size_t len;
-        int type = Receive(mSocket, &buf, &len);
+        int type = Receive(socket_, &buf, &len);
         if (type == MSG_CHUNK && len > sizeof(uint32_t)) {
             uint32_t offset;
             memcpy(&offset, buf.data() + sizeof(CameraMsg), sizeof(offset));
@@ -95,14 +95,14 @@ void FaceCapture::loop(Callbacks callbacks) {
             filled = 0;
             // The frame is copied out; the daemon may send the next one.
             CameraMsg release = {MSG_RELEASE, 0};
-            TEMP_FAILURE_RETRY(send(mSocket, &release, sizeof(release), MSG_NOSIGNAL));
-            callbacks.onPreview(frame.data());
+            TEMP_FAILURE_RETRY(send(socket_, &release, sizeof(release), MSG_NOSIGNAL));
+            callbacks.on_preview(frame.data());
             {
-                std::lock_guard<std::mutex> lock(mFrameLock);
-                mLatest.swap(frame);
-                mHaveFrame = true;
+                std::lock_guard<std::mutex> lock(frame_lock_);
+                latest_.swap(frame);
+                have_frame_ = true;
             }
-            mFrameCv.notify_one();
+            frame_cv_.notify_one();
             continue;
         }
         if (type == MSG_ERROR && len >= sizeof(int32_t)) {
@@ -110,37 +110,37 @@ void FaceCapture::loop(Callbacks callbacks) {
         }
         if (type == MSG_ERROR || type < 0) break;
     }
-    if (!mStopping) {
+    if (!stopping_) {
         LOG(ERROR) << "The face camera stopped: " << error;
-        callbacks.onEnd(error);
+        callbacks.on_end(error);
     }
 }
 
-void FaceCapture::engineLoop(FrameCallback onFrame) {
+void FaceCapture::EngineLoop(FrameCallback on_frame) {
     std::vector<uint8_t> frame(kFrameBytes);
     for (;;) {
         {
-            std::unique_lock<std::mutex> lock(mFrameLock);
-            mFrameCv.wait(lock, [this] { return mHaveFrame || mStopping; });
-            if (mStopping) return;
-            frame.swap(mLatest);
-            mHaveFrame = false;
+            std::unique_lock<std::mutex> lock(frame_lock_);
+            frame_cv_.wait(lock, [this] { return have_frame_ || stopping_; });
+            if (stopping_) return;
+            frame.swap(latest_);
+            have_frame_ = false;
         }
-        if (!onFrame(frame.data())) return;
+        if (!on_frame(frame.data())) return;
     }
 }
 
-void FaceCapture::stop() {
-    if (mSocket < 0) return;
+void FaceCapture::Stop() {
+    if (socket_ < 0) return;
     {
-        std::lock_guard<std::mutex> lock(mFrameLock);
-        mStopping = true;
+        std::lock_guard<std::mutex> lock(frame_lock_);
+        stopping_ = true;
     }
-    mFrameCv.notify_all();
-    shutdown(mSocket, SHUT_RDWR);
-    if (mThread.joinable()) mThread.join();
-    if (mEngineThread.joinable()) mEngineThread.join();
-    mSocket.reset();
+    frame_cv_.notify_all();
+    shutdown(socket_, SHUT_RDWR);
+    if (thread_.joinable()) thread_.join();
+    if (engine_thread_.joinable()) engine_thread_.join();
+    socket_.reset();
 }
 
 }  // namespace aidl::android::hardware::biometrics::face

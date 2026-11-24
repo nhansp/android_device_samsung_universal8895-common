@@ -27,33 +27,33 @@ class FaceCapture {
     using FrameCallback = std::function<bool(const uint8_t* nv21)>;
     using EndCallback = std::function<void(int error)>;
     struct Callbacks {
-        PreviewCallback onPreview;
-        FrameCallback onFrame;
-        EndCallback onEnd;
+        PreviewCallback on_preview;
+        FrameCallback on_frame;
+        EndCallback on_end;
     };
 
     ~FaceCapture();
 
-    // Opens the camera. Every frame goes to onPreview on the capture thread; the engine thread
-    // takes the newest one to onFrame whenever the last call returned. onEnd runs on the
+    // Opens the camera. Every frame goes to on_preview on the capture thread; the engine thread
+    // takes the newest one to on_frame whenever the last call returned. on_end runs on the
     // capture thread if the camera fails or goes away.
-    bool start(Callbacks callbacks);
+    bool Start(Callbacks callbacks);
     // Closes the camera; returns once no callback runs any more. Not from a callback.
-    void stop();
+    void Stop();
 
   private:
-    void loop(Callbacks callbacks);
-    void engineLoop(FrameCallback onFrame);
+    void Loop(Callbacks callbacks);
+    void EngineLoop(FrameCallback on_frame);
 
-    ::android::base::unique_fd mSocket;
-    std::atomic<bool> mStopping = false;
-    std::thread mThread;
+    ::android::base::unique_fd socket_;
+    std::atomic<bool> stopping_ = false;
+    std::thread thread_;
 
-    std::mutex mFrameLock;
-    std::condition_variable mFrameCv;
-    std::vector<uint8_t> mLatest;
-    bool mHaveFrame = false;
-    std::thread mEngineThread;
+    std::mutex frame_lock_;
+    std::condition_variable frame_cv_;
+    std::vector<uint8_t> latest_;
+    bool have_frame_ = false;
+    std::thread engine_thread_;
 };
 
 }  // namespace aidl::android::hardware::biometrics::face

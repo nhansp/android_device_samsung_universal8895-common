@@ -36,43 +36,43 @@ uint32_t Rgba(uint8_t y, uint8_t v, uint8_t u) {
 }  // namespace
 
 Preview::~Preview() {
-    reset(nullptr);
+    Reset(nullptr);
 }
 
-void Preview::reset(ANativeWindow* window) {
+void Preview::Reset(ANativeWindow* window) {
     if (window) {
         ANativeWindow_acquire(window);
         // A new frame replaces one the app has not latched yet, so the capture thread never
         // waits for a view that stopped drawing.
         if (ANativeWindow_setSwapInterval(window, 0)) LOG(WARNING) << "No async preview surface";
     }
-    if (mWindow) ANativeWindow_release(mWindow);
-    mWindow = window;
-    mSized = false;
+    if (window_) ANativeWindow_release(window_);
+    window_ = window;
+    sized_ = false;
 }
 
-void Preview::setSurface(ANativeWindow* window) {
-    std::lock_guard<std::mutex> lock(mLock);
-    reset(window);
+void Preview::SetSurface(ANativeWindow* window) {
+    std::lock_guard<std::mutex> lock(lock_);
+    Reset(window);
 }
 
-void Preview::render(const uint8_t* nv21) {
-    std::lock_guard<std::mutex> lock(mLock);
-    if (!mWindow) return;
-    if (!mSized) {
-        if (ANativeWindow_setBuffersGeometry(mWindow, kSize, kSize,
+void Preview::Render(const uint8_t* nv21) {
+    std::lock_guard<std::mutex> lock(lock_);
+    if (!window_) return;
+    if (!sized_) {
+        if (ANativeWindow_setBuffersGeometry(window_, kSize, kSize,
                                              AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM)) {
             LOG(ERROR) << "Failed to size the preview surface";
-            reset(nullptr);
+            Reset(nullptr);
             return;
         }
-        mSized = true;
+        sized_ = true;
     }
 
     ANativeWindow_Buffer buffer;
-    if (ANativeWindow_lock(mWindow, &buffer, nullptr)) {
+    if (ANativeWindow_lock(window_, &buffer, nullptr)) {
         // The surface went away with the enrollment screen.
-        reset(nullptr);
+        Reset(nullptr);
         return;
     }
     // The frame turned by kRotation (the 270 degrees the face library gets too) is kHeight wide
@@ -91,7 +91,7 @@ void Preview::render(const uint8_t* nv21) {
             out[x] = Rgba(nv21[static_cast<size_t>(sy) * kWidth + sx], c[sx & ~1], c[sx | 1]);
         }
     }
-    ANativeWindow_unlockAndPost(mWindow);
+    ANativeWindow_unlockAndPost(window_);
 }
 
 }  // namespace aidl::android::hardware::biometrics::face
