@@ -1,0 +1,38 @@
+[
+    {
+        "repository": "LineageOS/android_device_samsung_slsi_sepolicy",
+        "target_path": "device/samsung_slsi/sepolicy",
+        "remote": "LineageOS",
+        "branch": "lineage-24.0"
+    },
+    {
+        "repository": "LineageOS/android_hardware_samsung",
+        "target_path": "hardware/samsung",
+        "remote": "LineageOS",
+        "branch": "lineage-24.0"
+    },
+    {
+        "repository": "LineageOS/android_hardware_samsung_slsi_nfc",
+        "target_path": "hardware/samsung_slsi/nfc",
+        "remote": "LineageOS",
+        "branch": "lineage-24.0"
+    },
+    {
+        "repository": "nhansp/android_kernel_samsung_universal8895",
+        "target_path": "kernel/samsung/universal8895",
+        "remote": "LineageOS",
+        "branch": "17"
+    },
+    {
+        "repository": "nhansp/android_kernel_samsung_universal8895-devicetrees",
+        "target_path": "kernel/samsung/universal8895-devicetrees",
+        "remote": "LineageOS",
+        "branch": "17"
+    },
+    {
+        "repository": "nhansp/android_kernel_samsung_universal8895-modules",
+        "target_path": "kernel/samsung/universal8895-modules",
+        "remote": "LineageOS",
+        "branch": "17"
+    }
+]
