@@ -6,10 +6,6 @@
 COMMON_PATH := device/samsung/universal8895-common
 
 # Architecture
-# The big cluster is Exynos M2, which clang no longer accepts as -mcpu
-# (build/soong/cc/config/arm64_device.go:98-99 would pass -mcpu=exynos-m2);
-# tune for the Cortex-A53 little cluster, which also links with the A53
-# erratum 843419 workaround this SoC needs.
 TARGET_ARCH := arm64
 TARGET_ARCH_VARIANT := armv8-a
 TARGET_CPU_ABI := arm64-v8a
@@ -93,17 +89,12 @@ TARGET_KERNEL_EXT_MODULES := \
     samsung/fimc-is2
 
 # Partitions
-# Block counts of the GREATLTE_KOR_SINGLE PIT x 4096. USERDATA has no fixed
-# size (it takes the rest of LUN 0).
 BOARD_BOOTIMAGE_PARTITION_SIZE := 41943040
 BOARD_CACHEIMAGE_PARTITION_SIZE := 314572800
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 48234496
 BOARD_FLASH_BLOCK_SIZE := 4096
 
 # Partitions - dynamic
-# The stock SYSTEM and HIDDEN partitions hold the super partition, with its metadata on SYSTEM
-# (androidboot.super_partition=SYSTEM in the kernel command line). Their sizes are those of the
-# block devices on the phone (/sys/class/block/sda15 and sda17).
 BOARD_SUPER_PARTITION_BLOCK_DEVICES := SYSTEM HIDDEN
 BOARD_SUPER_PARTITION_METADATA_DEVICE := SYSTEM
 BOARD_SUPER_PARTITION_SYSTEM_DEVICE_SIZE := 4729077760
@@ -117,8 +108,7 @@ BOARD_SAMSUNG_DYNAMIC_PARTITIONS_SIZE := $(shell expr $(BOARD_SUPER_PARTITION_SI
 -include vendor/lineage/config/BoardConfigReservedSize.mk
 BOARD_ROOT_EXTRA_FOLDERS := cpefs efs
 
-# A17 keeps the aconfig flag storage, apex sessions and vold state in /metadata: the empty OMR
-# partition serves as one (fstab).
+# Partitions - metadata
 BOARD_USES_METADATA_PARTITION := true
 
 # Platform
@@ -169,8 +159,6 @@ BOARD_HOSTAPD_DRIVER := NL80211
 BOARD_HOSTAPD_PRIVATE_LIB := lib_driver_cmd_$(BOARD_WLAN_DEVICE)
 BOARD_WPA_SUPPLICANT_DRIVER := NL80211
 BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_$(BOARD_WLAN_DEVICE)
-# The dhd driver appends the chip revision (_b0, _b2) to the path; stock ships
-# one STA image per revision and uses it for SoftAP as well.
 WIFI_DRIVER_FW_PATH_AP := "/vendor/etc/wifi/bcmdhd_sta.bin"
 WIFI_DRIVER_FW_PATH_PARAM := "/sys/module/dhd/parameters/firmware_path"
 WIFI_DRIVER_FW_PATH_STA := "/vendor/etc/wifi/bcmdhd_sta.bin"

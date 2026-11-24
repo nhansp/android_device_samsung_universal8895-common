@@ -3,21 +3,18 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# Iris unlock, served to the framework as the face sensor. The iris trustlets and the sepolicy
-# ship with the common tree; everything else is here.
-
 IRIS_PATH := device/samsung/universal8895-common/biometrics/iris
 
-# The iris HAL (APEX) and the biometrics camera host it talks to
+# HAL
 PRODUCT_PACKAGES += \
     com.android.hardware.biometrics.iris.samsung \
     vendor.lineage.biometrics.camera.samsung
 
-# The APEX loads the stock libIrisService.so from /vendor
+# Linker
 PRODUCT_VENDOR_LINKER_CONFIG_FRAGMENTS += \
     $(IRIS_PATH)/linker.config.json
 
-# The iris card, enrollment and their overlays
+# Overlays
 PRODUCT_PACKAGES += \
     IrisPreview \
     SettingsOverlayIris \

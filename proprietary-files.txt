@@ -1,4 +1,4 @@
-# All blobs are from N950NKSU5DZE2 (SM-N950N, Android 9) unless pinned
+# All unpinned blobs are extracted from N950NKSU5DZE2
 
 # Audio
 system/lib/libfloatingfeature.so:vendor/lib/libfloatingfeature.so
@@ -6,9 +6,7 @@ system/lib/libsecnativefeature.so:vendor/lib/libsecnativefeature.so
 vendor/lib/libtinycompress.so
 vendor/lib/libvndsecril-client.so
 
-## Audio - LSI ABOX primary HAL built for exynos8895 by the universal7885 community, and its
-## libraries, as codeberg universal8895 lineage-23.2 (github 8890q/proprietary_vendor_samsung:
-## the HAL from 4517882c "Import 7885 audio hal", the libraries from lineage-19.1)
+# Audio - from codeberg universal8895 lineage-23.2
 system/lib/hw/audio.primary.exynos8895.so:vendor/lib/hw/audio.primary.exynos8895.so|9b77947eb120b83ee8c54bfb7558804d2e34c88d|d173b9ba5efa7ba434305a7b9b493063aac083a5
 system/lib/libSamsungPostProcessConvertor.so:vendor/lib/libSamsungPostProcessConvertor.so|2c0a713597538c2b94240e602ebe43a3e0797854
 system/lib/lib_SamsungRec_06006.so:vendor/lib/lib_SamsungRec_06006.so|0d865049930cec077d856672dac5544cea9b723e|d40ab083df662be8afe5b6dc9261d16e18775b33
@@ -100,11 +98,11 @@ vendor/lib64/libexynosv4l2.so
 vendor/lib64/libion_exynos.so
 vendor/lib64/libmpp.so
 
-# Face (the matching itself is in the face trustlet under TEE)
+# Face
 system/lib64/libFaceService.so:vendor/lib64/libFaceService.so
 system/lib64/libsecfr_engine.so:vendor/lib64/libsecfr_engine.so
 
-# Iris (the matching itself is in the iris trustlets under TEE)
+# Iris
 system/lib64/libIrisLibrary_preview.so:vendor/lib64/libIrisLibrary_preview.so
 system/lib64/libIrisService.so:vendor/lib64/libIrisService.so
 system/lib64/libIrisTlc.so:vendor/lib64/libIrisTlc.so
@@ -116,10 +114,10 @@ vendor/lib64/libkeymaster_mdfpp.so
 vendor/lib/libskeymaster3device.so
 vendor/lib64/libskeymaster3device.so
 
-# Audio - routing (mixer_paths.xml of codeberg lineage-23.2 is in configs/audio)
+# Audio - routing
 system/etc/mixer_gains.xml:vendor/etc/mixer_gains.xml
 
-# Compiler runtime (greatlte libOpenCv.camera.samsung)
+# Compiler runtime
 system/lib/libcompiler_rt.so:vendor/lib/libcompiler_rt-samsung.so
 
 # Media
@@ -139,7 +137,7 @@ system/lib/omx/libOMX.Exynos.VP9.Encoder.so:vendor/lib/omx/libOMX.Exynos.VP9.Enc
 system/lib/omx/libOMX.Exynos.WMV.Decoder.so:vendor/lib/omx/libOMX.Exynos.WMV.Decoder.so
 vendor/lib/libcsc.so
 
-# Media - firmware (MFC video codec, loaded by the kernel)
+# Media - firmware
 vendor/firmware/mfc_fw.bin
 
 # NFC
@@ -156,8 +154,7 @@ vendor/etc/plmn_delta_usagsm.bin
 vendor/etc/plmn_delta_usacdma.bin
 vendor/etc/plmn_se13.bin
 
-## RIL - from N975FXXU6ETLL (github 8890q/proprietary_vendor_samsung lineage-19.1); the N975F
-## rild fails "waiting ONLINE" against the N950N cbd, so cbd is the N975F one too, as 23.2
+# RIL - from N975FXXU6ETLL
 vendor/bin/cbd|aae9a11fefb25f0293aa7da714a093d5f017d826
 vendor/bin/hw/rild|c77d17bde3312077a77a3a8238a62e649a996f44
 vendor/etc/mtu-conf.xml|0f17947b42293684e25db2cf97027c7deed66a31
@@ -183,7 +180,7 @@ vendor/lib64/sensors.bio.so
 vendor/lib64/sensors.grip.so
 vendor/lib64/sensors.sensorhub.so
 
-# TEE (Trustonic Kinibi)
+# TEE
 system/app/mcRegistry/00060308060501020000000000000000.tlbin:vendor/app/mcRegistry/00060308060501020000000000000000.tlbin
 system/app/mcRegistry/ffffffff000000000000000000000004.tlbin:vendor/app/mcRegistry/ffffffff000000000000000000000004.tlbin
 system/app/mcRegistry/ffffffff000000000000000000000005.tlbin:vendor/app/mcRegistry/ffffffff000000000000000000000005.tlbin
@@ -238,9 +235,9 @@ vendor/etc/wifi/nvram.txt_r02j_b0
 vendor/etc/wifi/p2p_supplicant_overlay.conf
 vendor/etc/wifi/wpa_supplicant_overlay.conf
 
-## libcrypto - from AOSP prebuilts/vndk/v28 android-13.0.0_r84
+# libcrypto - from AOSP prebuilts/vndk/v28 android-13.0.0_r84
 vendor/lib64/libcrypto-v28.so|96165e8dc1f57cfd6993dd7b8161792005b0d555|78c3084a49293c8ce29cfc0e349a798fdab14165
 
-# Dolby DAP (SamsungDAP): the effect and the profile storage it links
+# Dolby DAP
 system/lib/libprofileparamstorage.so:vendor/lib/libprofileparamstorage.so
 vendor/lib/soundfx/libswdap.so

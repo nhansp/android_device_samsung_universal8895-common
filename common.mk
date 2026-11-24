@@ -5,15 +5,13 @@
 
 COMMON_PATH := device/samsung/universal8895-common
 
-# Dalvik heap: 6 GB of RAM
+# Dalvik heap
 $(call inherit-product, frameworks/native/build/phone-xhdpi-6144-dalvik-heap.mk)
 
-# Emulated storage with project quotas and casefolding
+# Emulated storage
 $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 
 # Audio
-# The primary HAL (audio.primary.exynos8895, codeberg universal8895 lineage-23.2) exists only as a
-# 32-bit module, so the HIDL audio service stays on its default prefer32 build.
 PRODUCT_PACKAGES += \
     android.hardware.audio.effect@7.0-impl \
     android.hardware.audio.service \
@@ -67,7 +65,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.biometrics.fingerprint-service.samsung
 
-# Face unlock: face (default) or iris; only one can serve the face sensor
+# Face unlock
 UNIVERSAL8895_FACE_UNLOCK ?= face
 ifeq ($(UNIVERSAL8895_FACE_UNLOCK),iris)
 $(call inherit-product, $(COMMON_PATH)/biometrics/iris/iris.mk)
@@ -214,13 +212,13 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.midi.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.midi.xml \
     frameworks/native/data/etc/com.android.nfc_extras.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/com.android.nfc_extras.xml
 
-# Display and Dolby settings (hardware/samsung)
+# Samsung settings
 PRODUCT_PACKAGES += \
     AdvancedDisplay \
     AdvancedDisplayOverlayCommon \
     SamsungDAP
 
-# Power: LineageOS's maintained libperfmgr service (hardware/lineage/interfaces), with PowerExt
+# Power
 PRODUCT_PACKAGES += \
     android.hardware.power-service.lineage-libperfmgr
 
