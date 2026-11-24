@@ -50,8 +50,8 @@ int main() {
         }
         for (int i = 0; i < 2; i++) {
             if (fds[i].fd < 0 || !(fds[i].revents & POLLIN)) continue;
-            unique_fd client(TEMP_FAILURE_RETRY(accept4(fds[i].fd, nullptr, nullptr,
-                                                        SOCK_CLOEXEC)));
+            unique_fd client(
+                    TEMP_FAILURE_RETRY(accept4(fds[i].fd, nullptr, nullptr, SOCK_CLOEXEC)));
             if (client < 0) {
                 PLOG(ERROR) << "accept";
                 continue;

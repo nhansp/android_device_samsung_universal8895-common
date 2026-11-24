@@ -51,14 +51,14 @@ int IrisDataFd(const char* id, const uint8_t* data, size_t size) {
 void StartFront(Hal1Camera* front) {
     CameraParams params;
     android::base::SetProperty(kCompanionDisableProp, "1");
-    bool opened = Hal1Open(front,
-                           {{"focus-mode", "fixed-face"},
-                            {"no-display-mode", "1"},
-                            {"preview-size", std::to_string(kFrontWidth) + "x" +
-                                                     std::to_string(kFrontHeight)},
-                            {"preview-fps-range", "15000,15000"},
-                            {"shot-mode", "39"}},
-                           &params);
+    bool opened = Hal1Open(
+            front,
+            {{"focus-mode", "fixed-face"},
+             {"no-display-mode", "1"},
+             {"preview-size", std::to_string(kFrontWidth) + "x" + std::to_string(kFrontHeight)},
+             {"preview-fps-range", "15000,15000"},
+             {"shot-mode", "39"}},
+            &params);
     if (!opened) return;
     front->device->ops->enable_msg_type(front->device, kMsgIrisPreviewData);
     int ret = front->device->ops->start_preview(front->device);

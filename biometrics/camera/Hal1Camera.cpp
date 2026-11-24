@@ -43,8 +43,7 @@ camera_module_t* Module() {
         // The module reports torch availability through these on every open.
         static const camera_module_callbacks_t callbacks = {
                 .camera_device_status_change = [](const camera_module_callbacks*, int, int) {},
-                .torch_mode_status_change = [](const camera_module_callbacks*, const char*,
-                                               int) {},
+                .torch_mode_status_change = [](const camera_module_callbacks*, const char*, int) {},
         };
         hmi->set_callbacks(&callbacks);
         return hmi;
@@ -95,8 +94,8 @@ void Notify(int32_t msgType, int32_t ext1, int32_t ext2, void* user) {
     if (camera->onError) camera->onError(ext1);
 }
 
-void Data(int32_t msgType, const camera_memory_t* mem, unsigned int index,
-          camera_frame_metadata_t*, void* user) {
+void Data(int32_t msgType, const camera_memory_t* mem, unsigned int index, camera_frame_metadata_t*,
+          void* user) {
     auto* camera = static_cast<Hal1Camera*>(user);
     const uint8_t* data = nullptr;
     size_t size = 0;
@@ -119,10 +118,10 @@ void DataTimestamp(int64_t, int32_t, const camera_memory_t*, unsigned int, void*
 
 bool OpenDevice(Hal1Camera* camera, CameraParams* defaults) {
     camera_module_t* module = Module();
-    int ret = module ? module->open_legacy(&module->common, camera->id,
-                                           CAMERA_DEVICE_API_VERSION_1_0,
-                                           reinterpret_cast<hw_device_t**>(&camera->device))
-                     : -ENODEV;
+    int ret =
+            module ? module->open_legacy(&module->common, camera->id, CAMERA_DEVICE_API_VERSION_1_0,
+                                         reinterpret_cast<hw_device_t**>(&camera->device))
+                   : -ENODEV;
     if (ret || !camera->device) {
         LOG(ERROR) << "Failed to open camera " << camera->id << ": " << ret;
         camera->device = nullptr;
@@ -163,8 +162,7 @@ bool Hal1Open(Hal1Camera* camera, const std::function<CameraParams(const CameraP
 }
 
 bool Hal1Open(Hal1Camera* camera, const CameraParams& overrides, CameraParams* params) {
-    return Hal1Open(
-            camera, [&overrides](const CameraParams&) { return overrides; }, params);
+    return Hal1Open(camera, [&overrides](const CameraParams&) { return overrides; }, params);
 }
 
 bool Hal1SetParameters(Hal1Camera* camera, const CameraParams& params) {

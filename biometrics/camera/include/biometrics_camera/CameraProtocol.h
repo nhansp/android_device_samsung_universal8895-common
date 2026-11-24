@@ -31,11 +31,11 @@ constexpr int kFrontWidth = 752;
 constexpr int kFrontHeight = 1328;
 
 enum MsgType : uint32_t {
-    MSG_PARAMS = 1,     // daemon -> HAL: the flattened camera parameters, once per connection
-    MSG_FRAME = 2,      // daemon -> HAL: one IR frame, its dma-buf passed with SCM_RIGHTS
-    MSG_ERROR = 3,      // daemon -> HAL: int32_t error, the capture is over
-    MSG_SET_PARAMS = 4, // HAL -> daemon: "key=value;..." to merge into the camera parameters
-    MSG_FRONT_FRAME = 5, // daemon -> HAL: the front camera's iris data, its dma-buf with SCM_RIGHTS
+    MSG_PARAMS = 1,       // daemon -> HAL: the flattened camera parameters, once per connection
+    MSG_FRAME = 2,        // daemon -> HAL: one IR frame, its dma-buf passed with SCM_RIGHTS
+    MSG_ERROR = 3,        // daemon -> HAL: int32_t error, the capture is over
+    MSG_SET_PARAMS = 4,   // HAL -> daemon: "key=value;..." to merge into the camera parameters
+    MSG_FRONT_FRAME = 5,  // daemon -> HAL: the front camera's iris data, dma-buf with SCM_RIGHTS
 };
 
 }  // namespace iris_camera
@@ -50,10 +50,10 @@ constexpr int kHeight = 480;
 constexpr size_t kFrameBytes = kWidth * kHeight * 3 / 2;
 
 enum MsgType : uint32_t {
-    MSG_STARTED = 1,   // daemon -> HAL: the camera streams, once per connection
-    MSG_CHUNK = 2,     // daemon -> HAL: uint32_t offset, then bytes of the current frame
-    MSG_ERROR = 3,     // daemon -> HAL: int32_t error, the capture is over
-    MSG_RELEASE = 4,   // HAL -> daemon: the frame is received, the next one may come
+    MSG_STARTED = 1,  // daemon -> HAL: the camera streams, once per connection
+    MSG_CHUNK = 2,    // daemon -> HAL: uint32_t offset, then bytes of the current frame
+    MSG_ERROR = 3,    // daemon -> HAL: int32_t error, the capture is over
+    MSG_RELEASE = 4,  // HAL -> daemon: the frame is received, the next one may come
 };
 
 // A frame goes out in chunks that fit kMaxMsgSize; the chunk that reaches kFrameBytes completes
