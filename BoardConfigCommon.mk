@@ -72,31 +72,25 @@ TARGET_KERNEL_RUST_VERSION := 1.91.1
 TARGET_KERNEL_SOURCE := kernel/samsung/universal8895
 TARGET_KERNEL_CONFIG := \
     gki_defconfig \
-    greatlte_base.config \
-    greatlte.config \
-    greatlte_l1.config \
-    greatlte_l2.config \
-    greatlte_l3.config \
-    greatlte_l4.config \
-    greatlte_l4b.config \
-    greatlte_l5.config \
-    greatlte_l6com.config \
-    greatlte_l6t.config \
-    greatlte_l6a.config \
-    greatlte_l6f.config \
-    greatlte_l6d.config \
-    greatlte_l6e.config \
-    greatlte_l6c.config \
-    greatlte_l6b.config \
-    greatlte_l6g.config \
-    greatlte_l6h.config \
-    greatlte_l6i.config \
-    greatlte_l6k.config \
-    greatlte_l6l.config \
-    greatlte_l6m.config \
-    greatlte_l2b.config \
-    greatlte_l7.config \
-    greatlte_release.config
+    vendor/exynos8895.config
+
+# Kernel modules
+BOARD_VENDOR_KERNEL_MODULES_LOAD := $(strip $(shell cat $(COMMON_PATH)/modules.load))
+TARGET_KERNEL_EXT_MODULE_ROOT := kernel/samsung/universal8895-modules
+TARGET_KERNEL_EXT_MODULES := \
+    trustonic/kinibi400 \
+    samsung/m2m1shot \
+    samsung/s2mpb02 \
+    samsung/sensorhub \
+    samsung/mfc \
+    arm/b_r16p0 \
+    broadcom/bcmdhd4361 \
+    samsung/bcm43xx_bt_lpm \
+    samsung/sec_nfc \
+    samsung/sec_gps_pwr \
+    samsung/vfsspi \
+    samsung/optics \
+    samsung/fimc-is2
 
 # Partitions
 # Block counts of the GREATLTE_KOR_SINGLE PIT x 4096. USERDATA has no fixed

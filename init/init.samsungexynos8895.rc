@@ -7,6 +7,7 @@ import /vendor/etc/init/hw/init.samsungexynos8895.usb.rc
 
 on early-init
     mkdir /efs 0771 radio system
+    exec u:r:vendor_modprobe:s0 -- /vendor/bin/modprobe -a -d /vendor/lib/modules --all=/vendor/lib/modules/modules.load
 
 on init
     # Reactivation Lock and Google FRP (stock init.samsungexynos8895.rc)
