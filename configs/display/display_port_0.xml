@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
+  SPDX-FileCopyrightText: The LineageOS Project
+  SPDX-License-Identifier: Apache-2.0
+-->
+<!--
      The panel scaler offers 1440x2960 and 1080x2220. The display has no identification data, so
      DisplayDeviceConfig finds this file by its port (0).
 -->

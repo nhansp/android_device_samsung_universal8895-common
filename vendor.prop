@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: The LineageOS Project
+# SPDX-License-Identifier: Apache-2.0
 # Audio: hw_get_module_by_class() tries ro.hardware.<class> first, so no ro.arch is needed
 ro.hardware.audio.primary=exynos8895
 
