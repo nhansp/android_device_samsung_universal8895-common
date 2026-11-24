@@ -25,21 +25,21 @@
 
 #include <binder/ProcessState.h>
 #include <composer-passthrough/2.1/HwcLoader.h>
-#include <hwc2on1adapter/HWC2On1Adapter.h>
 #include <hidl/LegacySupport.h>
+#include <hwc2on1adapter/HWC2On1Adapter.h>
 
 using android::HWC2On1Adapter;
+using android::hardware::hidl_vec;
 using android::hardware::graphics::composer::V2_1::Config;
 using android::hardware::graphics::composer::V2_1::Display;
-using android::hardware::graphics::composer::V2_1::IComposerCallback;
 using android::hardware::graphics::composer::V2_1::Error;
 using android::hardware::graphics::composer::V2_1::IComposer;
+using android::hardware::graphics::composer::V2_1::IComposerCallback;
 using android::hardware::graphics::composer::V2_1::IComposerClient;
 using android::hardware::graphics::composer::V2_1::Layer;
-using android::hardware::graphics::composer::V2_1::passthrough::HwcHal;
 using android::hardware::graphics::composer::V2_1::hal::ComposerHal;
+using android::hardware::graphics::composer::V2_1::passthrough::HwcHal;
 using android::hardware::graphics::composer::V2_1::passthrough::HwcLoader;
-using android::hardware::hidl_vec;
 
 namespace {
 
@@ -128,8 +128,8 @@ class HotplugTracker : public ComposerHal::EventCallback {
 };
 
 // Works around the stock HWC1 behind HWC2On1Adapter:
-// - SOLID_COLOR layers are composed by the client: the HWC dereferences the color, which the adapter
-//   keeps in the union that holds the buffer handle
+// - SOLID_COLOR layers are composed by the client: the HWC dereferences the color, which the
+//   adapter keeps in the union that holds the buffer handle
 // - the retire fence of frame N-1 is the present fence of N: the HWC1 retire fence of N signals one
 //   refresh late and SurfaceFlinger would count every frame as missed
 // - DOZE_SUSPEND waits for a frame presented in DOZE, then goes to the framebuffer directly: from
@@ -377,9 +377,7 @@ class SolidColorHwcHal : public HwcHal {
     }
 
   private:
-    bool isScaled(Display display) const {
-        return mScalerReady && display == mHotplug.primary();
-    }
+    bool isScaled(Display display) const { return mScalerReady && display == mHotplug.primary(); }
 
     bool scalerIndex(Config config, size_t* outIndex) {
         std::lock_guard<std::mutex> lock(mScalerMutex);
