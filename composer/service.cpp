@@ -53,24 +53,24 @@ class ExynosScaler {
         int32_t height;
     };
 
-    bool init(hwc_composer_device_1* hwc1) {
+    bool Init(hwc_composer_device_1* hwc1) {
         void* lib = dlopen("libexynosdisplay.so", RTLD_NOW | RTLD_NOLOAD);
         if (lib == nullptr) {
             ALOGE("scaler: libexynosdisplay.so is not loaded");
             return false;
         }
-        auto getDisplay = reinterpret_cast<void* (*)(void*, uint32_t)>(
+        auto get_display = reinterpret_cast<void* (*)(void*, uint32_t)>(
                 dlsym(lib, "_ZN12ExynosDevice10getDisplayEj"));
-        mSetScaler = reinterpret_cast<void (*)(void*, int, int)>(
+        set_scaler_ = reinterpret_cast<void (*)(void*, int, int)>(
                 dlsym(lib, "_ZN13ExynosDisplay18setDDIScalerEnableEii"));
-        if (getDisplay == nullptr || mSetScaler == nullptr) {
+        if (get_display == nullptr || set_scaler_ == nullptr) {
             ALOGE("scaler: libexynosdisplay.so lacks the scaler symbols");
             return false;
         }
 
         void* device = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(hwc1) + 0xe8);
-        mDisplay = device != nullptr ? getDisplay(device, HWC_DISPLAY_PRIMARY) : nullptr;
-        if (mDisplay == nullptr) {
+        display_ = device != nullptr ? get_display(device, HWC_DISPLAY_PRIMARY) : nullptr;
+        if (display_ == nullptr) {
             ALOGE("scaler: no primary ExynosDisplay");
             return false;
         }
@@ -78,12 +78,12 @@ class ExynosScaler {
     }
 
     // mDSUInfo is filled from psr_info by the HWC, read at each use
-    std::vector<Mode> modes() const {
+    std::vector<Mode> Modes() const {
         std::vector<Mode> modes;
-        if (mDisplay == nullptr) {
+        if (display_ == nullptr) {
             return modes;
         }
-        const uint8_t* display = static_cast<const uint8_t*>(mDisplay);
+        const uint8_t* display = static_cast<const uint8_t*>(display_);
         uint32_t count = *reinterpret_cast<const uint32_t*>(display + 0xc48);
         for (uint32_t i = 0; i < count && i < kMaxModes; i++) {
             const int32_t* mode = reinterpret_cast<const int32_t*>(display + 0xc4c + 8 * i);
@@ -94,37 +94,37 @@ class ExynosScaler {
         return modes;
     }
 
-    void set(const Mode& mode) const { mSetScaler(mDisplay, mode.width, mode.height); }
+    void Set(const Mode& mode) const { set_scaler_(display_, mode.width, mode.height); }
 
   private:
     static constexpr uint32_t kMaxModes = 3;  // DSU_MODE_1..3, the HWC's own bound
-    void* mDisplay = nullptr;
-    void (*mSetScaler)(void*, int, int) = nullptr;
+    void* display_ = nullptr;
+    void (*set_scaler_)(void*, int, int) = nullptr;
 };
 
 // Records the first connected display as the primary, which HWC2On1Adapter connects first
 class HotplugTracker : public ComposerHal::EventCallback {
   public:
-    void setTarget(ComposerHal::EventCallback* target) { mTarget = target; }
-    Display primary() const { return mPrimary.load(); }
+    void SetTarget(ComposerHal::EventCallback* target) { target_ = target; }
+    Display Primary() const { return primary_.load(); }
 
     void onHotplug(Display display, IComposerCallback::Connection connected) override {
         Display none = kNone;
         if (connected == IComposerCallback::Connection::CONNECTED) {
-            mPrimary.compare_exchange_strong(none, display);
+            primary_.compare_exchange_strong(none, display);
         }
-        mTarget->onHotplug(display, connected);
+        target_->onHotplug(display, connected);
     }
-    void onRefresh(Display display) override { mTarget->onRefresh(display); }
+    void onRefresh(Display display) override { target_->onRefresh(display); }
     void onVsync(Display display, int64_t timestamp) override {
-        mTarget->onVsync(display, timestamp);
+        target_->onVsync(display, timestamp);
     }
 
     static constexpr Display kNone = ~Display(0);
 
   private:
-    ComposerHal::EventCallback* mTarget = nullptr;
-    std::atomic<Display> mPrimary{kNone};
+    ComposerHal::EventCallback* target_ = nullptr;
+    std::atomic<Display> primary_{kNone};
 };
 
 // Works around the stock HWC1 behind HWC2On1Adapter:
@@ -138,71 +138,71 @@ class HotplugTracker : public ComposerHal::EventCallback {
 //   setActiveConfig on the primary display
 class SolidColorHwcHal : public HwcHal {
   public:
-    void initScaler(hwc_composer_device_1* hwc1) { mScalerReady = mScaler.init(hwc1); }
+    void InitScaler(hwc_composer_device_1* hwc1) { scaler_ready_ = scaler_.Init(hwc1); }
 
-    void initDozeSuspend() {
-        mFramebuffer.reset(open("/dev/graphics/fb0", O_RDWR | O_CLOEXEC));
-        if (mFramebuffer < 0) {
+    void InitDozeSuspend() {
+        framebuffer_.reset(open("/dev/graphics/fb0", O_RDWR | O_CLOEXEC));
+        if (framebuffer_ < 0) {
             ALOGE("doze: cannot open /dev/graphics/fb0: %s", strerror(errno));
         }
     }
 
     void registerEventCallback(ComposerHal::EventCallback* callback) override {
-        mHotplug.setTarget(callback);
-        HwcHal::registerEventCallback(&mHotplug);
+        hotplug_.SetTarget(callback);
+        HwcHal::registerEventCallback(&hotplug_);
     }
 
-    Error getDisplayConfigs(Display display, hidl_vec<Config>* outConfigs) override {
-        Error err = HwcHal::getDisplayConfigs(display, outConfigs);
-        if (err != Error::NONE || !isScaled(display) || outConfigs->size() != 1) {
+    Error getDisplayConfigs(Display display, hidl_vec<Config>* out_configs) override {
+        Error err = HwcHal::getDisplayConfigs(display, out_configs);
+        if (err != Error::NONE || !IsScaled(display) || out_configs->size() != 1) {
             return err;
         }
 
-        std::vector<ExynosScaler::Mode> modes = mScaler.modes();
+        std::vector<ExynosScaler::Mode> modes = scaler_.Modes();
         if (modes.size() < 2) {
             return err;
         }
 
-        std::lock_guard<std::mutex> lock(mScalerMutex);
-        mBaseConfig = (*outConfigs)[0];
-        std::vector<Config> configs{mBaseConfig};
+        std::lock_guard<std::mutex> lock(scaler_mutex_);
+        base_config_ = (*out_configs)[0];
+        std::vector<Config> configs{base_config_};
         for (size_t i = 1; i < modes.size(); i++) {
-            configs.push_back(static_cast<Config>(mBaseConfig + i));
+            configs.push_back(static_cast<Config>(base_config_ + i));
         }
-        mModes = modes;
-        *outConfigs = configs;
+        modes_ = modes;
+        *out_configs = configs;
         return err;
     }
 
     Error getDisplayAttribute(Display display, Config config, IComposerClient::Attribute attribute,
-                              int32_t* outValue) override {
+                              int32_t* out_value) override {
         size_t index;
-        if (!isScaled(display) || !scalerIndex(config, &index) || index == 0) {
-            return HwcHal::getDisplayAttribute(display, config, attribute, outValue);
+        if (!IsScaled(display) || !ScalerIndex(config, &index) || index == 0) {
+            return HwcHal::getDisplayAttribute(display, config, attribute, out_value);
         }
 
         ExynosScaler::Mode base, mode;
         {
-            std::lock_guard<std::mutex> lock(mScalerMutex);
-            base = mModes[0];
-            mode = mModes[index];
+            std::lock_guard<std::mutex> lock(scaler_mutex_);
+            base = modes_[0];
+            mode = modes_[index];
         }
-        Error err = HwcHal::getDisplayAttribute(display, mBaseConfig, attribute, outValue);
+        Error err = HwcHal::getDisplayAttribute(display, base_config_, attribute, out_value);
         if (err != Error::NONE) {
             return err;
         }
         switch (attribute) {
             case IComposerClient::Attribute::WIDTH:
-                *outValue = mode.width;
+                *out_value = mode.width;
                 break;
             case IComposerClient::Attribute::HEIGHT:
-                *outValue = mode.height;
+                *out_value = mode.height;
                 break;
             case IComposerClient::Attribute::DPI_X:
-                *outValue = static_cast<int32_t>(int64_t(*outValue) * mode.width / base.width);
+                *out_value = static_cast<int32_t>(int64_t(*out_value) * mode.width / base.width);
                 break;
             case IComposerClient::Attribute::DPI_Y:
-                *outValue = static_cast<int32_t>(int64_t(*outValue) * mode.height / base.height);
+                *out_value = static_cast<int32_t>(int64_t(*out_value) * mode.height / base.height);
                 break;
             default:
                 break;
@@ -210,37 +210,37 @@ class SolidColorHwcHal : public HwcHal {
         return err;
     }
 
-    Error getActiveConfig(Display display, Config* outConfig) override {
-        if (isScaled(display)) {
-            std::lock_guard<std::mutex> lock(mScalerMutex);
-            if (!mModes.empty()) {
-                *outConfig = mActiveConfig.value_or(mBaseConfig);
+    Error getActiveConfig(Display display, Config* out_config) override {
+        if (IsScaled(display)) {
+            std::lock_guard<std::mutex> lock(scaler_mutex_);
+            if (!modes_.empty()) {
+                *out_config = active_config_.value_or(base_config_);
                 return Error::NONE;
             }
         }
-        return HwcHal::getActiveConfig(display, outConfig);
+        return HwcHal::getActiveConfig(display, out_config);
     }
 
     Error setActiveConfig(Display display, Config config) override {
         size_t index;
-        if (!isScaled(display) || !scalerIndex(config, &index)) {
+        if (!IsScaled(display) || !ScalerIndex(config, &index)) {
             return HwcHal::setActiveConfig(display, config);
         }
 
-        std::lock_guard<std::mutex> lock(mScalerMutex);
-        mScaler.set(mModes[index]);
-        mActiveConfig = config;
+        std::lock_guard<std::mutex> lock(scaler_mutex_);
+        scaler_.Set(modes_[index]);
+        active_config_ = config;
         return Error::NONE;
     }
 
     Error setPowerMode(Display display, IComposerClient::PowerMode mode) override {
-        if (display != mHotplug.primary()) {
+        if (display != hotplug_.Primary()) {
             return HwcHal::setPowerMode(display, mode);
         }
 
-        std::lock_guard<std::mutex> lock(mPowerMutex);
-        PowerState& state = mPower[display];
-        state.suspendPending = false;
+        std::lock_guard<std::mutex> lock(power_mutex_);
+        PowerState& state = power_[display];
+        state.suspend_pending = false;
         switch (mode) {
             case IComposerClient::PowerMode::DOZE_SUSPEND:
                 if (state.mode == IComposerClient::PowerMode::DOZE_SUSPEND) {
@@ -252,23 +252,23 @@ class SolidColorHwcHal : public HwcHal {
                         return err;
                     }
                     state.mode = IComposerClient::PowerMode::DOZE;
-                    state.dozeFramePresented = false;
+                    state.doze_frame_presented = false;
                 }
-                if (!state.dozeFramePresented) {
-                    state.suspendPending = true;
-                    requestDozeFrame(display);
+                if (!state.doze_frame_presented) {
+                    state.suspend_pending = true;
+                    RequestDozeFrame(display);
                     return Error::NONE;
                 }
-                return suspendDoze(state);
+                return SuspendDoze(state);
             case IComposerClient::PowerMode::DOZE:
                 if (state.mode == IComposerClient::PowerMode::DOZE_SUSPEND) {
-                    return resumeDoze(state);
+                    return ResumeDoze(state);
                 }
                 break;
             case IComposerClient::PowerMode::OFF:
                 // the HWC blanks from DOZE; a blank in DOZE_SUSPEND would leave the panel in ALPM
                 if (state.mode == IComposerClient::PowerMode::DOZE_SUSPEND) {
-                    Error err = resumeDoze(state);
+                    Error err = ResumeDoze(state);
                     if (err != Error::NONE) {
                         return err;
                     }
@@ -281,14 +281,16 @@ class SolidColorHwcHal : public HwcHal {
         Error err = HwcHal::setPowerMode(display, mode);
         if (err == Error::NONE) {
             state.mode = mode;
-            state.dozeFramePresented = false;
+            state.doze_frame_presented = false;
         }
         return err;
     }
 
-    Error presentDisplay(Display display, int32_t* outPresentFence, std::vector<Layer>* outLayers,
-                         std::vector<int32_t>* outReleaseFences) override {
-        Error err = HwcHal::presentDisplay(display, outPresentFence, outLayers, outReleaseFences);
+    Error presentDisplay(Display display, int32_t* out_present_fence,
+                         std::vector<Layer>* out_layers,
+                         std::vector<int32_t>* out_release_fences) override {
+        Error err =
+                HwcHal::presentDisplay(display, out_present_fence, out_layers, out_release_fences);
         if (err != Error::NONE) {
             return err;
         }
@@ -299,33 +301,33 @@ class SolidColorHwcHal : public HwcHal {
             return err;
         }
 
-        std::lock_guard<std::mutex> lock(mMutex);
-        android::base::unique_fd& previousRetire = mPreviousRetire[display];
-        int32_t retire = *outPresentFence;
+        std::lock_guard<std::mutex> lock(mutex_);
+        android::base::unique_fd& previous_retire = previous_retire_[display];
+        int32_t retire = *out_present_fence;
         // -1 for the first frame: no fence means presented
-        *outPresentFence = previousRetire.release();
-        previousRetire.reset(retire);
-        onDozeFramePresented(display);
+        *out_present_fence = previous_retire.release();
+        previous_retire.reset(retire);
+        OnDozeFramePresented(display);
         return err;
     }
 
     Error setLayerCompositionType(Display display, Layer layer, int32_t type) override {
         {
-            std::lock_guard<std::mutex> lock(mMutex);
+            std::lock_guard<std::mutex> lock(mutex_);
             if (type == HWC2_COMPOSITION_SOLID_COLOR) {
-                mSolidColorLayers[display].insert(layer);
+                solid_color_layers_[display].insert(layer);
                 type = HWC2_COMPOSITION_CLIENT;
             } else {
-                mSolidColorLayers[display].erase(layer);
+                solid_color_layers_[display].erase(layer);
             }
         }
         return HwcHal::setLayerCompositionType(display, layer, type);
     }
 
   protected:
-    int32_t getChangedCompositionTypes(Display display, uint32_t* outTypesCount,
-                                       Layer* outChangedLayers,
-                                       IComposerClient::Composition* outCompositionTypes) override {
+    int32_t getChangedCompositionTypes(
+            Display display, uint32_t* out_types_count, Layer* out_changed_layers,
+            IComposerClient::Composition* out_composition_types) override {
         uint32_t count = 0;
         int32_t err = getChangedCompositionTypesInternal(display, &count, nullptr, nullptr);
         if (err != HWC2_ERROR_NONE) {
@@ -344,9 +346,9 @@ class SolidColorHwcHal : public HwcHal {
         }
 
         {
-            std::lock_guard<std::mutex> lock(mMutex);
-            auto it = mSolidColorLayers.find(display);
-            if (it != mSolidColorLayers.end()) {
+            std::lock_guard<std::mutex> lock(mutex_);
+            auto it = solid_color_layers_.find(display);
+            if (it != solid_color_layers_.end()) {
                 for (Layer layer : it->second) {
                     if (std::find(layers.begin(), layers.end(), layer) == layers.end()) {
                         layers.push_back(layer);
@@ -356,49 +358,49 @@ class SolidColorHwcHal : public HwcHal {
             }
         }
 
-        if (outChangedLayers == nullptr || outCompositionTypes == nullptr) {
-            *outTypesCount = layers.size();
+        if (out_changed_layers == nullptr || out_composition_types == nullptr) {
+            *out_types_count = layers.size();
             return HWC2_ERROR_NONE;
         }
 
-        uint32_t n = std::min<uint32_t>(*outTypesCount, layers.size());
-        std::copy_n(layers.begin(), n, outChangedLayers);
-        std::copy_n(types.begin(), n, outCompositionTypes);
-        *outTypesCount = n;
+        uint32_t n = std::min<uint32_t>(*out_types_count, layers.size());
+        std::copy_n(layers.begin(), n, out_changed_layers);
+        std::copy_n(types.begin(), n, out_composition_types);
+        *out_types_count = n;
         return HWC2_ERROR_NONE;
     }
 
     void onLayerDestroyed(Display display, Layer layer) override {
-        std::lock_guard<std::mutex> lock(mMutex);
-        auto it = mSolidColorLayers.find(display);
-        if (it != mSolidColorLayers.end()) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = solid_color_layers_.find(display);
+        if (it != solid_color_layers_.end()) {
             it->second.erase(layer);
         }
     }
 
   private:
-    bool isScaled(Display display) const { return mScalerReady && display == mHotplug.primary(); }
+    bool IsScaled(Display display) const { return scaler_ready_ && display == hotplug_.Primary(); }
 
-    bool scalerIndex(Config config, size_t* outIndex) {
-        std::lock_guard<std::mutex> lock(mScalerMutex);
-        if (mModes.empty() || config < mBaseConfig || config - mBaseConfig >= mModes.size()) {
+    bool ScalerIndex(Config config, size_t* out_index) {
+        std::lock_guard<std::mutex> lock(scaler_mutex_);
+        if (modes_.empty() || config < base_config_ || config - base_config_ >= modes_.size()) {
             return false;
         }
-        *outIndex = config - mBaseConfig;
+        *out_index = config - base_config_;
         return true;
     }
 
-    ExynosScaler mScaler;
-    bool mScalerReady = false;
-    HotplugTracker mHotplug;
-    std::mutex mScalerMutex;
-    std::vector<ExynosScaler::Mode> mModes;
-    Config mBaseConfig = 0;
-    std::optional<Config> mActiveConfig;
+    ExynosScaler scaler_;
+    bool scaler_ready_ = false;
+    HotplugTracker hotplug_;
+    std::mutex scaler_mutex_;
+    std::vector<ExynosScaler::Mode> modes_;
+    Config base_config_ = 0;
+    std::optional<Config> active_config_;
 
     // SurfaceFlinger has nothing new to draw after the screen-off animation or a power mode
     // change (IComposerCallback.onRefresh is oneway)
-    void requestDozeFrame(Display display) {
+    void RequestDozeFrame(Display display) {
         if (mEventCallback != nullptr) {
             mEventCallback->onRefresh(display);
         }
@@ -412,51 +414,51 @@ class SolidColorHwcHal : public HwcHal {
     struct PowerState {
         IComposerClient::PowerMode mode = IComposerClient::PowerMode::OFF;
         // DOZE_SUSPEND waits for a frame presented in DOZE
-        bool suspendPending = false;
-        bool dozeFramePresented = false;
+        bool suspend_pending = false;
+        bool doze_frame_presented = false;
     };
 
-    Error setDeconPowerMode(uint32_t mode) {
-        if (mFramebuffer < 0 || ioctl(mFramebuffer.get(), kS3cfbPowerMode, &mode) != 0) {
+    Error SetDeconPowerMode(uint32_t mode) {
+        if (framebuffer_ < 0 || ioctl(framebuffer_.get(), kS3cfbPowerMode, &mode) != 0) {
             ALOGE("doze: S3CFB_POWER_MODE(%u) failed: %s", mode, strerror(errno));
             return Error::NO_RESOURCES;
         }
         return Error::NONE;
     }
 
-    Error suspendDoze(PowerState& state) {
-        Error err = setDeconPowerMode(kDeconPowerDozeSuspend);
+    Error SuspendDoze(PowerState& state) {
+        Error err = SetDeconPowerMode(kDeconPowerDozeSuspend);
         if (err == Error::NONE) {
             state.mode = IComposerClient::PowerMode::DOZE_SUSPEND;
         }
         return err;
     }
 
-    Error resumeDoze(PowerState& state) {
-        Error err = setDeconPowerMode(kDeconPowerDoze);
+    Error ResumeDoze(PowerState& state) {
+        Error err = SetDeconPowerMode(kDeconPowerDoze);
         if (err == Error::NONE) {
             state.mode = IComposerClient::PowerMode::DOZE;
-            state.dozeFramePresented = false;
+            state.doze_frame_presented = false;
         }
         return err;
     }
 
-    void onDozeFramePresented(Display display) {
-        if (display != mHotplug.primary()) {
+    void OnDozeFramePresented(Display display) {
+        if (display != hotplug_.Primary()) {
             return;
         }
 
-        std::lock_guard<std::mutex> lock(mPowerMutex);
-        auto it = mPower.find(display);
-        if (it == mPower.end()) {
+        std::lock_guard<std::mutex> lock(power_mutex_);
+        auto it = power_.find(display);
+        if (it == power_.end()) {
             return;
         }
 
         PowerState& state = it->second;
         if (state.mode == IComposerClient::PowerMode::DOZE_SUSPEND) {
-            if (resumeDoze(state) == Error::NONE) {
-                state.suspendPending = true;
-                requestDozeFrame(display);
+            if (ResumeDoze(state) == Error::NONE) {
+                state.suspend_pending = true;
+                RequestDozeFrame(display);
             }
             return;
         }
@@ -464,19 +466,19 @@ class SolidColorHwcHal : public HwcHal {
             return;
         }
 
-        state.dozeFramePresented = true;
-        if (state.suspendPending) {
-            state.suspendPending = false;
-            suspendDoze(state);
+        state.doze_frame_presented = true;
+        if (state.suspend_pending) {
+            state.suspend_pending = false;
+            SuspendDoze(state);
         }
     }
 
-    android::base::unique_fd mFramebuffer;
-    std::mutex mPowerMutex;
-    std::unordered_map<Display, PowerState> mPower;
-    std::mutex mMutex;
-    std::unordered_map<Display, std::unordered_set<Layer>> mSolidColorLayers;
-    std::unordered_map<Display, android::base::unique_fd> mPreviousRetire;
+    android::base::unique_fd framebuffer_;
+    std::mutex power_mutex_;
+    std::unordered_map<Display, PowerState> power_;
+    std::mutex mutex_;
+    std::unordered_map<Display, std::unordered_set<Layer>> solid_color_layers_;
+    std::unordered_map<Display, android::base::unique_fd> previous_retire_;
 };
 
 // HwcLoader::load() with SolidColorHwcHal, opening the HWC1 device here to keep it for the scaler
@@ -514,8 +516,8 @@ class SolidColorHwcLoader : public HwcLoader {
             return nullptr;
         }
         if (hwc1 != nullptr) {
-            hal->initScaler(hwc1);
-            hal->initDozeSuspend();
+            hal->InitScaler(hwc1);
+            hal->InitDozeSuspend();
         }
 
         return createComposer(std::move(hal));
