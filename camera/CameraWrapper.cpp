@@ -49,15 +49,15 @@ constexpr char kTorchMaxBrightnessPath[] = "/sys/class/leds/torch-sec1/max_brigh
 constexpr int32_t kTorchSteps[] = {3, 4, 6, 8, 10};
 constexpr int32_t kDefaultTorchLevel = 1;
 
-std::atomic<const camera_module_callbacks_t*> gCallbacks{nullptr};
+std::atomic<const camera_module_callbacks_t*> framework_callbacks{nullptr};
 
-std::mutex gStatusLock;
-std::map<std::string, int> gTorchStatus;
+std::mutex torch_status_mutex;
+std::map<std::string, int> torch_status;
 
-std::mutex gTorchLock;
+std::mutex torch_mutex;
 
-std::mutex gInfoLock;
-std::map<int, camera_metadata_t*> gStaticInfo;
+std::mutex static_info_mutex;
+std::map<int, camera_metadata_t*> static_info;
 
 camera_module_t* VendorModule() {
     static camera_module_t* const module = []() -> camera_module_t* {
@@ -119,7 +119,7 @@ constexpr int32_t kVideoFormats[] = {HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED,
                                      HAL_PIXEL_FORMAT_YCbCr_420_888};
 constexpr int32_t kSixtyFpsSizes[][2] = {{1920, 1080}, {1280, 720}};
 
-void AddBackVideoModes(std::vector<int64_t>* durations, std::vector<int32_t>* fpsRanges) {
+void AddBackVideoModes(std::vector<int64_t>* durations, std::vector<int32_t>* fps_ranges) {
     for (size_t i = 0; i + 3 < durations->size(); i += 4) {
         const int64_t* d = durations->data() + i;
         bool size = std::any_of(std::begin(kSixtyFpsSizes), std::end(kSixtyFpsSizes),
@@ -129,53 +129,53 @@ void AddBackVideoModes(std::vector<int64_t>* durations, std::vector<int32_t>* fp
             (*durations)[i + 3] = kFrameDuration60Fps;
         }
     }
-    fpsRanges->insert(fpsRanges->end(), {60, 60});
+    fps_ranges->insert(fps_ranges->end(), {60, 60});
 }
 
 // Returns a copy of src with the changes for this camera, or nullptr if there are none.
-camera_metadata_t* PatchStaticInfo(int cameraId, const camera_metadata_t* src,
-                                   int32_t maxTorchLevel) {
+camera_metadata_t* PatchStaticInfo(int camera_id, const camera_metadata_t* src,
+                                   int32_t max_torch_level) {
     camera_metadata_ro_entry_t entry;
-    bool torch = maxTorchLevel > 0 &&
+    bool torch = max_torch_level > 0 &&
                  find_camera_metadata_ro_entry(src, ANDROID_FLASH_INFO_AVAILABLE, &entry) == 0 &&
                  entry.count == 1 && entry.data.u8[0] == ANDROID_FLASH_INFO_AVAILABLE_TRUE;
-    bool video = cameraId == kBackCameraId;
+    bool video = camera_id == kBackCameraId;
     if (!torch && !video) return nullptr;
 
     auto keys = GetEntry<int32_t>(src, ANDROID_REQUEST_AVAILABLE_CHARACTERISTICS_KEYS);
     auto durations = GetEntry<int64_t>(src, ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS);
-    auto fpsRanges = GetEntry<int32_t>(src, ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
-    const int32_t defaultLevel = std::min(kDefaultTorchLevel, maxTorchLevel);
+    auto fps_ranges = GetEntry<int32_t>(src, ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+    const int32_t default_level = std::min(kDefaultTorchLevel, max_torch_level);
     if (torch) {
         for (int32_t tag : {ANDROID_FLASH_INFO_STRENGTH_MAXIMUM_LEVEL,
                             ANDROID_FLASH_INFO_STRENGTH_DEFAULT_LEVEL}) {
             if (std::find(keys.begin(), keys.end(), tag) == keys.end()) keys.push_back(tag);
         }
     }
-    if (video) AddBackVideoModes(&durations, &fpsRanges);
+    if (video) AddBackVideoModes(&durations, &fps_ranges);
 
-    size_t extraData = calculate_camera_metadata_entry_data_size(TYPE_INT32, keys.size()) +
-                       calculate_camera_metadata_entry_data_size(TYPE_INT64, durations.size()) +
-                       calculate_camera_metadata_entry_data_size(TYPE_INT32, fpsRanges.size());
+    size_t extra_data = calculate_camera_metadata_entry_data_size(TYPE_INT32, keys.size()) +
+                        calculate_camera_metadata_entry_data_size(TYPE_INT64, durations.size()) +
+                        calculate_camera_metadata_entry_data_size(TYPE_INT32, fps_ranges.size());
     camera_metadata_t* dst =
             allocate_camera_metadata(get_camera_metadata_entry_count(src) + 8,
-                                     get_camera_metadata_data_count(src) + extraData);
+                                     get_camera_metadata_data_count(src) + extra_data);
     if (dst == nullptr) return nullptr;
     int ret = append_camera_metadata(dst, src);
     if (!ret && torch) {
-        ret = SetEntry(dst, ANDROID_FLASH_INFO_STRENGTH_MAXIMUM_LEVEL, &maxTorchLevel, 1) ||
-              SetEntry(dst, ANDROID_FLASH_INFO_STRENGTH_DEFAULT_LEVEL, &defaultLevel, 1) ||
+        ret = SetEntry(dst, ANDROID_FLASH_INFO_STRENGTH_MAXIMUM_LEVEL, &max_torch_level, 1) ||
+              SetEntry(dst, ANDROID_FLASH_INFO_STRENGTH_DEFAULT_LEVEL, &default_level, 1) ||
               SetEntry(dst, ANDROID_REQUEST_AVAILABLE_CHARACTERISTICS_KEYS, keys.data(),
                        keys.size());
     }
     if (!ret && video) {
         ret = SetEntry(dst, ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS, durations.data(),
                        durations.size()) ||
-              SetEntry(dst, ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES, fpsRanges.data(),
-                       fpsRanges.size());
+              SetEntry(dst, ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES, fps_ranges.data(),
+                       fps_ranges.size());
     }
     if (ret) {
-        ALOGE("Failed to extend the static info of camera %d", cameraId);
+        ALOGE("Failed to extend the static info of camera %d", camera_id);
         free_camera_metadata(dst);
         return nullptr;
     }
@@ -184,13 +184,13 @@ camera_metadata_t* PatchStaticInfo(int cameraId, const camera_metadata_t* src,
 }
 
 bool IsTorchOn(const char* camera_id) {
-    std::lock_guard<std::mutex> lock(gStatusLock);
-    auto it = gTorchStatus.find(camera_id);
-    return it != gTorchStatus.end() && it->second == TORCH_MODE_STATUS_AVAILABLE_ON;
+    std::lock_guard<std::mutex> lock(torch_status_mutex);
+    auto it = torch_status.find(camera_id);
+    return it != torch_status.end() && it->second == TORCH_MODE_STATUS_AVAILABLE_ON;
 }
 
 void CameraDeviceStatusChange(const camera_module_callbacks_t*, int camera_id, int new_status) {
-    const camera_module_callbacks_t* callbacks = gCallbacks.load();
+    const camera_module_callbacks_t* callbacks = framework_callbacks.load();
     if (callbacks != nullptr) {
         callbacks->camera_device_status_change(callbacks, camera_id, new_status);
     }
@@ -199,10 +199,10 @@ void CameraDeviceStatusChange(const camera_module_callbacks_t*, int camera_id, i
 void TorchModeStatusChange(const camera_module_callbacks_t*, const char* camera_id,
                            int new_status) {
     if (camera_id != nullptr) {
-        std::lock_guard<std::mutex> lock(gStatusLock);
-        gTorchStatus[camera_id] = new_status;
+        std::lock_guard<std::mutex> lock(torch_status_mutex);
+        torch_status[camera_id] = new_status;
     }
-    const camera_module_callbacks_t* callbacks = gCallbacks.load();
+    const camera_module_callbacks_t* callbacks = framework_callbacks.load();
     if (callbacks != nullptr) {
         callbacks->torch_mode_status_change(callbacks, camera_id, new_status);
     }
@@ -229,12 +229,12 @@ struct WrappedDevice {
     camera3_callback_ops_t callbacks;
     camera3_device_t* vendor = nullptr;
     const camera3_callback_ops_t* framework = nullptr;
-    uint32_t partialResultCount = 1;
+    uint32_t partial_result_count = 1;
 
     std::mutex lock;
     std::condition_variable drained;
-    bool hasInputStream = false;
-    std::map<uint32_t, Pending> inFlight;
+    bool has_input_stream = false;
+    std::map<uint32_t, Pending> in_flight;
 };
 
 WrappedDevice* FromDevice(const camera3_device_t* dev) {
@@ -249,8 +249,8 @@ WrappedDevice* FromCallbacks(const camera3_callback_ops_t* ops) {
 // Called with w->lock held.
 void Settle(WrappedDevice* w, std::map<uint32_t, Pending>::iterator it) {
     if (it->second.buffers == 0 && it->second.metadata) {
-        w->inFlight.erase(it);
-        if (w->inFlight.empty()) w->drained.notify_all();
+        w->in_flight.erase(it);
+        if (w->in_flight.empty()) w->drained.notify_all();
     }
 }
 
@@ -258,11 +258,11 @@ void ProcessCaptureResult(const camera3_callback_ops_t* ops, const camera3_captu
     WrappedDevice* w = FromCallbacks(ops);
     {
         std::lock_guard<std::mutex> lock(w->lock);
-        auto it = w->inFlight.find(r->frame_number);
-        if (it != w->inFlight.end()) {
+        auto it = w->in_flight.find(r->frame_number);
+        if (it != w->in_flight.end()) {
             uint32_t returned = r->num_output_buffers + (r->input_buffer != nullptr ? 1 : 0);
             it->second.buffers -= std::min(returned, it->second.buffers);
-            if (r->result != nullptr && r->partial_result >= w->partialResultCount) {
+            if (r->result != nullptr && r->partial_result >= w->partial_result_count) {
                 it->second.metadata = true;
             }
             Settle(w, it);
@@ -277,12 +277,12 @@ void Notify(const camera3_callback_ops_t* ops, const camera3_notify_msg_t* msg) 
         std::lock_guard<std::mutex> lock(w->lock);
         const camera3_error_msg_t& e = msg->message.error;
         if (e.error_code == CAMERA3_MSG_ERROR_DEVICE) {
-            w->inFlight.clear();
+            w->in_flight.clear();
             w->drained.notify_all();
         } else if (e.error_code == CAMERA3_MSG_ERROR_REQUEST ||
                    e.error_code == CAMERA3_MSG_ERROR_RESULT) {
-            auto it = w->inFlight.find(e.frame_number);
-            if (it != w->inFlight.end()) {
+            auto it = w->in_flight.find(e.frame_number);
+            if (it != w->in_flight.end()) {
                 it->second.metadata = true;
                 Settle(w, it);
             }
@@ -306,7 +306,7 @@ int ConfigureStreams(const camera3_device_t* dev, camera3_stream_configuration_t
                              });
     {
         std::lock_guard<std::mutex> lock(w->lock);
-        w->hasInputStream = input;
+        w->has_input_stream = input;
     }
     return w->vendor->ops->configure_streams(w->vendor, list);
 }
@@ -315,14 +315,14 @@ int ProcessCaptureRequest(const camera3_device_t* dev, camera3_capture_request_t
     WrappedDevice* w = FromDevice(dev);
     {
         std::lock_guard<std::mutex> lock(w->lock);
-        w->inFlight[request->frame_number] = {
+        w->in_flight[request->frame_number] = {
                 request->num_output_buffers + (request->input_buffer != nullptr ? 1 : 0), false};
     }
     int ret = w->vendor->ops->process_capture_request(w->vendor, request);
     if (ret != 0) {
         std::lock_guard<std::mutex> lock(w->lock);
-        w->inFlight.erase(request->frame_number);
-        if (w->inFlight.empty()) w->drained.notify_all();
+        w->in_flight.erase(request->frame_number);
+        if (w->in_flight.empty()) w->drained.notify_all();
     }
     return ret;
 }
@@ -351,10 +351,10 @@ int Flush(const camera3_device_t* dev) {
     WrappedDevice* w = FromDevice(dev);
     {
         std::unique_lock<std::mutex> lock(w->lock);
-        if (w->hasInputStream &&
-            !w->drained.wait_for(lock, kZslDrainTimeout, [w] { return w->inFlight.empty(); })) {
-            ALOGW("%zu requests still in flight after %lld ms, flushing anyway", w->inFlight.size(),
-                  static_cast<long long>(kZslDrainTimeout.count()));
+        if (w->has_input_stream &&
+            !w->drained.wait_for(lock, kZslDrainTimeout, [w] { return w->in_flight.empty(); })) {
+            ALOGW("%zu requests still in flight after %lld ms, flushing anyway",
+                  w->in_flight.size(), static_cast<long long>(kZslDrainTimeout.count()));
         }
     }
     return w->vendor->ops->flush(w->vendor);
@@ -367,9 +367,9 @@ int CloseDevice(hw_device_t* device) {
     return ret;
 }
 
-uint32_t PartialResultCount(camera_module_t* vendor, int cameraId) {
+uint32_t PartialResultCount(camera_module_t* vendor, int camera_id) {
     camera_info info = {};
-    if (vendor->get_camera_info(cameraId, &info) != 0 ||
+    if (vendor->get_camera_info(camera_id, &info) != 0 ||
         info.static_camera_characteristics == nullptr) {
         return 1;
     }
@@ -388,11 +388,11 @@ int Open(const hw_module_t*, const char* id, hw_device_t** device) {
         return ret;
     }
 
-    int cameraId = 0;
+    int camera_id = 0;
     auto* w = new WrappedDevice();
     w->vendor = reinterpret_cast<camera3_device_t*>(*device);
-    if (android::base::ParseInt(id, &cameraId, 0)) {
-        w->partialResultCount = PartialResultCount(vendor, cameraId);
+    if (android::base::ParseInt(id, &camera_id, 0)) {
+        w->partial_result_count = PartialResultCount(vendor, camera_id);
     }
     // Only the device 3.3 operations, the blob's ops table predates the later members
     const camera3_device_ops_t* v = w->vendor->ops;
@@ -432,10 +432,10 @@ int GetCameraInfo(int camera_id, struct camera_info* info) {
         return ret;
     }
 
-    std::lock_guard<std::mutex> lock(gInfoLock);
-    auto it = gStaticInfo.find(camera_id);
-    if (it == gStaticInfo.end()) {
-        it = gStaticInfo
+    std::lock_guard<std::mutex> lock(static_info_mutex);
+    auto it = static_info.find(camera_id);
+    if (it == static_info.end()) {
+        it = static_info
                      .emplace(camera_id,
                               PatchStaticInfo(camera_id, info->static_camera_characteristics,
                                               TorchMaxLevel()))
@@ -452,7 +452,7 @@ int SetCallbacks(const camera_module_callbacks_t* callbacks) {
     if (vendor == nullptr) {
         return -ENODEV;
     }
-    gCallbacks.store(callbacks);
+    framework_callbacks.store(callbacks);
     return vendor->set_callbacks(callbacks != nullptr ? &kCallbacks : nullptr);
 }
 
@@ -463,12 +463,12 @@ void GetVendorTagOps(vendor_tag_ops_t* ops) {
     }
 }
 
-int OpenLegacy(const hw_module_t*, const char* id, uint32_t halVersion, hw_device_t** device) {
+int OpenLegacy(const hw_module_t*, const char* id, uint32_t hal_version, hw_device_t** device) {
     camera_module_t* vendor = VendorModule();
     if (vendor == nullptr || vendor->open_legacy == nullptr) {
         return -ENOSYS;
     }
-    return vendor->open_legacy(&vendor->common, id, halVersion, device);
+    return vendor->open_legacy(&vendor->common, id, hal_version, device);
 }
 
 int SetTorchMode(const char* camera_id, bool enabled) {
@@ -476,7 +476,7 @@ int SetTorchMode(const char* camera_id, bool enabled) {
     if (vendor == nullptr) {
         return -ENODEV;
     }
-    std::lock_guard<std::mutex> lock(gTorchLock);
+    std::lock_guard<std::mutex> lock(torch_mutex);
     return vendor->set_torch_mode(camera_id, enabled);
 }
 
@@ -489,17 +489,17 @@ int SetTorchModeStrength(const char* camera_id, bool enabled, int32_t strength) 
     if (vendor == nullptr) {
         return -ENODEV;
     }
-    const int32_t maxLevel = TorchMaxLevel();
-    if (maxLevel == 0) {
+    const int32_t max_level = TorchMaxLevel();
+    if (max_level == 0) {
         return -ENOSYS;
     }
-    if (strength < 1 || strength > maxLevel) {
+    if (strength < 1 || strength > max_level) {
         return -EINVAL;
     }
 
-    std::lock_guard<std::mutex> lock(gTorchLock);
-    const bool wasOn = IsTorchOn(camera_id);
-    if (!wasOn) {
+    std::lock_guard<std::mutex> lock(torch_mutex);
+    const bool was_on = IsTorchOn(camera_id);
+    if (!was_on) {
         int ret = vendor->set_torch_mode(camera_id, true);
         if (ret != 0) {
             return ret;
@@ -509,7 +509,7 @@ int SetTorchModeStrength(const char* camera_id, bool enabled, int32_t strength) 
                                           kTorchBrightnessPath)) {
         int ret = errno != 0 ? -errno : -EIO;
         ALOGE("Failed to set torch level %d: %s", strength, strerror(-ret));
-        if (!wasOn) {
+        if (!was_on) {
             vendor->set_torch_mode(camera_id, false);
         }
         return ret;
@@ -528,7 +528,7 @@ int Init() {
     return vendor->init != nullptr ? vendor->init() : 0;
 }
 
-hw_module_methods_t gModuleMethods = {
+hw_module_methods_t module_methods = {
         .open = Open,
 };
 
@@ -543,7 +543,7 @@ camera_module_t HAL_MODULE_INFO_SYM __attribute__((visibility("default"))) = {
                         .id = CAMERA_HARDWARE_MODULE_ID,
                         .name = "Exynos 8895 camera wrapper",
                         .author = "The LineageOS Project",
-                        .methods = &gModuleMethods,
+                        .methods = &module_methods,
                         .dso = nullptr,
                         .reserved = {},
                 },
