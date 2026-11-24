@@ -24,7 +24,7 @@ IKeymasterDevice* CreateSKeymasterDevice(keymaster2_device_t* dev);
 
 namespace {
 
-IKeymasterDevice* openKeymaster1(const hw_module_t* mod) {
+IKeymasterDevice* OpenKeymaster1(const hw_module_t* mod) {
     keymaster1_device_t* dev = nullptr;
     int rc = keymaster1_open(mod, &dev);
     if (rc) {
@@ -34,7 +34,7 @@ IKeymasterDevice* openKeymaster1(const hw_module_t* mod) {
     return skeymaster::ng::CreateSKeymasterDevice(dev);
 }
 
-IKeymasterDevice* openKeymaster2(const hw_module_t* mod) {
+IKeymasterDevice* OpenKeymaster2(const hw_module_t* mod) {
     keymaster2_device_t* dev = nullptr;
     int rc = keymaster2_open(mod, &dev);
     if (rc) {
@@ -44,7 +44,7 @@ IKeymasterDevice* openKeymaster2(const hw_module_t* mod) {
     return skeymaster::ng::CreateSKeymasterDevice(dev);
 }
 
-IKeymasterDevice* createKeymaster3Device() {
+IKeymasterDevice* CreateKeymaster3Device() {
     const hw_module_t* mod = nullptr;
 
     int rc = hw_get_module_by_class(KEYSTORE_HARDWARE_MODULE_ID, nullptr, &mod);
@@ -55,9 +55,9 @@ IKeymasterDevice* createKeymaster3Device() {
 
     switch (mod->module_api_version) {
         case KEYMASTER_MODULE_API_VERSION_1_0:
-            return openKeymaster1(mod);
+            return OpenKeymaster1(mod);
         case KEYMASTER_MODULE_API_VERSION_2_0:
-            return openKeymaster2(mod);
+            return OpenKeymaster2(mod);
         default:
             ALOGE("Unsupported keystore module API version 0x%x", mod->module_api_version);
             return nullptr;
@@ -70,7 +70,7 @@ extern "C" IKeymasterDevice* HIDL_FETCH_IKeymasterDevice(const char* name) {
     ALOGI("Fetching keymaster device name %s", name);
 
     if (name && strcmp(name, "default") == 0) {
-        return createKeymaster3Device();
+        return CreateKeymaster3Device();
     }
     return nullptr;
 }
