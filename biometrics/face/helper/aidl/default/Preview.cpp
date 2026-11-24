@@ -82,7 +82,8 @@ void Preview::render(const uint8_t* nv21) {
     const uint8_t* vu = nv21 + static_cast<size_t>(kWidth) * kHeight;
     const int32_t top = (kWidth - kSize) / 2;
     for (int32_t y = 0; y < kSize; y++) {
-        uint32_t* out = static_cast<uint32_t*>(buffer.bits) + static_cast<size_t>(y) * buffer.stride;
+        uint32_t* out =
+                static_cast<uint32_t*>(buffer.bits) + static_cast<size_t>(y) * buffer.stride;
         const int32_t sx = kWidth - 1 - (y + top);
         for (int32_t x = 0; x < kSize; x++) {
             const int32_t sy = kHeight - 1 - x;

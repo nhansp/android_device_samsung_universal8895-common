@@ -158,8 +158,8 @@ bool Session::onFrame(const uint8_t* nv21) {
     // closes its session itself; its result was sent to notify() before), any other value to
     // keep feeding frames; -2 when the library is not open.
     int ret = mEngine.lib->ss_face_processFrontImage(nv21, face_camera::kFrameBytes,
-                                                      face_camera::kWidth, face_camera::kHeight,
-                                                      kRotation, FACE_IMAGE_FORMAT_NV21);
+                                                     face_camera::kWidth, face_camera::kHeight,
+                                                     kRotation, FACE_IMAGE_FORMAT_NV21);
     return ret != 1 && ret >= 0;
 }
 
@@ -451,9 +451,8 @@ bool Session::checkLockout() {
 }
 
 ndk::ScopedAStatus Session::enumerateEnrollments() {
-    mWorker->post([self = ref<Session>()] {
-        self->mCb->onEnrollmentsEnumerated(self->enrollments());
-    });
+    mWorker->post(
+            [self = ref<Session>()] { self->mCb->onEnrollmentsEnumerated(self->enrollments()); });
     return ndk::ScopedAStatus::ok();
 }
 

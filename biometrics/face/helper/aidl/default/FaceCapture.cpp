@@ -44,8 +44,8 @@ FaceCapture::~FaceCapture() {
 }
 
 bool FaceCapture::start(Callbacks callbacks) {
-    mSocket.reset(socket_local_client(kSocketName, ANDROID_SOCKET_NAMESPACE_RESERVED,
-                                      SOCK_SEQPACKET));
+    mSocket.reset(
+            socket_local_client(kSocketName, ANDROID_SOCKET_NAMESPACE_RESERVED, SOCK_SEQPACKET));
     if (mSocket < 0) {
         PLOG(ERROR) << "Failed to connect to the face camera";
         return false;
